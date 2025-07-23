@@ -4,6 +4,9 @@ This is a very, very barebones prototype / Proof of Concept. It is designed to b
 Any issues with this, hit me up.
 -Mackenzie
 
+PS. Also, for the love of god, I need to update the directory structure. I am refusing to deal with another single-directory mess of a project again lmao. I have learned my lessons. 
+PPS. No, no I haven't.
+
 ## Overview
 This prototype provides an interactive web-based platform to visualize tropical cyclone tracks across different climate scenarios based on the dp4PDF dataset. The application allows users to compare cyclone activity under current conditions, +2K warming, and +4K warming scenarios.
 
