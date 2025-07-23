@@ -1,5 +1,9 @@
 # Tropical Cyclone Track Visualization Prototype
 
+This is a very, very barebones prototype / Proof of Concept. It is designed to be run through XAMPP, and then launched in the browser as localhost/YOUR_PROJECT_DIRECTORY_INSIDE_HTDOCS/index.html
+Any issues with this, hit me up.
+-Mackenzie
+
 ## Overview
 This prototype provides an interactive web-based platform to visualize tropical cyclone tracks across different climate scenarios based on the dp4PDF dataset. The application allows users to compare cyclone activity under current conditions, +2K warming, and +4K warming scenarios.
 
@@ -207,18 +211,6 @@ Add `?debug=true` to URL for console logging
 - Real-time data updates
 - Multi-language support
 
-## Contributing
-This is a prototype for the UNSW climate visualization project. For contributions:
-1. Follow existing code structure
-2. Document new functions
-3. Test across browsers
-4. Update this README
-
-## License
-This prototype is developed for UNSW SSCI educational and research purposes.
-
-## Contact
-For questions about dp4df data integration or technical issues, contact the project maintainer.
 
 
 
