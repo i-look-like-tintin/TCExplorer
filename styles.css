@@ -86,6 +86,21 @@ header p {
     color: white;
 }
 
+/* Ensemble Selector */
+#ensemble-select {
+    padding: 0.5rem;
+    border: 2px solid #3498db;
+    border-radius: 4px;
+    font-size: 0.875rem;
+    background-color: white;
+    cursor: pointer;
+}
+
+#ensemble-select:focus {
+    outline: none;
+    border-color: #2980b9;
+}
+
 /* Toggle Options */
 .toggle-options {
     display: flex;
@@ -106,14 +121,16 @@ header p {
     cursor: pointer;
 }
 
-/* Time Slider */
-#time-slider {
+/* Year Slider */
+#year-slider {
     width: 200px;
 }
 
-#time-display {
+#year-display {
     font-weight: 600;
     color: #3498db;
+    min-width: 80px;
+    display: inline-block;
 }
 
 /* Export Button */

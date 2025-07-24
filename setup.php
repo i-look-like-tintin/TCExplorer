@@ -137,7 +137,10 @@ echo "\n=== Setup Complete ===\n";
 echo "Next steps:\n";
 echo "1. Ensure your web server (Apache) is running\n";
 echo "2. Access the application at: http://localhost" . dirname($_SERVER['SCRIPT_NAME']) . "/\n";
-echo "3. Place dp4df NetCDF files in the data directory when available\n";
+echo "3. The application will fetch d4PDF data from:\n";
+echo "   https://climate.mri-jma.go.jp/pub/d4pdf/tropical_cyclone_tracks/\n";
 echo "4. Modify config.local.php for environment-specific settings\n";
+echo "\nNote: Initial data loading may take time as files are fetched from the remote server.\n";
+echo "Subsequent loads will use cached data for better performance.\n";
 echo "\nFor more information, see README.md\n";
 ?>

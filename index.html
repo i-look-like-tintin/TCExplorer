@@ -24,10 +24,21 @@
             <div class="control-group">
                 <label>Climate Scenario:</label>
                 <div class="scenario-buttons">
-                    <button class="scenario-btn active" data-scenario="current">Current Climate</button>
-                    <button class="scenario-btn" data-scenario="2k">+2K Warming</button>
-                    <button class="scenario-btn" data-scenario="4k">+4K Warming</button>
+                    <button class="scenario-btn active" data-scenario="current">Historical (1951-2011)</button>
+                    <button class="scenario-btn" data-scenario="2k">+2K Warming (2051-2111)</button>
+                    <button class="scenario-btn" data-scenario="4k">+4K Warming (2051-2111)</button>
                 </div>
+            </div>
+            
+            <div class="control-group">
+                <label>Ensemble Member:</label>
+                <select id="ensemble-select">
+                    <option value="1">Ensemble 1</option>
+                    <option value="2">Ensemble 2</option>
+                    <option value="3">Ensemble 3</option>
+                    <option value="4">Ensemble 4</option>
+                    <option value="5">Ensemble 5</option>
+                </select>
             </div>
             
             <div class="control-group">
@@ -42,17 +53,21 @@
                     <label class="checkbox-label">
                         <input type="checkbox" id="show-intensity"> Show Intensity Colors
                     </label>
+                    <label class="checkbox-label">
+                        <input type="checkbox" id="filter-australia" checked> Filter to Australian Region
+                    </label>
                 </div>
             </div>
             
             <div class="control-group">
-                <label>Time Period:</label>
-                <input type="range" id="time-slider" min="2020" max="2100" value="2020" step="10">
-                <span id="time-display">2020</span>
+                <label>Year Range:</label>
+                <input type="range" id="year-slider" min="1951" max="2111" value="2000" step="1">
+                <span id="year-display">All Years</span>
             </div>
             
             <div class="control-group">
                 <button id="export-data" class="export-btn">Export Data (CSV)</button>
+                <button id="refresh-data" class="export-btn" style="background-color: #3498db;">Refresh Data</button>
             </div>
         </div>
 
