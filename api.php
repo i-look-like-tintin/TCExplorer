@@ -191,7 +191,8 @@ class CycloneDataAPI {
                 'period' => $config['time_period'],
                 'warming' => '0K',
                 'model' => 'd4PDF HPB',
-                'ensemble_members' => $config['ensemble_members']
+                'ensemble_members' => $config['ensemble_members'],
+                'ensemble_range' => '1-' . $config['ensemble_members']
             ],
             '2k' => [
                 'description' => '+2K Global Warming Scenario',
@@ -199,6 +200,7 @@ class CycloneDataAPI {
                 'warming' => '+2K',
                 'model' => 'd4PDF HFB_2K',
                 'ensemble_members' => $config['ensemble_members'],
+                'ensemble_range' => '101-109',
                 'sst_models' => $config['sst_models'] ?? []
             ],
             '4k' => [
@@ -207,6 +209,7 @@ class CycloneDataAPI {
                 'warming' => '+4K',
                 'model' => 'd4PDF HFB_4K',
                 'ensemble_members' => $config['ensemble_members'],
+                'ensemble_range' => '101-115',
                 'sst_models' => $config['sst_models'] ?? []
             ]
         ];

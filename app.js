@@ -4,6 +4,7 @@ class TCVisualization {
         this.map = null;
         this.currentScenario = 'current';
         this.currentEnsemble = 1;
+        this.currentSSTModel = 'CC';
         this.cycloneData = {};
         this.layers = {
             tracks: L.layerGroup(),
@@ -20,6 +21,7 @@ class TCVisualization {
     init() {
         this.initMap();
         this.initEventListeners();
+        this.updateEnsembleSelector();
         this.updateYearSlider();
         this.loadData();
     }
@@ -67,6 +69,12 @@ class TCVisualization {
         // Ensemble selector
         document.getElementById('ensemble-select').addEventListener('change', (e) => {
             this.currentEnsemble = parseInt(e.target.value);
+            this.loadData();
+        });
+        
+        // SST model selector
+        document.getElementById('sst-select').addEventListener('change', (e) => {
+            this.currentSSTModel = e.target.value;
             this.loadData();
         });
         
@@ -128,8 +136,59 @@ class TCVisualization {
         
         // Update current scenario
         this.currentScenario = e.target.dataset.scenario;
+        
+        // Update ensemble selector based on scenario
+        this.updateEnsembleSelector();
+        
+        // Update year slider
         this.updateYearSlider();
+        
+        // Load data
         this.loadData();
+    }
+    
+    updateEnsembleSelector() {
+        const ensembleInfo = document.getElementById('ensemble-info');
+        const ensembleSelect = document.getElementById('ensemble-select');
+        const sstSelector = document.getElementById('sst-selector');
+        
+        // Define ensemble limits for each scenario
+        const ensembleLimits = {
+            'current': { max: 100, available: 100, note: '(1-100 available)' },
+            '2k': { max: 9, available: 9, note: '(101-109 on server)' },
+            '4k': { max: 15, available: 15, note: '(101-115 on server)' }
+        };
+        
+        const limit = ensembleLimits[this.currentScenario];
+        
+        // Update info text
+        ensembleInfo.textContent = limit.note;
+        
+        // Show/hide SST selector based on scenario
+        if (this.currentScenario === '2k' || this.currentScenario === '4k') {
+            sstSelector.style.display = 'flex';
+        } else {
+            sstSelector.style.display = 'none';
+        }
+        
+        // Update options
+        const currentValue = parseInt(ensembleSelect.value);
+        ensembleSelect.innerHTML = '';
+        
+        for (let i = 1; i <= Math.min(limit.max, 15); i++) { // Show max 15 in dropdown
+            const option = document.createElement('option');
+            option.value = i;
+            option.textContent = `Ensemble ${i}`;
+            ensembleSelect.appendChild(option);
+        }
+        
+        // Restore previous value if still valid
+        if (currentValue <= limit.max) {
+            ensembleSelect.value = currentValue;
+        } else {
+            ensembleSelect.value = 1;
+            this.currentEnsemble = 1;
+        }
     }
     
     updateYearSlider() {
@@ -141,9 +200,13 @@ class TCVisualization {
             yearSlider.min = 1951;
             yearSlider.max = 2011;
             yearSlider.value = 1951;
-        } else {
+        } else if (this.currentScenario === '2k') {
+            yearSlider.min = 2031;
+            yearSlider.max = 2090;
+            yearSlider.value = 2031;
+        } else if (this.currentScenario === '4k') {
             yearSlider.min = 2051;
-            yearSlider.max = 2111;
+            yearSlider.max = 2110;
             yearSlider.value = 2051;
         }
         
@@ -164,7 +227,9 @@ class TCVisualization {
         this.updateDataStatus('Loading data...');
         
         try {
-            const cacheKey = `${this.currentScenario}_${this.currentEnsemble}`;
+            const cacheKey = this.currentScenario === 'current' 
+                ? `${this.currentScenario}_${this.currentEnsemble}`
+                : `${this.currentScenario}_${this.currentEnsemble}_${this.currentSSTModel}`;
             
             // Check if we already have this data and not forcing refresh
             if (!forceRefresh && this.cycloneData[cacheKey]) {
@@ -183,6 +248,11 @@ class TCVisualization {
                 use_sample: useSample ? 'true' : 'false',
                 debug: 'true' // Enable debug logging
             });
+            
+            // Add SST model for 2K/4K scenarios
+            if (this.currentScenario === '2k' || this.currentScenario === '4k') {
+                params.append('sst', this.currentSSTModel);
+            }
             
             console.log(`Fetching data with params:`, params.toString());
             
@@ -236,7 +306,9 @@ class TCVisualization {
         // Clear existing layers
         Object.values(this.layers).forEach(layer => layer.clearLayers());
         
-        const cacheKey = `${this.currentScenario}_${this.currentEnsemble}`;
+        const cacheKey = this.currentScenario === 'current' 
+            ? `${this.currentScenario}_${this.currentEnsemble}`
+            : `${this.currentScenario}_${this.currentEnsemble}_${this.currentSSTModel}`;
         const data = this.cycloneData[cacheKey];
         if (!data || !data.cyclones) return;
         
@@ -355,7 +427,9 @@ class TCVisualization {
     }
     
     exportData() {
-        const cacheKey = `${this.currentScenario}_${this.currentEnsemble}`;
+        const cacheKey = this.currentScenario === 'current' 
+            ? `${this.currentScenario}_${this.currentEnsemble}`
+            : `${this.currentScenario}_${this.currentEnsemble}_${this.currentSSTModel}`;
         const data = this.cycloneData[cacheKey];
         if (!data || !data.cyclones) {
             alert('No data to export');
@@ -380,7 +454,14 @@ class TCVisualization {
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.href = url;
-        a.download = `cyclone_data_${this.currentScenario}_ensemble${this.currentEnsemble}_${new Date().toISOString().split('T')[0]}.csv`;
+        
+        let filename = `cyclone_data_${this.currentScenario}_ensemble${this.currentEnsemble}`;
+        if (this.currentScenario === '2k' || this.currentScenario === '4k') {
+            filename += `_${this.currentSSTModel}`;
+        }
+        filename += `_${new Date().toISOString().split('T')[0]}.csv`;
+        
+        a.download = filename;
         a.click();
         URL.revokeObjectURL(url);
     }

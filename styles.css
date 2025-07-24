@@ -87,7 +87,7 @@ header p {
 }
 
 /* Ensemble Selector */
-#ensemble-select {
+#ensemble-select, #sst-select {
     padding: 0.5rem;
     border: 2px solid #3498db;
     border-radius: 4px;
@@ -96,7 +96,7 @@ header p {
     cursor: pointer;
 }
 
-#ensemble-select:focus {
+#ensemble-select:focus, #sst-select:focus {
     outline: none;
     border-color: #2980b9;
 }

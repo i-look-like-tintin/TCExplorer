@@ -25,8 +25,8 @@
                 <label>Climate Scenario:</label>
                 <div class="scenario-buttons">
                     <button class="scenario-btn active" data-scenario="current">Historical (1951-2011)</button>
-                    <button class="scenario-btn" data-scenario="2k">+2K Warming (2051-2111)</button>
-                    <button class="scenario-btn" data-scenario="4k">+4K Warming (2051-2111)</button>
+                    <button class="scenario-btn" data-scenario="2k">+2K Warming (2031-2090)</button>
+                    <button class="scenario-btn" data-scenario="4k">+4K Warming (2051-2110)</button>
                 </div>
             </div>
             
@@ -38,6 +38,23 @@
                     <option value="3">Ensemble 3</option>
                     <option value="4">Ensemble 4</option>
                     <option value="5">Ensemble 5</option>
+                    <option value="6">Ensemble 6</option>
+                    <option value="7">Ensemble 7</option>
+                    <option value="8">Ensemble 8</option>
+                    <option value="9">Ensemble 9</option>
+                </select>
+                <span id="ensemble-info" style="font-size: 0.8rem; color: #7f8c8d; margin-left: 0.5rem;"></span>
+            </div>
+            
+            <div class="control-group" id="sst-selector" style="display: none;">
+                <label>SST Model:</label>
+                <select id="sst-select">
+                    <option value="CC">CCSM4 (CC)</option>
+                    <option value="GF">GFDL-CM3 (GF)</option>
+                    <option value="HA">HadGEM-AO2 (HA)</option>
+                    <option value="MI">MIROC5 (MI)</option>
+                    <option value="MP">MPI-ESM-MR (MP)</option>
+                    <option value="MR">MRI-CGCM3 (MR)</option>
                 </select>
             </div>
             

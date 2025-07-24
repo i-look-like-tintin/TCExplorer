@@ -85,7 +85,7 @@ class Dp4dfParser {
         
         return $cyclones;
     }
-    
+
     /**
      * Apply data reduction strategies
      */
@@ -143,35 +143,62 @@ class Dp4dfParser {
         switch ($scenario) {
             case 'current':
                 // Format: xytrackk319b_HPB_m001_1951-2011.txt
+                $actualEnsemble = $ensembleId; // No offset for current
                 return sprintf('%s%03d%s', 
                     $config['prefix'], 
-                    $ensembleId, 
+                    $actualEnsemble, 
                     $config['suffix']
                 );
-                
+            //TODO: 2k and 4k cases here are bodge fixes cos AI cracked the shits
+            //so I used the purely human ability to hit shit with hammers until it started working lol
             case '2k':
-            case '4k':
-                // Based on user feedback, the format is:
-                // xytrackk319b_HFB_2K_m001_CC_2051-2111.txt
-                // (ensemble number comes before SST model)
+                                // Convert display ensemble (1-9 or 1-15) to actual ensemble number (101-109 or 101-115)
+                //$ensembleStart = isset($config['ensemble_start']) ? $config['ensemble_start'] : 1;
+                $ensembleStart = 101;
+                $actualEnsemble = $ensembleStart + $ensembleId - 1;
+                $yearRange = "_2031-2090.txt";
+                // Format: xytrackk319b_HFB_2K_CC_m101_2031-2090.txt
+                // SST model comes BEFORE ensemble number
                 if (!$sstModel) {
                     $sstModel = $config['sst_models'][0]; // Default to CC
                 }
                 
-                $filename = sprintf('%s%03d_%s%s', 
-                    $config['prefix'],    // e.g., "xytrackk319b_HFB_2K_m"
-                    $ensembleId,          // e.g., "001"
+                $filename = sprintf('%s%s_m%03d%s', 
+                    $config['prefix'],    // e.g., "xytrackk319b_HFB_2K_"
                     $sstModel,            // e.g., "CC"
-                    $config['suffix']     // e.g., "_2051-2111.txt"
+                    $actualEnsemble,      // e.g., "101"
+                    $yearRange    // e.g., "_2031-2090.txt"
                 );
                 
-                error_log("Built filename for {$scenario}: {$filename}");
+                error_log("Built filename for {$scenario}: {$filename} (display ensemble: {$ensembleId}, actual: {$actualEnsemble})");
                 return $filename;
+            case '4k':
+                // Convert display ensemble (1-9 or 1-15) to actual ensemble number (101-109 or 101-115)
+                //$ensembleStart = isset($config['ensemble_start']) ? $config['ensemble_start'] : 1;
+                $ensembleStart = 101;
+                $actualEnsemble = $ensembleStart + $ensembleId - 1;
+                $yearRange = "_2051-2110.txt";
+                // Format: xytrackk319b_HFB_2K_CC_m101_2031-2090.txt
+                // SST model comes BEFORE ensemble number
+                if (!$sstModel) {
+                    $sstModel = $config['sst_models'][0]; // Default to CC
+                }
+                
+                $filename = sprintf('%s%s_m%03d%s', 
+                    $config['prefix'],    // e.g., "xytrackk319b_HFB_2K_"
+                    $sstModel,            // e.g., "CC"
+                    $actualEnsemble,      // e.g., "101"
+                    $yearRange    // e.g., "_2031-2090.txt"
+                );
+                
+                error_log("Built filename for {$scenario}: {$filename} (display ensemble: {$ensembleId}, actual: {$actualEnsemble})");
+                return $filename;
+                
         }
         
         return '';
     }
-    
+
     /**
      * Fetch data from URL
      */

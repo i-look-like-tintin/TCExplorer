@@ -39,10 +39,14 @@ class SampleDataGenerator {
         ];
         
         // Generate data for multiple ensemble members (just 3 for demo)
-        for ($ensemble = 1; $ensemble <= min(3, $config['ensemble_members']); $ensemble++) {
+        $startEnsemble = isset($config['ensemble_start']) ? $config['ensemble_start'] : 1;
+        $numToGenerate = min(3, $config['ensemble_members']);
+        
+        for ($i = 0; $i < $numToGenerate; $i++) {
+            $ensembleId = $startEnsemble + $i;
             $ensembleData = [
-                'ensemble_id' => $ensemble,
-                'cyclones' => $this->generateCyclonesForEnsemble($scenario, $ensemble)
+                'ensemble_id' => $ensembleId,
+                'cyclones' => $this->generateCyclonesForEnsemble($scenario, $ensembleId)
             ];
             $data['ensemble_data'][] = $ensembleData;
         }
@@ -66,7 +70,10 @@ class SampleDataGenerator {
         $scenarioParams = $params[$scenario];
         $yearRange = $this->getYearRange($scenario);
         
-        for ($i = 0; $i < $scenarioParams['count']; $i++) {
+        // Add some variation based on ensemble ID
+        $cycloneCount = $scenarioParams['count'] + ($ensembleId % 5) - 2;
+        
+        for ($i = 0; $i < $cycloneCount; $i++) {
             $year = rand($yearRange['start'], $yearRange['end']);
             $cyclone = $this->generateSingleCyclone($year, $i, $scenarioParams['intensity_bias']);
             $cyclones[] = $cyclone;
@@ -78,13 +85,13 @@ class SampleDataGenerator {
     private function getYearRange($scenario) {
         switch ($scenario) {
             case 'current':
-                return ['start' => 1990, 'end' => 2020];
+                return ['start' => 1951, 'end' => 2011];
             case '2k':
-                return ['start' => 2040, 'end' => 2070];
+                return ['start' => 2031, 'end' => 2090];
             case '4k':
-                return ['start' => 2070, 'end' => 2100];
+                return ['start' => 2051, 'end' => 2110];
             default:
-                return ['start' => 2020, 'end' => 2030];
+                return ['start' => 2000, 'end' => 2010];
         }
     }
     
