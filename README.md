@@ -1,7 +1,7 @@
 # Tropical Cyclone Track Visualization Prototype
 # Version 0.6.1
 This is a very, very barebones prototype / Proof of Concept. It is designed to be run through XAMPP, and then launched in the browser as localhost/YOUR_PROJECT_DIRECTORY_INSIDE_HTDOCS/index.html
-Any issues with this, hit me up. The instructions below may not be super accurate, but I have implemented it through Linux, Windows, and MacOS so happy to help you get it running if needed.
+Any issues with this, hit me up. The instructions below may not be super accurate, but I have implemented/tested it through Linux, Windows, and MacOS so happy to help you get it running if needed.
 -Mackenzie
 
 PS. Also, for the love of god, I need to update the directory structure. I am refusing to deal with another single-directory mess of a project again lmao. I have learned my lessons. 
