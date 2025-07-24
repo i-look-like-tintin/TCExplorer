@@ -315,7 +315,7 @@ class TCVisualization {
         // Filter by year if specified
         let cyclones = data.cyclones;
         if (this.yearRange) {
-            cyclones = cyclones.filter(c => c.year <= this.yearRange);
+            cyclones = cyclones.filter(c => c.year === this.yearRange);
         }
         
         // Process each cyclone
@@ -439,7 +439,7 @@ class TCVisualization {
         // Filter by year if specified
         let cyclones = data.cyclones;
         if (this.yearRange) {
-            cyclones = cyclones.filter(c => c.year <= this.yearRange);
+            cyclones = cyclones.filter(c => c.year === this.yearRange);
         }
         
         // Convert to CSV
