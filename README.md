@@ -5,7 +5,7 @@ Any issues with this, hit me up. The instructions below may not be super accurat
 -Mackenzie
 
 PS. Also, for the love of god, I need to update the directory structure. I am refusing to deal with another single-directory mess of a project again lmao. I have learned my lessons. 
-PPS. No, no I haven't.
+PPS. No, no I haven't. This is looking more unlikely as the hours pass. 
 
 ## May's Immediate (<5 days) Roadmap
 - Add heatmap function to map dashboard
