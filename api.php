@@ -5,6 +5,11 @@
  * This API serves cyclone track data from d4PDF dataset
  */
 
+// Enable error logging (but not display)
+error_reporting(E_ALL);
+ini_set('display_errors', 0);
+ini_set('log_errors', 1);
+
 require_once 'config.php';
 require_once 'Dp4dfParser.php';
 
@@ -24,7 +29,12 @@ class CycloneDataAPI {
     
     public function __construct() {
         $this->dataPath = DATA_PATH;
-        $this->parser = new Dp4dfParser();
+        try {
+            $this->parser = new Dp4dfParser();
+        } catch (Exception $e) {
+            error_log("Failed to create Dp4dfParser: " . $e->getMessage());
+            $this->parser = null;
+        }
     }
     
     public function handleRequest() {
@@ -46,45 +56,108 @@ class CycloneDataAPI {
             case 'getAvailableEnsembles':
                 $this->getAvailableEnsembles($scenario);
                 break;
+            case 'test':
+                $this->testConnection();
+                break;
             default:
                 $this->sendError('Invalid action');
         }
+    }
+    
+    private function testConnection() {
+        $testUrl = DP4DF_BASE_URL . 'xytrackk319b_HPB_m001_1951-2011.txt';
+        $headers = @get_headers($testUrl);
+        
+        $this->sendSuccess([
+            'test' => 'connection',
+            'base_url' => DP4DF_BASE_URL,
+            'test_file' => 'xytrackk319b_HPB_m001_1951-2011.txt',
+            'connection_success' => ($headers && strpos($headers[0], '200') !== false),
+            'cache_dir_exists' => is_dir(CACHE_PATH . 'dp4df/'),
+            'cache_dir_writable' => is_writable(CACHE_PATH . 'dp4df/'),
+            'php_version' => PHP_VERSION
+        ]);
     }
     
     private function getCycloneData($scenario) {
         $ensembleId = isset($_GET['ensemble']) ? (int)$_GET['ensemble'] : 1;
         $sstModel = $_GET['sst'] ?? null;
         
-        // Try to get data from d4PDF
-        $cyclones = $this->parser->getCycloneData($scenario, $ensembleId, $sstModel);
+        // For 2K/4K scenarios, default to CC model if not specified
+        if (($scenario === '2k' || $scenario === '4k') && !$sstModel) {
+            $sstModel = 'CC';
+        }
         
-        if ($cyclones === null) {
-            // Fall back to sample data if available
-            $jsonFile = DATA_PATH . "sample_{$scenario}_cyclones.json";
-            if (file_exists($jsonFile)) {
-                $jsonData = json_decode(file_get_contents($jsonFile), true);
-                $processedData = $this->processJsonData($jsonData, $scenario);
-                $this->sendSuccess($processedData);
-                return;
+        // Add debug mode
+        $debug = isset($_GET['debug']) && $_GET['debug'] === 'true';
+        
+        // Add option to force use of sample data for testing
+        $useSample = isset($_GET['use_sample']) && $_GET['use_sample'] === 'true';
+        
+        if (!$useSample) {
+            // Check if parser is available
+            if ($this->parser === null) {
+                error_log("API: Parser is null, cannot fetch d4PDF data");
+            } else {
+                // Try to get data from d4PDF
+                if ($debug) {
+                    error_log("API: Attempting to fetch d4PDF data for scenario: $scenario, ensemble: $ensembleId, SST: " . ($sstModel ?? 'none'));
+                }
+                
+                $cyclones = $this->parser->getCycloneData($scenario, $ensembleId, $sstModel);
+                
+                if ($cyclones !== null) {
+                    if ($debug) {
+                        error_log("API: Successfully got " . count($cyclones) . " cyclones from d4PDF");
+                    }
+                    
+                    // Filter cyclones to Australian region if requested
+                    if (isset($_GET['filter']) && $_GET['filter'] === 'australia') {
+                        $beforeFilter = count($cyclones);
+                        $cyclones = $this->filterToAustralianRegion($cyclones);
+                        if ($debug) {
+                            error_log("API: Filtered from $beforeFilter to " . count($cyclones) . " cyclones (Australian region)");
+                        }
+                    }
+                    
+                    $metadata = $this->getMetadata($scenario);
+                    if ($sstModel && ($scenario === '2k' || $scenario === '4k')) {
+                        $metadata['sst_model'] = $sstModel;
+                    }
+                    
+                    $data = [
+                        'scenario' => $scenario,
+                        'metadata' => $metadata,
+                        'ensemble_id' => $ensembleId,
+                        'data_source' => 'd4pdf',
+                        'total_cyclones' => count($cyclones),
+                        'cyclones' => $cyclones
+                    ];
+                    
+                    $this->sendSuccess($data);
+                    return;
+                } else {
+                    if ($debug) {
+                        error_log("API: Failed to get d4PDF data, falling back to sample data");
+                    }
+                }
             }
-            
-            $this->sendError('Failed to load cyclone data');
+        }
+        
+        // Fall back to sample data if d4PDF fails or sample is requested
+        $jsonFile = DATA_PATH . "sample_{$scenario}_cyclones.json";
+        if (file_exists($jsonFile)) {
+            if ($debug) {
+                error_log("API: Using sample data from: $jsonFile");
+            }
+            $jsonData = json_decode(file_get_contents($jsonFile), true);
+            $processedData = $this->processJsonData($jsonData, $scenario);
+            $processedData['data_source'] = 'sample';
+            $this->sendSuccess($processedData);
             return;
         }
         
-        // Filter cyclones to Australian region if requested
-        if (isset($_GET['filter']) && $_GET['filter'] === 'australia') {
-            $cyclones = $this->filterToAustralianRegion($cyclones);
-        }
-        
-        $data = [
-            'scenario' => $scenario,
-            'metadata' => $this->getMetadata($scenario),
-            'ensemble_id' => $ensembleId,
-            'cyclones' => $cyclones
-        ];
-        
-        $this->sendSuccess($data);
+        $this->sendError('Failed to load cyclone data from d4PDF server and no sample data available');
     }
     
     private function filterToAustralianRegion($cyclones) {
@@ -323,6 +396,15 @@ class CycloneDataAPI {
 }
 
 // Initialize and handle request
-$api = new CycloneDataAPI();
-$api->handleRequest();
+try {
+    $api = new CycloneDataAPI();
+    $api->handleRequest();
+} catch (Exception $e) {
+    // If there's a fatal error, return it as JSON
+    header('Content-Type: application/json');
+    echo json_encode([
+        'success' => false,
+        'error' => 'Server error: ' . $e->getMessage()
+    ]);
+}
 ?>

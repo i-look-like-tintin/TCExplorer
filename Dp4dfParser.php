@@ -30,27 +30,108 @@ class Dp4dfParser {
         $filename = $this->buildFilename($scenario, $ensembleId, $sstModel);
         $url = $this->baseUrl . $filename;
         
+        error_log("=== Dp4dfParser::getCycloneData ===");
+        error_log("Scenario: $scenario, Ensemble: $ensembleId, SST: " . ($sstModel ?? 'default'));
+        error_log("Attempting to fetch d4PDF data from: $url");
+        
         // Check cache first
         $cacheFile = $this->cacheDir . $filename . '.json';
         if (ENABLE_CACHING && file_exists($cacheFile) && 
             (time() - filemtime($cacheFile) < $this->cacheLifetime)) {
-            return json_decode(file_get_contents($cacheFile), true);
+            error_log("Using cached data from: $cacheFile");
+            $cachedData = json_decode(file_get_contents($cacheFile), true);
+            if ($cachedData !== null) {
+                return $cachedData;
+            }
+            error_log("Cache file exists but failed to decode, fetching fresh data");
         }
         
         // Fetch and parse data
         $rawData = $this->fetchData($url);
         if (!$rawData) {
+            error_log("Failed to fetch data from URL: $url");
+            return null;
+        }
+        
+        error_log("Successfully fetched " . strlen($rawData) . " bytes of data");
+        
+        // Check if we got HTML error page instead of data
+        if (strpos($rawData, '<html') !== false || strpos($rawData, '<!DOCTYPE') !== false) {
+            error_log("Received HTML instead of data - likely 404 or error page");
             return null;
         }
         
         $cyclones = $this->parseTrackData($rawData, $scenario);
         
+        if (empty($cyclones)) {
+            error_log("No cyclones parsed from data");
+            return null;
+        }
+        
+        error_log("Parsed " . count($cyclones) . " cyclones from data");
+        
+        // Apply additional filters to reduce data volume
+        $cyclones = $this->applyDataReduction($cyclones);
+        
         // Cache the parsed data
-        if (ENABLE_CACHING) {
-            file_put_contents($cacheFile, json_encode($cyclones));
+        if (ENABLE_CACHING && !empty($cyclones)) {
+            $cacheResult = file_put_contents($cacheFile, json_encode($cyclones));
+            if ($cacheResult !== false) {
+                error_log("Cached parsed data to: $cacheFile");
+            } else {
+                error_log("Failed to write cache file: $cacheFile");
+            }
         }
         
         return $cyclones;
+    }
+    
+    /**
+     * Apply data reduction strategies
+     */
+    private function applyDataReduction($cyclones) {
+        // Get filter settings
+        $minCategory = defined('MIN_CATEGORY_FILTER') ? MIN_CATEGORY_FILTER : 1;
+        $maxTrackPoints = defined('MAX_TRACK_POINTS') ? MAX_TRACK_POINTS : 20;
+        
+        // Filter out weak systems (below tropical cyclone strength)
+        $filtered = [];
+        foreach ($cyclones as $cyclone) {
+            // Only include if it reached at least the minimum category
+            if ($cyclone['maxCategory'] >= $minCategory) {
+                // Simplify track to reduce data volume
+                $cyclone['track'] = $this->simplifyTrack($cyclone['track'], $maxTrackPoints);
+                $filtered[] = $cyclone;
+            }
+        }
+        
+        error_log("Reduced from " . count($cyclones) . " to " . count($filtered) . " cyclones after filtering (min category: $minCategory)");
+        
+        return $filtered;
+    }
+    
+    /**
+     * Simplify track by reducing points
+     */
+    private function simplifyTrack($track, $maxPoints = 20) {
+        if (count($track) <= $maxPoints) {
+            return $track; // Already simple enough
+        }
+        
+        // Keep every nth point to reduce data volume
+        $simplified = [];
+        $interval = ceil(count($track) / $maxPoints);
+        
+        for ($i = 0; $i < count($track); $i += $interval) {
+            $simplified[] = $track[$i];
+        }
+        
+        // Always include the last point
+        if ($simplified[count($simplified) - 1] !== $track[count($track) - 1]) {
+            $simplified[] = $track[count($track) - 1];
+        }
+        
+        return $simplified;
     }
     
     /**
@@ -62,7 +143,7 @@ class Dp4dfParser {
         switch ($scenario) {
             case 'current':
                 // Format: xytrackk319b_HPB_m001_1951-2011.txt
-                return sprintf('%sm%03d%s', 
+                return sprintf('%s%03d%s', 
                     $config['prefix'], 
                     $ensembleId, 
                     $config['suffix']
@@ -70,26 +151,48 @@ class Dp4dfParser {
                 
             case '2k':
             case '4k':
-                // Format: xytrackk319b_HFB_2K_CC_m001_2051-2111.txt
+                // Based on user feedback, the format is:
+                // xytrackk319b_HFB_2K_m001_CC_2051-2111.txt
+                // (ensemble number comes before SST model)
                 if (!$sstModel) {
-                    $sstModel = $config['sst_models'][0]; // Default to first model
+                    $sstModel = $config['sst_models'][0]; // Default to CC
                 }
-                return sprintf('%s%s_m%03d%s', 
-                    $config['prefix'], 
-                    $sstModel,
-                    $ensembleId, 
-                    $config['suffix']
+                
+                $filename = sprintf('%s%03d_%s%s', 
+                    $config['prefix'],    // e.g., "xytrackk319b_HFB_2K_m"
+                    $ensembleId,          // e.g., "001"
+                    $sstModel,            // e.g., "CC"
+                    $config['suffix']     // e.g., "_2051-2111.txt"
                 );
+                
+                error_log("Built filename for {$scenario}: {$filename}");
+                return $filename;
         }
+        
+        return '';
     }
     
     /**
      * Fetch data from URL
      */
     private function fetchData($url) {
+        // First try to get file size
+        $headers = @get_headers($url, 1);
+        $fileSize = isset($headers['Content-Length']) ? (int)$headers['Content-Length'] : 0;
+        
+        if ($fileSize > 0) {
+            $sizeMB = round($fileSize / 1024 / 1024, 2);
+            error_log("File size: {$sizeMB} MB");
+            
+            // If file is very large, consider partial fetch
+            if ($fileSize > 50 * 1024 * 1024) { // 50MB
+                error_log("Large file detected, this may take a while...");
+            }
+        }
+        
         $context = stream_context_create([
             'http' => [
-                'timeout' => 30,
+                'timeout' => 60, // Increase timeout for large files
                 'user_agent' => 'TC-Visualization/1.0'
             ]
         ]);
@@ -112,6 +215,10 @@ class Dp4dfParser {
         $currentCyclone = null;
         $currentId = null;
         
+        // Get year range filter from config or default
+        $yearMin = isset($_GET['year_min']) ? (int)$_GET['year_min'] : null;
+        $yearMax = isset($_GET['year_max']) ? (int)$_GET['year_max'] : null;
+        
         foreach ($lines as $line) {
             // Skip empty lines and comments
             if (empty($line) || $line[0] === '#') {
@@ -123,6 +230,10 @@ class Dp4dfParser {
             if (!$data) {
                 continue;
             }
+            
+            // Apply year filter if specified
+            if ($yearMin && $data['year'] < $yearMin) continue;
+            if ($yearMax && $data['year'] > $yearMax) continue;
             
             // Check if this is a new cyclone
             if ($data['tc_id'] !== $currentId) {
@@ -149,6 +260,8 @@ class Dp4dfParser {
             $this->finalizeCyclone($currentCyclone);
             $cyclones[] = $currentCyclone;
         }
+        
+        error_log("Parsed " . count($cyclones) . " cyclones from raw data");
         
         return $cyclones;
     }

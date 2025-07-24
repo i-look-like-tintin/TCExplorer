@@ -75,6 +75,8 @@ define('MAP_MAX_ZOOM', 10);
 // Data Processing Settings
 define('TRACK_SIMPLIFICATION_TOLERANCE', 0.01); // degrees
 define('MIN_TRACK_POINTS', 3);
+define('MAX_TRACK_POINTS', 20); // Limit points per track for performance
+define('MIN_CATEGORY_FILTER', 1); // Only show cyclones that reach at least this category
 define('LANDFALL_BUFFER_KM', 50);
 
 // Export Settings

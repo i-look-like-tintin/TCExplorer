@@ -112,6 +112,11 @@ class TCVisualization {
         document.getElementById('refresh-data').addEventListener('click', () => {
             this.loadData(true);
         });
+        
+        // Sample data toggle
+        document.getElementById('use-sample-data').addEventListener('change', () => {
+            this.loadData(true);
+        });
     }
     
     handleScenarioChange(e) {
@@ -156,6 +161,7 @@ class TCVisualization {
     
     async loadData(forceRefresh = false) {
         this.showLoading(true);
+        this.updateDataStatus('Loading data...');
         
         try {
             const cacheKey = `${this.currentScenario}_${this.currentEnsemble}`;
@@ -167,15 +173,23 @@ class TCVisualization {
                 return;
             }
             
+            const useSample = document.getElementById('use-sample-data').checked;
+            
             const params = new URLSearchParams({
                 action: 'getCycloneData',
                 scenario: this.currentScenario,
                 ensemble: this.currentEnsemble,
-                filter: this.filterAustralia ? 'australia' : 'all'
+                filter: this.filterAustralia ? 'australia' : 'all',
+                use_sample: useSample ? 'true' : 'false',
+                debug: 'true' // Enable debug logging
             });
+            
+            console.log(`Fetching data with params:`, params.toString());
             
             const response = await fetch(`api.php?${params}`);
             const data = await response.json();
+            
+            console.log('API Response:', data);
             
             if (data.success) {
                 this.cycloneData[cacheKey] = data.data;
@@ -183,13 +197,24 @@ class TCVisualization {
                 this.showDataInfo(data.data);
             } else {
                 console.error('Failed to load data:', data.error);
+                this.updateDataStatus('Failed to load data', 'error');
                 alert('Failed to load cyclone data. The data file may not be available on the server.');
             }
         } catch (error) {
             console.error('Error loading data:', error);
+            this.updateDataStatus('Error loading data', 'error');
             alert('Error loading data. Please check your connection and try again.');
         } finally {
             this.showLoading(false);
+        }
+    }
+    
+    updateDataStatus(message, type = 'info') {
+        const statusEl = document.getElementById('data-status');
+        if (statusEl) {
+            statusEl.textContent = message;
+            statusEl.style.color = type === 'error' ? '#e74c3c' : 
+                                  type === 'success' ? '#27ae60' : '#7f8c8d';
         }
     }
     
@@ -198,6 +223,13 @@ class TCVisualization {
         const metadata = data.metadata;
         console.log(`Loaded ${data.cyclones.length} cyclones for ${metadata.description}`);
         console.log(`Period: ${metadata.period}, Ensemble: ${data.ensemble_id}`);
+        
+        let statusMsg = `Loaded ${data.cyclones.length} cyclones`;
+        if (data.total_cyclones && data.total_cyclones > data.cyclones.length) {
+            statusMsg += ` (filtered from ${data.total_cyclones})`;
+        }
+        
+        this.updateDataStatus(statusMsg, 'success');
     }
     
     updateVisualization() {
