@@ -17,12 +17,13 @@ cyclone-visualization/
 ├── app.js             # Frontend JavaScript application
 ├── styles.css         # Application styling
 ├── api.php            # Backend PHP API
+├── Dp4dfParser.php    # d4PDF data parser
 ├── config.php         # Main configuration file
 ├── config.local.php   # Local overrides (created by setup)
 ├── setup.php          # Setup script
 ├── generate_sample_data.php  # Sample data generator
 ├── .htaccess          # Apache configuration
-├── data/              # Directory for dp4df data files
+├── data/              # Directory for cached data files
 ├── cache/             # Cache directory
 ├── logs/              # Log directory
 └── README.md          # This file
