@@ -9,11 +9,13 @@ class TCVisualization {
         this.layers = {
             tracks: L.layerGroup(),
             genesis: L.layerGroup(),
-            intensity: L.layerGroup()
+            intensity: L.layerGroup(),
+            heatmap: null
         };
         this.selectedCyclone = null;
         this.filterAustralia = true;
         this.yearRange = null;
+        this.showHeatmap = false;
         
         this.init();
     }
@@ -35,8 +37,10 @@ class TCVisualization {
             attribution: '© OpenStreetMap contributors | Data: d4PDF'
         }).addTo(this.map);
         
-        // Add all layer groups to map
-        Object.values(this.layers).forEach(layer => layer.addTo(this.map));
+        // Add layer groups to map (except heatmap which is created dynamically)
+        this.layers.tracks.addTo(this.map);
+        this.layers.genesis.addTo(this.map);
+        this.layers.intensity.addTo(this.map);
         
         // Add Australian boundaries (simplified)
         this.addAustraliaBoundaries();
@@ -79,16 +83,45 @@ class TCVisualization {
         });
         
         // Toggle options
+        document.getElementById('show-heatmap').addEventListener('change', (e) => {
+            this.showHeatmap = e.target.checked;
+            if (this.showHeatmap) {
+                // Disable track-related options when heatmap is shown
+                document.getElementById('show-tracks').checked = false;
+                document.getElementById('show-genesis').checked = false;
+                document.getElementById('show-intensity').checked = false;
+                this.toggleLayer('tracks', false);
+                this.toggleLayer('genesis', false);
+                this.toggleLayer('intensity', false);
+            }
+            this.updateVisualization();
+        });
+        
         document.getElementById('show-tracks').addEventListener('change', (e) => {
+            if (e.target.checked && this.showHeatmap) {
+                document.getElementById('show-heatmap').checked = false;
+                this.showHeatmap = false;
+            }
             this.toggleLayer('tracks', e.target.checked);
+            this.updateVisualization();
         });
         
         document.getElementById('show-genesis').addEventListener('change', (e) => {
+            if (e.target.checked && this.showHeatmap) {
+                document.getElementById('show-heatmap').checked = false;
+                this.showHeatmap = false;
+            }
             this.toggleLayer('genesis', e.target.checked);
+            this.updateVisualization();
         });
         
         document.getElementById('show-intensity').addEventListener('change', (e) => {
+            if (e.target.checked && this.showHeatmap) {
+                document.getElementById('show-heatmap').checked = false;
+                this.showHeatmap = false;
+            }
             this.toggleLayer('intensity', e.target.checked);
+            this.updateVisualization();
         });
         
         document.getElementById('filter-australia').addEventListener('change', (e) => {
@@ -215,11 +248,59 @@ class TCVisualization {
     }
     
     toggleLayer(layerName, visible) {
-        if (visible) {
-            this.layers[layerName].addTo(this.map);
+        if (layerName === 'heatmap') {
+            if (visible && this.layers.heatmap) {
+                this.layers.heatmap.addTo(this.map);
+            } else if (!visible && this.layers.heatmap) {
+                this.map.removeLayer(this.layers.heatmap);
+            }
         } else {
-            this.map.removeLayer(this.layers[layerName]);
+            if (visible) {
+                this.layers[layerName].addTo(this.map);
+            } else {
+                this.map.removeLayer(this.layers[layerName]);
+            }
         }
+    }
+    
+    createHeatmap(cyclones) {
+        // Collect all track points with intensity weights
+        const heatData = [];
+        
+        cyclones.forEach(cyclone => {
+            cyclone.track.forEach(point => {
+                // Weight based on category (0-5) and normalize
+                const weight = (point.category + 1) / 6; // Normalize to 0-1 range
+                
+                // Add multiple points for higher intensity to create stronger heat spots
+                const intensityMultiplier = Math.max(1, point.category);
+                for (let i = 0; i < intensityMultiplier; i++) {
+                    heatData.push([
+                        point.lat,
+                        point.lon,
+                        weight
+                    ]);
+                }
+            });
+        });
+        
+        // Create heatmap layer
+        this.layers.heatmap = L.heatLayer(heatData, {
+            radius: 25,
+            blur: 15,
+            maxZoom: 17,
+            max: 1.0,
+            gradient: {
+                0.0: 'blue',
+                0.2: 'cyan',
+                0.4: 'lime',
+                0.6: 'yellow',
+                0.8: 'orange',
+                1.0: 'red'
+            }
+        });
+        
+        this.layers.heatmap.addTo(this.map);
     }
     
     async loadData(forceRefresh = false) {
@@ -304,7 +385,15 @@ class TCVisualization {
     
     updateVisualization() {
         // Clear existing layers
-        Object.values(this.layers).forEach(layer => layer.clearLayers());
+        this.layers.tracks.clearLayers();
+        this.layers.genesis.clearLayers();
+        this.layers.intensity.clearLayers();
+        
+        // Remove existing heatmap if present
+        if (this.layers.heatmap) {
+            this.map.removeLayer(this.layers.heatmap);
+            this.layers.heatmap = null;
+        }
         
         const cacheKey = this.currentScenario === 'current' 
             ? `${this.currentScenario}_${this.currentEnsemble}`
@@ -318,14 +407,19 @@ class TCVisualization {
             cyclones = cyclones.filter(c => c.year === this.yearRange);
         }
         
-        // Process each cyclone
-        cyclones.forEach(cyclone => {
-            this.drawCycloneTrack(cyclone);
-            this.drawGenesisPoint(cyclone);
-            if (document.getElementById('show-intensity').checked) {
-                this.drawIntensityTrack(cyclone);
-            }
-        });
+        // Show heatmap or tracks based on selection
+        if (this.showHeatmap) {
+            this.createHeatmap(cyclones);
+        } else {
+            // Process each cyclone for track display
+            cyclones.forEach(cyclone => {
+                this.drawCycloneTrack(cyclone);
+                this.drawGenesisPoint(cyclone);
+                if (document.getElementById('show-intensity').checked) {
+                    this.drawIntensityTrack(cyclone);
+                }
+            });
+        }
         
         // Update status
         const statusText = `Showing ${cyclones.length} cyclones`;
