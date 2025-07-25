@@ -16,6 +16,8 @@ class TCVisualization {
         this.filterAustralia = true;
         this.yearRange = null;
         this.showHeatmap = false;
+        this.heatmapData = null; // Store heatmap data for redraws
+        this.currentZoom = 4; // Track current zoom level
         
         this.init();
     }
@@ -29,50 +31,110 @@ class TCVisualization {
         this.createComparisonPanel();
     }
     
-    initMap() {
-        // Initialize map centered on Australia
-        this.map = L.map('map').setView([-25.2744, 133.7751], 4);
-        
-        // Add base tile layer
-        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-            attribution: '© OpenStreetMap contributors | Data: d4PDF'
-        }).addTo(this.map);
-        
-        // Add layer groups to map (except heatmap which is created dynamically)
-        this.layers.tracks.addTo(this.map);
-        this.layers.genesis.addTo(this.map);
-        this.layers.intensity.addTo(this.map);
-        
-        // Add Australian boundaries (simplified)
-        this.addAustraliaBoundaries();
-    }
+initMap() {
+    // Initialize map centered on Australia
+    this.map = L.map('map').setView([-25.2744, 133.7751], 4);
+    
+    // Add base tile layer
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '© OpenStreetMap contributors | Data: d4PDF'
+    }).addTo(this.map);
+    
+    // Add layer groups to map (except heatmap which is created dynamically)
+    this.layers.tracks.addTo(this.map);
+    this.layers.genesis.addTo(this.map);
+    this.layers.intensity.addTo(this.map);
+    
+    // Add Australian boundaries (simplified)
+    this.addAustraliaBoundaries();
+    
+    // ADD THIS: Zoom event listener for heatmap updates
+    let zoomTimeout;
+    this.map.on('zoomstart', () => {
+        // Optional: Add a class during zoom for styling
+        if (this.layers.heatmap) {
+            this.map.getContainer().classList.add('zooming');
+        }
+    });
+    
+    this.map.on('zoomend', () => {
+        clearTimeout(zoomTimeout);
+        zoomTimeout = setTimeout(() => {
+            if (this.showHeatmap && this.heatmapConfig) {
+                // Recreate heatmap with new radius for current zoom
+                const currentZoom = this.map.getZoom();
+                const radius = this.heatmapConfig.baseRadius * Math.pow(2, (currentZoom - 4) * 0.7);
+                const blur = 15 + (currentZoom - 4) * 3;
+                
+                // Remove old heatmap
+                if (this.layers.heatmap) {
+                    this.map.removeLayer(this.layers.heatmap);
+                }
+                
+                // Create new heatmap with updated parameters
+                this.layers.heatmap = L.heatLayer(this.heatmapConfig.data, {
+                    radius: Math.min(80, Math.max(15, radius)),
+                    blur: Math.min(40, Math.max(10, blur)),
+                    maxZoom: 17,
+                    max: 1.0,
+                    gradient: this.heatmapConfig.gradient,
+                    minOpacity: 0.3
+                });
+                
+                this.layers.heatmap.addTo(this.map);
+            }
+            
+            // Remove zooming class
+            this.map.getContainer().classList.remove('zooming');
+        }, 100); // Small delay to let zoom animation complete
+    });
+}
+
     
     addAustraliaBoundaries() {
-    // Option 1: Load from Natural Earth (recommended for accuracy)
-    fetch('https://raw.githubusercontent.com/nvkelso/natural-earth-vector/master/geojson/ne_50m_admin_0_countries.geojson')
-        .then(response => response.json())
-        .then(data => {
-            // Find Australia in the features
-            const australia = data.features.find(f => f.properties.NAME === 'Australia');
-            
-            if (australia) {
-                L.geoJSON(australia, {
-                    style: {
-                        color: '#2c3e50',
-                        weight: 2,
-                        fillColor: '#3498db',
-                        fillOpacity: 0.05,
-                        interactive: false
-                    }
-                }).addTo(this.map);
-            }
-        })
-        .catch(error => {
-            console.error('Failed to load Australia boundaries:', error);
-            // Fallback to simplified polygon
-            this.addSimplifiedAustraliaBoundaries();
-        });
-}
+        // Option 1: Load from Natural Earth (recommended for accuracy)
+        fetch('https://raw.githubusercontent.com/nvkelso/natural-earth-vector/master/geojson/ne_50m_admin_0_countries.geojson')
+            .then(response => response.json())
+            .then(data => {
+                // Find Australia in the features
+                const australia = data.features.find(f => f.properties.NAME === 'Australia');
+                
+                if (australia) {
+                    L.geoJSON(australia, {
+                        style: {
+                            color: '#2c3e50',
+                            weight: 2,
+                            fillColor: '#3498db',
+                            fillOpacity: 0.05,
+                            interactive: false
+                        }
+                    }).addTo(this.map);
+                }
+            })
+            .catch(error => {
+                console.error('Failed to load Australia boundaries:', error);
+                // Fallback to simplified polygon
+                this.addSimplifiedAustraliaBoundaries();
+            });
+    }
+    
+    addSimplifiedAustraliaBoundaries() {
+        // Simplified Australia polygon
+        const australiaBounds = [
+            [-10.6, 113.3], [-13.7, 130.8], [-12.5, 136.7], [-14.5, 145.4],
+            [-18.3, 146.3], [-24.5, 153.6], [-32.5, 152.5], [-37.5, 149.9],
+            [-39.2, 146.3], [-38.5, 140.9], [-35.1, 136.7], [-34.3, 135.2],
+            [-32.5, 133.6], [-31.3, 128.9], [-25.9, 122.2], [-19.7, 121.5],
+            [-17.3, 122.2], [-14.6, 125.8], [-11.3, 130.2], [-10.6, 113.3]
+        ];
+        
+        L.polygon(australiaBounds, {
+            color: '#2c3e50',
+            weight: 2,
+            fillOpacity: 0.1,
+            interactive: false
+        }).addTo(this.map);
+    }
     
     initEventListeners() {
         // Scenario buttons
@@ -92,10 +154,6 @@ class TCVisualization {
             this.loadData();
         });
         
-        document.getElementById('show-heatmap').addEventListener('change', () => {
-            this.visualizeData();
-        });
-
         // Toggle options
         document.getElementById('show-heatmap').addEventListener('change', (e) => {
             this.showHeatmap = e.target.checked;
@@ -278,11 +336,69 @@ class TCVisualization {
     }
     
     // Add this helper method for checking Australian region
-isInAustralianRegion(lat, lon) {
-    // Extended Australian region bounds for cyclone analysis
-    return lat >= -45 && lat <= -5 && lon >= 105 && lon <= 160;
-}
-
+    isInAustralianRegion(lat, lon) {
+        // Extended Australian region bounds for cyclone analysis
+        return lat >= -45 && lat <= -5 && lon >= 105 && lon <= 160;
+    }
+    
+    // Calculate dynamic radius based on zoom level
+    calculateHeatmapRadius(zoom) {
+        // Base radius at zoom level 4 (default Australia view)
+        const baseRadius = 30;
+        const baseZoom = 4;
+        
+        // Calculate scaling factor
+        // As we zoom in, we need larger radius to maintain coverage
+        const zoomDiff = zoom - baseZoom;
+        const scaleFactor = Math.pow(2, zoomDiff);
+        
+        // Apply scaling with bounds
+        const radius = baseRadius * scaleFactor;
+        
+        // Clamp to reasonable values
+        return Math.max(15, Math.min(200, radius));
+    }
+    
+    // Calculate dynamic blur based on zoom
+    calculateHeatmapBlur(zoom) {
+        // Similar scaling for blur
+        const baseBlur = 20;
+        const baseZoom = 4;
+        
+        const zoomDiff = zoom - baseZoom;
+        const scaleFactor = Math.pow(1.5, zoomDiff);
+        
+        const blur = baseBlur * scaleFactor;
+        
+        return Math.max(10, Math.min(50, blur));
+    }
+    
+    // Redraw heatmap with new parameters
+    redrawHeatmap() {
+        if (!this.heatmapData || this.heatmapData.length === 0) return;
+        
+        // Remove existing heatmap
+        if (this.layers.heatmap) {
+            this.map.removeLayer(this.layers.heatmap);
+        }
+        
+        const currentZoom = this.map.getZoom();
+        const radius = this.calculateHeatmapRadius(currentZoom);
+        const blur = this.calculateHeatmapBlur(currentZoom);
+        
+        // Recreate with new parameters
+        this.layers.heatmap = L.heatLayer(this.heatmapData, {
+            radius: radius,
+            blur: blur,
+            maxZoom: 17,
+            max: 1.0,
+            gradient: this.heatmapGradient,
+            minOpacity: 0.2
+        });
+        
+        this.layers.heatmap.addTo(this.map);
+    }
+    
     createHeatmap(cyclones) {
     // Clear existing heatmap
     if (this.layers.heatmap) {
@@ -294,100 +410,121 @@ isInAustralianRegion(lat, lon) {
     this.layers.genesis.clearLayers();
     this.layers.intensity.clearLayers();
     
-    // Prepare heatmap data
+    // Prepare heatmap data with better point distribution
     const heatData = [];
     
-    // Create a grid to accumulate intensity values
-    const gridSize = 0.5; // Grid cell size in degrees
-    const intensityGrid = {};
+    // Get current zoom to adjust point density
+    const currentZoom = this.map.getZoom();
+    const zoomFactor = Math.pow(1.5, currentZoom - 4); // Exponential scaling from base zoom 4
     
     cyclones.forEach(cyclone => {
         if (!cyclone.track || cyclone.track.length === 0) return;
         
-        cyclone.track.forEach(point => {
+        // Process track with interpolation for continuity
+        for (let i = 0; i < cyclone.track.length; i++) {
+            const point = cyclone.track[i];
+            
             // Skip if outside Australia region
             if (this.filterAustralia && !this.isInAustralianRegion(point.lat, point.lon)) {
-                return;
+                continue;
             }
             
-            // Calculate grid cell
-            const gridLat = Math.floor(point.lat / gridSize) * gridSize;
-            const gridLon = Math.floor(point.lon / gridSize) * gridSize;
-            const gridKey = `${gridLat},${gridLon}`;
+            // Calculate intensity weight
+            const category = point.category || cyclone.maxCategory || 1;
+            const weight = Math.pow(category / 5, 1.5); // Normalize to 0-1 range
             
-            // Initialize grid cell if needed
-            if (!intensityGrid[gridKey]) {
-                intensityGrid[gridKey] = {
-                    lat: gridLat + gridSize / 2,
-                    lon: gridLon + gridSize / 2,
-                    totalIntensity: 0,
-                    count: 0,
-                    maxCategory: 0
-                };
+            // Add main point
+            heatData.push([point.lat, point.lon, weight]);
+            
+            // Add interpolated points between track segments to prevent gaps
+            if (i < cyclone.track.length - 1) {
+                const nextPoint = cyclone.track[i + 1];
+                
+                // Only interpolate if points are reasonably close
+                const latDiff = Math.abs(nextPoint.lat - point.lat);
+                const lonDiff = Math.abs(nextPoint.lon - point.lon);
+                const distance = Math.sqrt(latDiff * latDiff + lonDiff * lonDiff);
+                
+                if (distance < 5) { // Only interpolate for nearby points
+                    // Number of interpolation points based on distance and zoom
+                    const interpPoints = Math.min(5, Math.ceil(distance * zoomFactor));
+                    
+                    for (let j = 1; j < interpPoints; j++) {
+                        const t = j / interpPoints;
+                        const interpLat = point.lat + (nextPoint.lat - point.lat) * t;
+                        const interpLon = point.lon + (nextPoint.lon - point.lon) * t;
+                        
+                        // Slightly reduce weight for interpolated points
+                        heatData.push([interpLat, interpLon, weight * 0.8]);
+                    }
+                }
             }
             
-            // Accumulate intensity (using category as a proxy for severity)
-            // Weight higher categories more heavily
-            const intensity = point.category || cyclone.maxCategory || 1;
-            const weight = Math.pow(intensity, 2); // Square to emphasize severe cyclones
+            // Add surrounding points for better coverage
+            // This helps prevent splitting at different zoom levels
+            const spread = 0.2 / zoomFactor; // Adaptive spread based on zoom
+            const angles = [0, 90, 180, 270]; // 4 cardinal directions
             
-            intensityGrid[gridKey].totalIntensity += weight;
-            intensityGrid[gridKey].count += 1;
-            intensityGrid[gridKey].maxCategory = Math.max(intensityGrid[gridKey].maxCategory, intensity);
-        });
-    });
-    
-    // Convert grid to heatmap data with normalized intensities
-    let maxIntensity = 0;
-    Object.values(intensityGrid).forEach(cell => {
-        const avgIntensity = cell.totalIntensity / cell.count;
-        maxIntensity = Math.max(maxIntensity, avgIntensity);
-    });
-    
-    // Create data points for heatmap
-    Object.values(intensityGrid).forEach(cell => {
-        const avgIntensity = cell.totalIntensity / cell.count;
-        // Normalize and apply non-linear scaling to enhance differences
-        const normalizedIntensity = Math.pow(avgIntensity / maxIntensity, 0.7);
-        
-        // Add multiple points for higher intensity areas to create stronger heat
-        const pointCount = Math.ceil(normalizedIntensity * 10);
-        for (let i = 0; i < pointCount; i++) {
-            heatData.push([
-                cell.lat,
-                cell.lon,
-                normalizedIntensity
-            ]);
+            angles.forEach(angle => {
+                const rad = angle * Math.PI / 180;
+                const offsetLat = point.lat + spread * Math.cos(rad);
+                const offsetLon = point.lon + spread * Math.sin(rad);
+                heatData.push([offsetLat, offsetLon, weight * 0.5]);
+            });
         }
     });
     
-    // Create custom gradient for Yellow → Red → Black
+    // Custom gradient for yellow → red → black
     const gradient = {
-        0.0: 'rgba(255, 255, 200, 0.1)',    // Very light yellow (transparent)
-        0.15: 'rgba(255, 255, 0, 0.4)',   // Yellow (reduced opacity)
-        0.3: 'rgba(255, 220, 0, 0.5)',    // Gold (reduced opacity)
-        0.45: 'rgba(255, 165, 0, 0.6)',   // Orange (reduced opacity)
-        0.6: 'rgba(255, 69, 0, 0.7)',     // Red-orange (reduced opacity)
-        0.75: 'rgba(255, 0, 0, 0.8)',     // Red (reduced opacity)
-        0.85: 'rgba(178, 34, 34, 0.9)',   // Firebrick (reduced opacity)
-        0.95: 'rgba(139, 0, 0, 0.92)',    // Dark red (reduced opacity)
-        1.0: 'rgba(0, 0, 0, 0.95)'         // Black (slightly transparent)
+        0.0: 'rgba(255, 255, 200, 0.0)',
+        0.1: 'rgba(255, 255, 100, 0.3)',
+        0.2: 'rgba(255, 255, 0, 0.5)',
+        0.5: 'rgba(255, 220, 0, 0.6)',
+        0.62: 'rgba(255, 165, 0, 0.7)',
+        0.7: 'rgba(255, 69, 0, 0.8)',
+        0.85: 'rgba(255, 0, 0, 0.9)',
+        0.95: 'rgba(139, 0, 0, 0.95)',
+        1.0: 'rgba(0, 0, 0, 1.0)'
     };
-    // Create heatmap layer with enhanced options
-   this.layers.heatmap = L.heatLayer(heatData, {
-        radius: 30,
-        blur: 20,
-        maxZoom: 10,
+    
+    // Calculate radius based on zoom level
+    // This is key to preventing splitting - radius must scale properly with zoom
+    const baseRadius = 25;
+    const radius = baseRadius * Math.pow(2, (currentZoom - 4) * 0.7);
+    const blur = 15 + (currentZoom - 4) * 3;
+    
+    // Create heatmap layer
+    this.layers.heatmap = L.heatLayer(heatData, {
+        radius: Math.min(80, Math.max(15, radius)), // Clamp between 15-80
+        blur: Math.min(40, Math.max(10, blur)),     // Clamp between 10-40
+        maxZoom: 17,
         max: 1.0,
         gradient: gradient,
-        minOpacity: 0.2  // Reduced for better map visibility
+        minOpacity: 0.3
     });
     
     // Add to map
     this.layers.heatmap.addTo(this.map);
     
-    // Add scenario comparison info
+    // Store configuration for zoom updates
+    this.heatmapConfig = {
+        baseRadius: baseRadius,
+        data: heatData,
+        gradient: gradient
+    };
+    
+    // Update UI elements
     this.updateHeatmapLegend();
+    
+    // Show comparison panel when heatmap is active
+    const comparisonPanel = document.getElementById('scenario-comparison');
+    if (comparisonPanel) {
+        comparisonPanel.classList.add('active');
+        
+        // Calculate and display metrics
+        const metrics = this.calculateIntensityMetrics(cyclones);
+        this.updateComparisonPanel(metrics);
+    }
 }
     
     async loadData(forceRefresh = false) {
@@ -481,6 +618,9 @@ isInAustralianRegion(lat, lon) {
         this.layers.heatmap = null;
     }
     
+    // Clear stored heatmap config
+    this.heatmapConfig = null;
+    
     const cacheKey = this.currentScenario === 'current' 
         ? `${this.currentScenario}_${this.currentEnsemble}`
         : `${this.currentScenario}_${this.currentEnsemble}_${this.currentSSTModel}`;
@@ -496,6 +636,13 @@ isInAustralianRegion(lat, lon) {
     // Check if heatmap checkbox exists and is checked
     const heatmapCheckbox = document.getElementById('show-heatmap');
     const isHeatmapMode = heatmapCheckbox && heatmapCheckbox.checked;
+    this.showHeatmap = isHeatmapMode;
+    
+    // Hide comparison panel by default
+    const comparisonPanel = document.getElementById('scenario-comparison');
+    if (comparisonPanel) {
+        comparisonPanel.classList.remove('active');
+    }
     
     if (isHeatmapMode) {
         // Show heatmap
@@ -670,280 +817,127 @@ isInAustralianRegion(lat, lon) {
             overlay.classList.remove('active');
         }
     }
-
-    // Enhanced data loading with scenario comparison
-async loadDataWithComparison() {
-    // Store data for all scenarios for comparison
-    this.scenarioData = {
-        current: null,
-        '2k': null,
-        '4k': null
-    };
     
-    // Load baseline data
-    await this.loadScenarioData('current');
-    
-    // Add comparison panel to DOM if it doesn't exist
-    this.createComparisonPanel();
-}
-
-// Create comparison panel
-createComparisonPanel() {
-    if (!document.getElementById('scenario-comparison')) {
-        const panel = document.createElement('div');
-        panel.id = 'scenario-comparison';
-        panel.className = 'scenario-comparison';
-        panel.innerHTML = `
-            <h4>Scenario Comparison</h4>
-            <div id="comparison-content">
-                <p style="font-size: 12px; color: #666;">
-                    Switch between scenarios to compare TC severity patterns
-                </p>
-            </div>
-        `;
-        document.getElementById('map').appendChild(panel);
+    // Create comparison panel
+    createComparisonPanel() {
+        if (!document.getElementById('scenario-comparison')) {
+            const panel = document.createElement('div');
+            panel.id = 'scenario-comparison';
+            panel.className = 'scenario-comparison';
+            panel.innerHTML = `
+                <h4>Scenario Comparison</h4>
+                <div id="comparison-content">
+                    <p style="font-size: 12px; color: #666;">
+                        Switch between scenarios to compare TC severity patterns
+                    </p>
+                </div>
+            `;
+            document.getElementById('map').appendChild(panel);
+        }
     }
-}
-
-// Enhanced heatmap creation with scenario-specific scaling
-createEnhancedHeatmap(cyclones) {
-    // Clear existing layers
-    if (this.layers.heatmap) {
-        this.map.removeLayer(this.layers.heatmap);
-    }
-    this.layers.tracks.clearLayers();
-    this.layers.genesis.clearLayers();
-    this.layers.intensity.clearLayers();
     
-    // Add heatmap class to map for styling
-    document.getElementById('map').classList.add('heatmap-active');
-    
-    // Calculate intensity metrics
-    const metrics = this.calculateIntensityMetrics(cyclones);
-    
-    // Create grid with scenario-specific weighting
-    const gridSize = 0.5;
-    const intensityGrid = {};
-    const scenarioWeight = {
-        'current': 1.0,
-        '2k': 1.3,  // Amplify differences for +2K
-        '4k': 1.8   // Further amplify for +4K
-    }[this.currentScenario] || 1.0;
-    
-    cyclones.forEach(cyclone => {
-        if (!cyclone.track || cyclone.track.length === 0) return;
+    // Update heatmap legend
+    updateHeatmapLegend() {
+        // Find or create heatmap legend
+        let heatmapLegend = document.getElementById('heatmap-legend');
+        if (!heatmapLegend) {
+            heatmapLegend = document.createElement('div');
+            heatmapLegend.id = 'heatmap-legend';
+            heatmapLegend.className = 'legend-box';
+            document.getElementById('legend').appendChild(heatmapLegend);
+        }
         
-        cyclone.track.forEach(point => {
-            if (this.filterAustralia && !this.isInAustralianRegion(point.lat, point.lon)) {
-                return;
+        // Update legend content based on scenario
+        const scenarioInfo = {
+            'current': 'Historical Baseline (1951-2011)',
+            '2k': '+2K Warming Scenario',
+            '4k': '+4K Warming Scenario'
+        };
+        
+        heatmapLegend.innerHTML = `
+            <h4>TC Severity Heatmap</h4>
+            <p style="font-size: 12px; margin: 5px 0;">${scenarioInfo[this.currentScenario]}</p>
+            <div class="heatmap-gradient">
+                <div class="gradient-bar"></div>
+                <div class="gradient-labels">
+                    <span>Low</span>
+                    <span>Moderate</span>
+                    <span>High</span>
+                    <span>Extreme</span>
+                </div>
+            </div>
+            <p style="font-size: 11px; margin-top: 10px; font-style: italic;">
+                Colors show average cyclone severity.<br>
+                Compare scenarios to see warming impact.
+            </p>
+        `;
+        
+        // Show/hide based on heatmap visibility
+        heatmapLegend.style.display = this.showHeatmap ? 'block' : 'none';
+    }
+    
+    // Calculate intensity metrics for comparison
+    calculateIntensityMetrics(cyclones) {
+        const metrics = {
+            totalCyclones: cyclones.length,
+            severeCyclones: 0,
+            avgMaxCategory: 0,
+            maxWindSpeed: 0,
+            landfallCount: 0
+        };
+        
+        let totalCategory = 0;
+        
+        cyclones.forEach(cyclone => {
+            if (cyclone.maxCategory >= 3) {
+                metrics.severeCyclones++;
             }
-            
-            const gridLat = Math.floor(point.lat / gridSize) * gridSize;
-            const gridLon = Math.floor(point.lon / gridSize) * gridSize;
-            const gridKey = `${gridLat},${gridLon}`;
-            
-            if (!intensityGrid[gridKey]) {
-                intensityGrid[gridKey] = {
-                    lat: gridLat + gridSize / 2,
-                    lon: gridLon + gridSize / 2,
-                    totalIntensity: 0,
-                    count: 0,
-                    maxCategory: 0,
-                    severeCount: 0
-                };
-            }
-            
-            const category = point.category || cyclone.maxCategory || 1;
-            // Apply scenario-specific weighting
-            const weight = Math.pow(category, 2) * scenarioWeight;
-            
-            intensityGrid[gridKey].totalIntensity += weight;
-            intensityGrid[gridKey].count += 1;
-            intensityGrid[gridKey].maxCategory = Math.max(intensityGrid[gridKey].maxCategory, category);
-            
-            if (category >= 3) {
-                intensityGrid[gridKey].severeCount += 1;
+            totalCategory += cyclone.maxCategory || 0;
+            metrics.maxWindSpeed = Math.max(metrics.maxWindSpeed, cyclone.maxWind || 0);
+            if (cyclone.landfall) {
+                metrics.landfallCount++;
             }
         });
-    });
-    
-    // Normalize with enhanced scaling
-    const heatData = [];
-    let maxIntensity = 0;
-    
-    Object.values(intensityGrid).forEach(cell => {
-        const avgIntensity = cell.totalIntensity / cell.count;
-        maxIntensity = Math.max(maxIntensity, avgIntensity);
-    });
-    
-    // Apply non-linear scaling to enhance differences
-    Object.values(intensityGrid).forEach(cell => {
-        const avgIntensity = cell.totalIntensity / cell.count;
-        // Use different scaling curves for different scenarios
-        const scalePower = {
-            'current': 0.8,
-            '2k': 0.6,
-            '4k': 0.5
-        }[this.currentScenario] || 0.7;
         
-        const normalizedIntensity = Math.pow(avgIntensity / maxIntensity, scalePower);
+        metrics.avgMaxCategory = cyclones.length > 0 ? (totalCategory / cyclones.length).toFixed(1) : 0;
         
-        // Add extra weight for areas with severe cyclones
-        const severeBonus = (cell.severeCount / cell.count) * 0.3;
-        const finalIntensity = Math.min(1.0, normalizedIntensity + severeBonus);
-        
-        // Create multiple points for stronger heat representation
-        const pointCount = Math.ceil(finalIntensity * 15);
-        for (let i = 0; i < pointCount; i++) {
-            heatData.push([
-                cell.lat,
-                cell.lon,
-                finalIntensity
-            ]);
-        }
-    });
-    
-    // Enhanced gradient with sharper transitions
-    const gradient = {
-        0.0: 'rgba(255, 255, 200, 0)',    // Very light yellow (transparent)
-        0.15: 'rgba(255, 255, 0, 0.5)',   // Yellow
-        0.3: 'rgba(255, 220, 0, 0.7)',    // Gold
-        0.45: 'rgba(255, 165, 0, 0.8)',   // Orange
-        0.6: 'rgba(255, 69, 0, 0.9)',     // Red-orange
-        0.75: 'rgba(255, 0, 0, 1)',       // Red
-        0.85: 'rgba(178, 34, 34, 1)',     // Firebrick
-        0.95: 'rgba(139, 0, 0, 1)',       // Dark red
-        1.0: 'rgba(0, 0, 0, 1)'           // Black
-    };
-    
-    // Create heatmap with optimized settings
-    this.layers.heatmap = L.heatLayer(heatData, {
-        radius: 30,
-        blur: 20,
-        maxZoom: 10,
-        max: 1.0,
-        gradient: gradient,
-        minOpacity: 0.4
-    });
-    
-    this.layers.heatmap.addTo(this.map);
-    
-    // Update UI elements
-    this.updateHeatmapLegend();
-    this.updateComparisonPanel(metrics);
-}
-
-// Add this method to update the heatmap legend
-updateHeatmapLegend() {
-    // Find or create heatmap legend
-    let heatmapLegend = document.getElementById('heatmap-legend');
-    if (!heatmapLegend) {
-        heatmapLegend = document.createElement('div');
-        heatmapLegend.id = 'heatmap-legend';
-        heatmapLegend.className = 'legend-box';
-        document.getElementById('legend').appendChild(heatmapLegend);
+        return metrics;
     }
     
-    // Update legend content based on scenario
-    const scenarioInfo = {
-        'current': 'Historical Baseline (1951-2011)',
-        '2k': '+2K Warming Scenario',
-        '4k': '+4K Warming Scenario'
-    };
-    
-    heatmapLegend.innerHTML = `
-        <h4>TC Severity Heatmap</h4>
-        <p style="font-size: 12px; margin: 5px 0;">${scenarioInfo[this.currentScenario]}</p>
-        <div class="heatmap-gradient">
-            <div class="gradient-bar"></div>
-            <div class="gradient-labels">
-                <span>Low</span>
-                <span>Moderate</span>
-                <span>High</span>
-                <span>Extreme</span>
+    // Update comparison panel
+    updateComparisonPanel(metrics) {
+        const panel = document.getElementById('scenario-comparison');
+        if (!panel) return;
+        
+        const content = document.getElementById('comparison-content');
+        
+        // Show panel when heatmap is active
+        panel.classList.add('active');
+        
+        content.innerHTML = `
+            <div class="comparison-item">
+                <div class="scenario-label">${this.currentScenario === 'current' ? 'Historical' : '+' + this.currentScenario.toUpperCase() + ' Warming'}</div>
+                <div class="metric">Total Cyclones: ${metrics.totalCyclones}</div>
+                <div class="metric">Severe (Cat 3+): ${metrics.severeCyclones} (${((metrics.severeCyclones/metrics.totalCyclones)*100).toFixed(1)}%)</div>
+                <div class="metric">Avg Category: ${metrics.avgMaxCategory}</div>
+                <div class="metric">Max Wind: ${metrics.maxWindSpeed} km/h</div>
+                <div class="metric">Landfalls: ${metrics.landfallCount}</div>
             </div>
-        </div>
-        <p style="font-size: 11px; margin-top: 10px; font-style: italic;">
-            Colors show average cyclone severity.<br>
-            Compare scenarios to see warming impact.
-        </p>
-    `;
-    
-    // Show/hide based on heatmap visibility
-    heatmapLegend.style.display = this.showHeatmap ? 'block' : 'none';
-}
-
-// Calculate intensity metrics for comparison
-calculateIntensityMetrics(cyclones) {
-    const metrics = {
-        totalCyclones: cyclones.length,
-        severeCyclones: 0,
-        avgMaxCategory: 0,
-        maxWindSpeed: 0,
-        landfallCount: 0
-    };
-    
-    let totalCategory = 0;
-    
-    cyclones.forEach(cyclone => {
-        if (cyclone.maxCategory >= 3) {
-            metrics.severeCyclones++;
-        }
-        totalCategory += cyclone.maxCategory || 0;
-        metrics.maxWindSpeed = Math.max(metrics.maxWindSpeed, cyclone.maxWind || 0);
-        if (cyclone.landfall) {
-            metrics.landfallCount++;
-        }
-    });
-    
-    metrics.avgMaxCategory = cyclones.length > 0 ? (totalCategory / cyclones.length).toFixed(1) : 0;
-    
-    return metrics;
-}
-
-// Update comparison panel
-updateComparisonPanel(metrics) {
-    const panel = document.getElementById('scenario-comparison');
-    if (!panel) return;
-    
-    const content = document.getElementById('comparison-content');
-    
-    // Show panel when heatmap is active
-    panel.classList.add('active');
-    
-    content.innerHTML = `
-        <div class="comparison-item">
-            <div class="scenario-label">${this.currentScenario === 'current' ? 'Historical' : '+' + this.currentScenario.toUpperCase() + ' Warming'}</div>
-            <div class="metric">Total Cyclones: ${metrics.totalCyclones}</div>
-            <div class="metric">Severe (Cat 3+): ${metrics.severeCyclones} (${((metrics.severeCyclones/metrics.totalCyclones)*100).toFixed(1)}%)</div>
-            <div class="metric">Avg Category: ${metrics.avgMaxCategory}</div>
-            <div class="metric">Max Wind: ${metrics.maxWindSpeed} km/h</div>
-            <div class="metric">Landfalls: ${metrics.landfallCount}</div>
-        </div>
-        <p style="font-size: 11px; color: #666; margin-top: 10px;">
-            ${this.getScenarioInsight()}
-        </p>
-    `;
-}
-
-// Get scenario-specific insights
-getScenarioInsight() {
-    const insights = {
-        'current': 'Historical baseline period showing natural cyclone patterns.',
-        '2k': 'Moderate warming scenario shows increased intensity in key regions.',
-        '4k': 'Severe warming scenario displays significant intensification and expanded severe cyclone zones.'
-    };
-    return insights[this.currentScenario] || '';
-}
-
-// Clean up when switching away from heatmap
-clearHeatmapMode() {
-    document.getElementById('map').classList.remove('heatmap-active');
-    const panel = document.getElementById('scenario-comparison');
-    if (panel) {
-        panel.classList.remove('active');
+            <p style="font-size: 11px; color: #666; margin-top: 10px;">
+                ${this.getScenarioInsight()}
+            </p>
+        `;
     }
-}
+    
+    // Get scenario-specific insights
+    getScenarioInsight() {
+        const insights = {
+            'current': 'Historical baseline period showing natural cyclone patterns.',
+            '2k': 'Moderate warming scenario shows increased intensity in key regions.',
+            '4k': 'Severe warming scenario displays significant intensification and expanded severe cyclone zones.'
+        };
+        return insights[this.currentScenario] || '';
+    }
 }
 
 // Initialize application when DOM is ready
