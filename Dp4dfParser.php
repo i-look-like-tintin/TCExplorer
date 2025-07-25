@@ -443,6 +443,11 @@ class Dp4dfParser {
         return ($lat > -39 && $lat < -10 && $lon > 113 && $lon < 154);
     }
     
+    //TODO: this is, i think, not quite correct as altho they are named on a rotating list, we should probably compute what the starting names for each set should be to go from there
+    //on second thoughts, this is probably only necessary for historical data because, yknow, the future and all is wibbly wobbly
+    //but still tho, could be worth doing for the past
+
+    //o and also the list is not fully complete iaw bom fair sure
     /**
      * Generate a cyclone name based on year and ID
      */

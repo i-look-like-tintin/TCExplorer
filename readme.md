@@ -1,20 +1,4 @@
 # Tropical Cyclone Track Visualization Prototype
-# Version 0.6.7
-This is a very, very barebones prototype / Proof of Concept. It is designed to be run through XAMPP, and then launched in the browser as localhost/YOUR_PROJECT_DIRECTORY_INSIDE_HTDOCS/index.html
-Any issues with this, hit me up. The instructions below may not be super accurate, but I have implemented/tested it through Linux, Windows, and MacOS so happy to help you get it running if needed.
--Mackenzie
-
-PS. Also, for the love of god, I need to update the directory structure. I am refusing to deal with another single-directory mess of a project again lmao. I have learned my lessons. 
-PPS. No, no I haven't. This is looking more unlikely as the hours pass. 
-
-## May's Immediate (<5 days) Roadmap
-- Add heatmap function to map dashboard
-- Add ability to select year ranges, rather than just all years or single year
-- Actually read the task sheet and figure out what else the client needs lmao
-- Add additional data to TC selection pop-up
-- Add quick summary datapage to summarise differences against "baseline" <- we don't /really/ have a baseline but fuck it we ball
-- probs some other things maybe
-
 
 ## Overview
 This prototype provides an interactive web-based platform to visualize tropical cyclone tracks across different climate scenarios based on the dp4PDF dataset. The application allows users to compare cyclone activity under current conditions, +2K warming, and +4K warming scenarios.
@@ -26,13 +10,12 @@ cyclone-visualization/
 ├── app.js             # Frontend JavaScript application
 ├── styles.css         # Application styling
 ├── api.php            # Backend PHP API
-├── Dp4dfParser.php    # d4PDF data parser
 ├── config.php         # Main configuration file
 ├── config.local.php   # Local overrides (created by setup)
 ├── setup.php          # Setup script
 ├── generate_sample_data.php  # Sample data generator
 ├── .htaccess          # Apache configuration
-├── data/              # Directory for cached data files
+├── data/              # Directory for dp4df data files
 ├── cache/             # Cache directory
 ├── logs/              # Log directory
 └── README.md          # This file
@@ -224,67 +207,15 @@ Add `?debug=true` to URL for console logging
 - Real-time data updates
 - Multi-language support
 
+## Contributing
+This is a prototype for the UNSW climate visualization project. For contributions:
+1. Follow existing code structure
+2. Document new functions
+3. Test across browsers
+4. Update this README
 
+## License
+This prototype is developed for UNSW SSCI educational and research purposes.
 
-
-
-                    #########
-                    ##XXXX#XX####                    #########
-                    ###############          #####################
-                      ###XXXXXXXXX### ########XXXXXXXXXXXXXXXXXX##
-                        #X#XXXXXXX#X#####XX#XXXXXXX XXXXXXX XX###
-                         #XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX###
-                         ##XXXXXXXXX##XXXXXXXXXXXXXXXXXXXXXXXXX##
-                          #XXXXXXXX##XXXXXXXXXXXXXXXXXXXXXXXXX###
-                          ##XXXX###XXXXXXXXXXXXXXXXXXXXXXXX#####
-                        ####XXX##XXXXXXXXXXXXXXXXXXXXXXX#######
-                       ##X##XX#XXXXXXXXXXXXXXXXXXXXXXXX#######
-                  #####XXX#XXXXXXXXXXXXXXXXXXXXXXXX##########
-         ##########X##XXXXXXXXXXXXXXXXXXXXXXXXXXX###XXX#####
-      #######XXXXXXXXX##XXXXXXXXXXXXXXXXXXXXXXXXXX###XXX#######
-      ####XXXXXXXXXXXXXX##XXXXXXXXXXXXXXXXXXXXXXXXX###XXXX##XXXXX#####
-      ##XX###############XXXXXXXXXXXXXXXXXXXXXXX###XXXXXX##XXXXXXXXXX#####
-      #######XXXXXXXXXXXXXXXXXXXXX###XXXXXXX##XXXXXXXXXXXXXXX###
-                ##XXXXXXXXXXXXXXXXXXXX###XXXXXXXX##XXXXXXXXXXXXXXXXXXX###
-               ##XXXXXXXXXXXXXXXXXXX###XXXXXXXX#######XXXXXXXXXXXXXXXXXX###
-              ##XXXXXXXXXXXXXXXX#####XXXXXXXX###     ############XXXXXXXXX###
-             ##XXXXXXXXXXXXX#####XXXXXXXXX###                   ######XXXXXX#
-             #XXXXXXXXXXX####XXXXXXXXXX####                          ######X#
-            ##XXXXXXXXX###XXXXXXXXXX####                                  ###
-           ##XXXXXXXXX##XXXXXXXX#####
-           #XXXX#XXXX##XXXXXX####                #####
-          ##XXXXXXXX##XXXXX#####              ####XXX#
-          #XXXXXXXXX#XXXX###XX#             ###XXXX##
-          #XXXXXXXX##XX###XXXX#          ####XXXXXX#
-          #XXXXXXXX#X######XXX#        ###XXXXXXXX##
-          #XXXXXXXX#X#    #####      ###XXXXXXXXXX#
-          #XXXXXXX###        ##    ###XXXXXXXXXXX##
-          #XXXXXXX#X#            ###XXXXXXXXX#####
-          #XXXXXXX###          ###XXXXXXX#####
-          ##XXXXX#X##        ###XXXXXXX###
-           #XXXXX####   #####XXXXXXXX##
-           ##XXXXXX######XXXXXXXXXX###
-           ###XXXXXXXXXXXXXXXXXXX###
-           #X##XXXXXXXXXXXXXXXXX##
-          ##X####XXXXXXXXXXXXXX##
-          ####  ###XXXXXXXXXXX##
-          ##      ###XXXXXXXX##
-                    #XXXXXXXX#
-                     #XXXXXX##
-                     #XXXXXX#
-                     ##XXXXX#
-                      #XXXXX#
-                      #XXXXX#
-                       #XXXX#
-                       ##XXX#
-                        #XXXX#
-                        ##XXX#
-                         ##XX##
-                          ##XX##
-                           ##XX#
-                            ##XX##
-                             ##XX##
-                              ###X##
-                                #####
-                                  #####
-                                    ###
+## Contact
+For questions about dp4df data integration or technical issues, contact the project maintainer.
