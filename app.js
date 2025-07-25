@@ -47,6 +47,7 @@ class TCVisualization {
     }
     
     addAustraliaBoundaries() {
+        /*
         // Simplified Australia polygon
         const australiaBounds = [
             [-10.6, 113.3], [-13.7, 130.8], [-12.5, 136.7], [-14.5, 145.4],
@@ -62,6 +63,7 @@ class TCVisualization {
             fillOpacity: 0.1,
             interactive: false
         }).addTo(this.map);
+        */
     }
     
     initEventListeners() {
@@ -287,16 +289,15 @@ class TCVisualization {
         // Create heatmap layer
         this.layers.heatmap = L.heatLayer(heatData, {
             radius: 25,
-            blur: 15,
+            blur: 1,
             maxZoom: 17,
             max: 1.0,
             gradient: {
-                0.0: 'blue',
-                0.2: 'cyan',
-                0.4: 'lime',
-                0.6: 'yellow',
-                0.8: 'orange',
-                1.0: 'red'
+                0.0: 'lime',
+                0.05: 'yellow',
+                0.2: 'orange',
+                0.4: 'red',
+                0.5: 'black',
             }
         });
         
