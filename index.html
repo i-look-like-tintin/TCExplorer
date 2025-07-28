@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tropical Cyclone Track Visualization - Australia</title>
+    
+    <!-- Leaflet CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div id="app-container">
+        <!-- Header -->
+        <header>
+            <h1>Tropical Cyclone Track Visualization</h1>
+            <p>d4PDF Climate Model Projections for Australia</p>
+        </header>
+
+        <!-- Control Panel -->
+        <div id="control-panel">
+            <div class="control-group">
+                <label>Climate Scenario:</label>
+                <div class="scenario-buttons">
+                    <button class="scenario-btn active" data-scenario="current">Historical (1951-2011)</button>
+                    <button class="scenario-btn" data-scenario="2k">+2K Warming (2031-2090)</button>
+                    <button class="scenario-btn" data-scenario="4k">+4K Warming (2051-2110)</button>
+                </div>
+            </div>
+            
+            <div class="control-group">
+                <label>Ensemble Member:</label>
+                <select id="ensemble-select">
+                    <option value="1">Ensemble 1</option>
+                    <option value="2">Ensemble 2</option>
+                    <option value="3">Ensemble 3</option>
+                    <option value="4">Ensemble 4</option>
+                    <option value="5">Ensemble 5</option>
+                    <option value="6">Ensemble 6</option>
+                    <option value="7">Ensemble 7</option>
+                    <option value="8">Ensemble 8</option>
+                    <option value="9">Ensemble 9</option>
+                </select>
+                <span id="ensemble-info" style="font-size: 0.8rem; color: #7f8c8d; margin-left: 0.5rem;"></span>
+            </div>
+            
+            <div class="control-group" id="sst-selector" style="display: none;">
+                <label>SST Model:</label>
+                <select id="sst-select">
+                    <option value="CC">CCSM4 (CC)</option>
+                    <option value="GF">GFDL-CM3 (GF)</option>
+                    <option value="HA">HadGEM-AO2 (HA)</option>
+                    <option value="MI">MIROC5 (MI)</option>
+                    <option value="MP">MPI-ESM-MR (MP)</option>
+                    <option value="MR">MRI-CGCM3 (MR)</option>
+                </select>
+            </div>
+            
+            <div class="control-group">
+                <label>Display Options:</label>
+                <div class="toggle-options">
+                    <label class="checkbox-label">
+                        <input type="checkbox" id="show-heatmap"> Show Severity Heatmap
+                    </label>
+                    <label class="checkbox-label">
+                        <input type="checkbox" id="show-tracks" checked> Show Tracks
+                    </label>
+                    <label class="checkbox-label">
+                        <input type="checkbox" id="show-genesis" checked> Show Genesis Points
+                    </label>
+                    <label class="checkbox-label">
+                        <input type="checkbox" id="show-intensity"> Show Intensity Colors
+                    </label>
+                    <label class="checkbox-label">
+                        <input type="checkbox" id="filter-australia" checked> Filter to Australian Region
+                    </label>
+                </div>
+            </div>
+            
+            <div class="control-group">
+                <label>Year Range:</label>
+                <input type="range" id="year-slider" min="1951" max="2111" value="2000" step="1">
+                <span id="year-display">All Years</span>
+            </div>
+            
+            <div class="control-group">
+                <button id="export-data" class="export-btn">Export Data (CSV)</button>
+                <button id="refresh-data" class="export-btn" style="background-color: #3498db;">Refresh Data</button>
+            </div>
+            
+            <div class="control-group" style="font-size: 0.8rem; color: #7f8c8d;">
+                <label class="checkbox-label">
+                    <input type="checkbox" id="use-sample-data"> Use sample data (faster)
+                </label>
+                <div id="data-status" style="margin-top: 0.5rem;"></div>
+            </div>
+        </div>
+
+        <!-- Map Container -->
+        <div id="map-container">
+            <div id="map"></div>
+            <div id="legend">
+                <h4>Intensity Categories</h4>
+                <div class="legend-item">
+                    <span class="legend-color" style="background: #1f78b4;"></span>
+                    <span>Category 1</span>
+                </div>
+                <div class="legend-item">
+                    <span class="legend-color" style="background: #33a02c;"></span>
+                    <span>Category 2</span>
+                </div>
+                <div class="legend-item">
+                    <span class="legend-color" style="background: #ff7f00;"></span>
+                    <span>Category 3</span>
+                </div>
+                <div class="legend-item">
+                    <span class="legend-color" style="background: #e31a1c;"></span>
+                    <span>Category 4</span>
+                </div>
+                <div class="legend-item">
+                    <span class="legend-color" style="background: #6a3d9a;"></span>
+                    <span>Category 5</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Info Panel -->
+        <div id="info-panel" class="hidden">
+            <h3>Cyclone Information</h3>
+            <div id="cyclone-details"></div>
+        </div>
+    </div>
+
+    <!-- Loading Overlay -->
+    <div id="loading-overlay">
+        <div class="loader"></div>
+        <p>Loading cyclone data...</p>
+    </div>
+
+    <!-- Scripts -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="https://unpkg.com/leaflet.heat@0.2.0/dist/leaflet-heat.js"></script>
+    <script src="app.js"></script>
+</body>
+</html>
