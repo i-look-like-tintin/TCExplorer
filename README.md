@@ -6,12 +6,13 @@ Any issues with this, hit me up. The instructions below may not be super accurat
 
 
 
-## May's Immediate (<5 days) Roadmap
+## May's Immediate (<10 days) Roadmap
 - ~~Add heatmap function to map dashboard~~
 - Add ability to select year ranges, rather than just all years or single year
 - Actually read the task sheet and figure out what else the client needs lmao
 - Add additional data to TC selection pop-up
 - ~~Add quick summary datapage to summarise differences against "baseline" <- we don't /really/ have a baseline but fuck it we ball~~
+- Remove sample data functionality - no longer needed with data curl working
 - probs some other things maybe
 
 
