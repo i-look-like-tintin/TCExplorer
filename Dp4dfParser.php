@@ -134,8 +134,8 @@ class Dp4dfParser {
                     $actualEnsemble, 
                     $config['suffix']
                 );
-            //TODO: 2k and 4k cases here are bodge fixes cos AI cracked the shits
-            //so I used the purely human ability to hit shit with hammers until it started working lol
+            //TODO: 2k and 4k cases here are bodge fixes
+            //I used the purely human ability to hit shit with hammers until it started working lol
             case '2k':
                 $ensembleStart = 101;
                 $actualEnsemble = $ensembleStart + $ensembleId - 1;
