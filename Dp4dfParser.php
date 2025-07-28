@@ -1,10 +1,5 @@
 <?php
-/**
- * d4PDF Tropical Cyclone Track Data Parser
- * 
- * Parses track data from d4PDF text files according to the format:
- * AAAA BBBBB CCCC DD EE FF GGGGGG HHHHHH IIIII JJJJJ KKKKKK LLLLL MMMM NNNNNN OOOO PP
- */
+
 
 class Dp4dfParser {
     private $baseUrl;
@@ -16,15 +11,12 @@ class Dp4dfParser {
         $this->cacheDir = CACHE_PATH . 'dp4df/';
         $this->cacheLifetime = CACHE_LIFETIME;
         
-        // Create cache directory if it doesn't exist
         if (!file_exists($this->cacheDir)) {
             mkdir($this->cacheDir, 0755, true);
         }
     }
     
-    /**
-     * Get cyclone data for a specific scenario
-     */
+
     public function getCycloneData($scenario, $ensembleId = 1, $sstModel = null) {
         $config = DP4DF_FILE_PATTERNS[$scenario];
         $filename = $this->buildFilename($scenario, $ensembleId, $sstModel);
@@ -86,9 +78,7 @@ class Dp4dfParser {
         return $cyclones;
     }
 
-    /**
-     * Apply data reduction strategies
-     */
+
     private function applyDataReduction($cyclones) {
         // Get filter settings
         $minCategory = defined('MIN_CATEGORY_FILTER') ? MIN_CATEGORY_FILTER : 1;
@@ -110,9 +100,7 @@ class Dp4dfParser {
         return $filtered;
     }
     
-    /**
-     * Simplify track by reducing points
-     */
+
     private function simplifyTrack($track, $maxPoints = 20) {
         if (count($track) <= $maxPoints) {
             return $track; // Already simple enough
@@ -134,16 +122,13 @@ class Dp4dfParser {
         return $simplified;
     }
     
-    /**
-     * Build filename based on scenario and parameters
-     */
+
     private function buildFilename($scenario, $ensembleId, $sstModel = null) {
         $config = DP4DF_FILE_PATTERNS[$scenario];
         
         switch ($scenario) {
             case 'current':
-                // Format: xytrackk319b_HPB_m001_1951-2011.txt
-                $actualEnsemble = $ensembleId; // No offset for current
+                $actualEnsemble = $ensembleId; 
                 return sprintf('%s%03d%s', 
                     $config['prefix'], 
                     $actualEnsemble, 
@@ -152,13 +137,10 @@ class Dp4dfParser {
             //TODO: 2k and 4k cases here are bodge fixes cos AI cracked the shits
             //so I used the purely human ability to hit shit with hammers until it started working lol
             case '2k':
-                                // Convert display ensemble (1-9 or 1-15) to actual ensemble number (101-109 or 101-115)
-                //$ensembleStart = isset($config['ensemble_start']) ? $config['ensemble_start'] : 1;
                 $ensembleStart = 101;
                 $actualEnsemble = $ensembleStart + $ensembleId - 1;
                 $yearRange = "_2031-2090.txt";
-                // Format: xytrackk319b_HFB_2K_CC_m101_2031-2090.txt
-                // SST model comes BEFORE ensemble number
+
                 if (!$sstModel) {
                     $sstModel = $config['sst_models'][0]; // Default to CC
                 }
@@ -173,13 +155,11 @@ class Dp4dfParser {
                 error_log("Built filename for {$scenario}: {$filename} (display ensemble: {$ensembleId}, actual: {$actualEnsemble})");
                 return $filename;
             case '4k':
-                // Convert display ensemble (1-9 or 1-15) to actual ensemble number (101-109 or 101-115)
-                //$ensembleStart = isset($config['ensemble_start']) ? $config['ensemble_start'] : 1;
+                // Again, kind of a bodge fix, but she works.                
                 $ensembleStart = 101;
                 $actualEnsemble = $ensembleStart + $ensembleId - 1;
                 $yearRange = "_2051-2110.txt";
-                // Format: xytrackk319b_HFB_2K_CC_m101_2031-2090.txt
-                // SST model comes BEFORE ensemble number
+
                 if (!$sstModel) {
                     $sstModel = $config['sst_models'][0]; // Default to CC
                 }
@@ -199,9 +179,7 @@ class Dp4dfParser {
         return '';
     }
 
-    /**
-     * Fetch data from URL
-     */
+
     private function fetchData($url) {
         // First try to get file size
         $headers = @get_headers($url, 1);
@@ -211,7 +189,7 @@ class Dp4dfParser {
             $sizeMB = round($fileSize / 1024 / 1024, 2);
             error_log("File size: {$sizeMB} MB");
             
-            // If file is very large, consider partial fetch
+            // Shouldn't occur with this dataset, but hey its here if needed in future
             if ($fileSize > 50 * 1024 * 1024) { // 50MB
                 error_log("Large file detected, this may take a while...");
             }
@@ -233,9 +211,6 @@ class Dp4dfParser {
         return $data;
     }
     
-    /**
-     * Parse track data from d4PDF format
-     */
     private function parseTrackData($rawData, $scenario) {
         $lines = explode("\n", trim($rawData));
         $cyclones = [];
@@ -293,9 +268,7 @@ class Dp4dfParser {
         return $cyclones;
     }
     
-    /**
-     * Parse a single line of track data
-     */
+
     private function parseLine($line) {
         // Format: AAAA BBBBB CCCC DD EE FF GGGGGG HHHHHH IIIII JJJJJ KKKKKK LLLLL MMMM NNNNNN OOOO PP
         $pattern = '/^\s*(\d+)\s+(\d+)\s+(\d{4})\s+(\d+)\s+(\d+)\s+(\d+)\s+' .
@@ -326,9 +299,7 @@ class Dp4dfParser {
         ];
     }
     
-    /**
-     * Initialize a new cyclone structure
-     */
+
     private function initializeCyclone($data, $scenario) {
         $datetime = sprintf('%04d-%02d-%02d %02d:00:00', 
             $data['year'], $data['month'], $data['day'], $data['hour']);
@@ -350,9 +321,7 @@ class Dp4dfParser {
         ];
     }
     
-    /**
-     * Create a track point
-     */
+
     private function createTrackPoint($data) {
         $datetime = sprintf('%04d-%02d-%02d %02d:00:00', 
             $data['year'], $data['month'], $data['day'], $data['hour']);
@@ -373,9 +342,7 @@ class Dp4dfParser {
         ];
     }
     
-    /**
-     * Update cyclone statistics with new track point
-     */
+
     private function updateCycloneStats(&$cyclone, $data) {
         // Update maximum wind speed
         if ($data['wind_surface'] > $cyclone['max_wind_mps']) {
@@ -398,9 +365,7 @@ class Dp4dfParser {
         }
     }
     
-    /**
-     * Finalize cyclone data
-     */
+
     private function finalizeCyclone(&$cyclone) {
         // Calculate duration
         $start = strtotime($cyclone['start_date']);
