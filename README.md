@@ -19,21 +19,21 @@ Any issues with this, hit me up. The instructions below may not be super accurat
 ## Overview
 Project Aim:
 This project will develop an interactive web-based platform to visualize and compare tropical cyclone tracks across multiple climate model simulations, ensemble members, and global warming levels (e.g., past, no warming, +1.5 K, +2 K, +4 K) based on the d4PDF large-ensemble dataset. The platform aims to:
-· Aid climate research and student learning in climate dynamics and TC risk analysis.
-· Visualize the spatial and temporal response of TC activity to anthropogenic warming.
-· Provide a tool for educators, students, and climate policy analysts to explore model-based TC projections for the Australian region and the Indo-Pacific.
+- Aid climate research and student learning in climate dynamics and TC risk analysis.
+- Visualize the spatial and temporal response of TC activity to anthropogenic warming.
+- Provide a tool for educators, students, and climate policy analysts to explore model-based TC projections for the Australian region and the Indo-Pacific.
  
 Expected Deliverables:
-· A web-friendly dashboard.
-· Interactive map layers of:
-o TC tracks (by model, warming level, ensemble member, and period)
-o Genesis points, landfall location, and intensity categories
-· Time sliders to animate TC evolution and frequency over time.
-· Clickable TC tracks to show metadata (e.g., date, intensity, pressure, wind speed).
-· Scenario toggle buttons: e.g., Past Climate, Past no warming, +2 K future, +4 K future.
-· Scenario difference toggle buttons: e.g., Past Climate, Past no warming, +2 K future, +4 K future.
-· Data export functionality (e.g., filtered CSV download).
-· A layer management panel (show/hide: genesis density, track density, intensity bins).
+- A web-friendly dashboard.
+- Interactive map layers of:
+- TC tracks (by model, warming level, ensemble member, and period)
+- Genesis points, landfall location, and intensity categories
+- Time sliders to animate TC evolution and frequency over time.
+- Clickable TC tracks to show metadata (e.g., date, intensity, pressure, wind speed).
+- Scenario toggle buttons: e.g., Past Climate, Past no warming, +2 K future, +4 K future.
+- Scenario difference toggle buttons: e.g., Past Climate, Past no warming, +2 K future, +4 K future.
+- Data export functionality (e.g., filtered CSV download).
+- A layer management panel (show/hide: genesis density, track density, intensity bins).
 
 
 
