@@ -15,6 +15,34 @@ Any issues with this, hit me up. The instructions below may not be super accurat
 - Remove sample data functionality - no longer needed with data curl working
 - probs some other things maybe
 
+## Client Notes:
+- Density and frequency maps. Include a unit converted to something / per year. Allows for experiment comparison – defined unit for everything.  
+-  Genesis locations - Refine and include a much more accurate genesis location when cyclone speed reaching 34 knots (17m/s). Ignore path prior to genesis.  
+
+- Checks to see how the genesis will change as the warming increases.  
+
+- Historical period to show different member and what does it mean – to produce an overall pattern. Producing average locations.  
+
+- Add a button to show ‘ensemble mean’  
+
+- Add a button to show land-fall locations. Display purely land-fall spots – no tracks. Be able to select the time. Have different coloured dots for land-fall location to show cyclone intensity upon landfall.  
+
+- Intensity – highest intensity, filter by intensity levels.  
+
+- Dissipation data points.  
+
+- Integrate one more layer using the BOM dataset – observations straight from BOM, will be supplied.  
+
+- Zoom, and improve navigation, export function with longitude/latitude inputs to export a small region of data.  
+
+- TCs that are lower than category 1, should be included in overall as well.  
+
+- Add a historical period with no warming.  
+
+- Overall map with heat maps for complete historical data.  
+
+- Need to implement longitude and latitude and implement tick boxes to divide the map into regions. Define the categories for each region's individual category classifications.  
+
 
 ## Overview
 Project Aim:
