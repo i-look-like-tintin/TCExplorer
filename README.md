@@ -6,14 +6,10 @@ Any issues with this, hit me up. The instructions below may not be super accurat
 
 
 
-## May's Immediate (<10 days) Roadmap
-- ~~Add heatmap function to map dashboard~~
+## May's Immediate Roadmap
 - Add ability to select year ranges, rather than just all years or single year
-- Actually read the task sheet and figure out what else the client needs lmao
 - Add additional data to TC selection pop-up
-- ~~Add quick summary datapage to summarise differences against "baseline" <- we don't /really/ have a baseline but fuck it we ball~~
 - Remove sample data functionality - no longer needed with data curl working
-- probs some other things maybe
 
 ## Client Notes:
 - Density and frequency maps. Include a unit converted to something / per year. Allows for experiment comparison – defined unit for everything.  
@@ -43,6 +39,9 @@ Any issues with this, hit me up. The instructions below may not be super accurat
 
 - Need to implement longitude and latitude and implement tick boxes to divide the map into regions. Define the categories for each region's individual category classifications.  
 
+## Other Needs
+- Fix heatmap display
+- Validate data (I have only partially validated curled TC D4PDF data checking speeds and pressures - May)
 
 ## Overview
 Project Aim:
