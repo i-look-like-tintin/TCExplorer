@@ -11,9 +11,10 @@ Any issues with this, hit me up. The instructions below may not be super accurat
 - Add additional data to TC selection pop-up
 - ~~Remove sample data functionality - no longer needed with data curl working~~
 - ~~Fix heatmap display~~
-- Validate data (I have only partially validated curled TC D4PDF data checking speeds and pressures - May)
 - Density and frequency maps. Include a unit converted to something / per year. Allows for experiment comparison – defined unit for everything
 
+## Other Needs:
+- Validate data (I have only partially validated curled TC D4PDF data checking speeds and pressures - May)
 
 ## Client Notes:
 - Density and frequency maps. Include a unit converted to something / per year. Allows for experiment comparison – defined unit for everything.  <-- In progress - May
