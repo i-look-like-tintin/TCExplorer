@@ -15,9 +15,19 @@ class TCVisualization {
         this.selectedCyclone = null;
         this.filterAustralia = true;
         this.yearRange = null;
+        this.scenarioYearRanges = {
+            'current': { min: 1951, max: 2011 },
+            '2k': { min: 2031, max: 2090 },
+            '4k': { min: 2051, max: 2110 }
+        };
         this.showHeatmap = false;
         this.heatmapData = null; 
         this.currentZoom = 4; 
+        //Added these sections to facilitate heatmap zoom locking
+        //Not the best solution so could look to change TODO
+        this.heatmapZoomLevel = 4;
+        this.previousZoom = null;
+        this.previousCenter = null;
         
         this.init();
     }
@@ -31,64 +41,20 @@ class TCVisualization {
         this.createComparisonPanel();
     }
     
-initMap() {
-
-    this.map = L.map('map').setView([-25.2744, 133.7751], 4);
-    
-
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-        attribution: '© OpenStreetMap contributors | Data: d4PDF'
-    }).addTo(this.map);
-    
-
-    this.layers.tracks.addTo(this.map);
-    this.layers.genesis.addTo(this.map);
-    this.layers.intensity.addTo(this.map);
-    
-
-    this.addAustraliaBoundaries();
-    
-
-    let zoomTimeout;
-    this.map.on('zoomstart', () => {
-
-        if (this.layers.heatmap) {
-            this.map.getContainer().classList.add('zooming');
-        }
-    });
-    
-    this.map.on('zoomend', () => {
-        clearTimeout(zoomTimeout);
-        zoomTimeout = setTimeout(() => {
-            if (this.showHeatmap && this.heatmapConfig) {
-
-                const currentZoom = this.map.getZoom();
-                const radius = this.heatmapConfig.baseRadius * Math.pow(2, (currentZoom - 4) * 0.7);
-                const blur = 15 + (currentZoom - 4) * 3;
-                
-
-                if (this.layers.heatmap) {
-                    this.map.removeLayer(this.layers.heatmap);
-                }
-                
-
-                this.layers.heatmap = L.heatLayer(this.heatmapConfig.data, {
-                    radius: Math.min(80, Math.max(15, radius)),
-                    blur: Math.min(40, Math.max(10, blur)),
-                    maxZoom: 17,
-                    max: 1.0,
-                    gradient: this.heatmapConfig.gradient,
-                    minOpacity: 0.3
-                });
-                
-                this.layers.heatmap.addTo(this.map);
-            }
-            
-
-            this.map.getContainer().classList.remove('zooming');
-        }, 100);
-    });
-}
+    initMap() {
+        this.map = L.map('map').setView([-25.2744, 133.7751], 4);
+        
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '© OpenStreetMap contributors | Data: d4PDF'
+        }).addTo(this.map);
+        
+        this.layers.tracks.addTo(this.map);
+        this.layers.genesis.addTo(this.map);
+        this.layers.intensity.addTo(this.map);
+        
+        this.addAustraliaBoundaries();
+        
+    }
 
     
     addAustraliaBoundaries() {
@@ -119,7 +85,7 @@ initMap() {
     }
     
     addSimplifiedAustraliaBoundaries() {
-        // Simplified Australia polygon  -again, pretty terrible
+        // Simplified Australia polygon  -again, pretty terrible - look to fix or just remove
         const australiaBounds = [
             [-10.6, 113.3], [-13.7, 130.8], [-12.5, 136.7], [-14.5, 145.4],
             [-18.3, 146.3], [-24.5, 153.6], [-32.5, 152.5], [-37.5, 149.9],
@@ -154,20 +120,55 @@ initMap() {
             this.loadData();
         });
         
-
+        //TODO as above, locking heatmap zoom bodge solution
         document.getElementById('show-heatmap').addEventListener('change', (e) => {
             this.showHeatmap = e.target.checked;
             if (this.showHeatmap) {
-
+                this.previousZoom = this.map.getZoom();
+                this.previousCenter = this.map.getCenter();
+                
                 document.getElementById('show-tracks').checked = false;
                 document.getElementById('show-genesis').checked = false;
                 document.getElementById('show-intensity').checked = false;
                 this.toggleLayer('tracks', false);
                 this.toggleLayer('genesis', false);
                 this.toggleLayer('intensity', false);
+                
+                this.map.setView([-25.2744, 133.7751], this.heatmapZoomLevel, {
+                    animate: true,
+                    duration: 0.5
+                });
+                
+                this.map.scrollWheelZoom.disable();
+                this.map.doubleClickZoom.disable();
+                this.map.touchZoom.disable();
+                this.map.boxZoom.disable();
+                this.map.keyboard.disable();
+                
+                this.map.zoomControl.remove();
+                
+                this.showZoomLockNotice();
+            } else {
+                this.map.scrollWheelZoom.enable();
+                this.map.doubleClickZoom.enable();
+                this.map.touchZoom.enable();
+                this.map.boxZoom.enable();
+                this.map.keyboard.enable();
+                
+                this.map.zoomControl.addTo(this.map);
+                
+                if (this.previousZoom && this.previousCenter) {
+                    this.map.setView(this.previousCenter, this.previousZoom, {
+                        animate: true,
+                        duration: 0.5
+                    });
+                }
+                
+                this.removeZoomLockNotice();
             }
             this.updateVisualization();
         });
+        
         
         document.getElementById('show-tracks').addEventListener('change', (e) => {
             if (e.target.checked && this.showHeatmap) {
@@ -200,53 +201,161 @@ initMap() {
             this.filterAustralia = e.target.checked;
             this.loadData();
         });
-        const yearSlider = document.getElementById('year-slider');
+        const yearMinSlider = document.getElementById('year-slider-min');
+        const yearMaxSlider = document.getElementById('year-slider-max');
         const yearDisplay = document.getElementById('year-display');
-        yearSlider.addEventListener('input', (e) => {
-            const year = parseInt(e.target.value);
-            if (year === parseInt(yearSlider.min)) {
-                yearDisplay.textContent = 'All Years';
-                this.yearRange = null;
-            } else {
-                yearDisplay.textContent = year;
-                this.yearRange = year;
+        
+                const updateYearRange = () => {
+            let min = parseInt(yearMinSlider.value);
+            let max = parseInt(yearMaxSlider.value);
+            
+            const bounds = this.scenarioYearRanges[this.currentScenario];
+            
+            min = Math.max(bounds.min, Math.min(bounds.max, min));
+            max = Math.max(bounds.min, Math.min(bounds.max, max));
+            
+            if (min > max) {
+                if (this.lastChangedSlider === 'min') {
+                    max = min;
+                    yearMaxSlider.value = max;
+                } else {
+                    min = max;
+                    yearMinSlider.value = min;
+                }
             }
+            
+            yearMinSlider.value = min;
+            yearMaxSlider.value = max;
+            
+            this.updateSliderRange();
+            
+            if (min === bounds.min && max === bounds.max) {
+                yearDisplay.textContent = `${bounds.min} - ${bounds.max}`;
+                this.yearRange = null;
+            } else if (min === max) {
+                yearDisplay.textContent = `Year: ${min}`;
+                this.yearRange = { min: min, max: min };
+            } else {
+                yearDisplay.textContent = `${min} - ${max}`;
+                this.yearRange = { min: min, max: max };
+            }
+            
             this.updateVisualization();
+        };
+        
+        yearMinSlider.addEventListener('input', (e) => {
+            this.lastChangedSlider = 'min';
+            updateYearRange();
         });
+        
+        yearMaxSlider.addEventListener('input', (e) => {
+            this.lastChangedSlider = 'max';
+            updateYearRange();
+        });
+        
+        this.updateSliderRange();
+
         document.getElementById('export-data').addEventListener('click', () => {
             this.exportData();
         });
         document.getElementById('refresh-data').addEventListener('click', () => {
             this.loadData(true);
         });
-        document.getElementById('use-sample-data').addEventListener('change', () => {
-            this.loadData(true);
-        });
     }
     
-    handleScenarioChange(e) {
+    updateSliderRange() {
+        const minSlider = document.getElementById('year-slider-min');
+        const maxSlider = document.getElementById('year-slider-max');
+        const sliderRange = document.querySelector('.slider-range');
+        
+        const min = parseInt(minSlider.value);
+        const max = parseInt(maxSlider.value);
+        const sliderMin = parseInt(minSlider.min);
+        const sliderMax = parseInt(minSlider.max);
+        
+        const minPercent = ((min - sliderMin) / (sliderMax - sliderMin)) * 100;
+        const maxPercent = ((max - sliderMin) / (sliderMax - sliderMin)) * 100;
+        
+        sliderRange.style.left = `${minPercent}%`;
+        sliderRange.style.width = `${maxPercent - minPercent}%`;
+    }
+    updateYearSlider() {
+        const yearMinSlider = document.getElementById('year-slider-min');
+        const yearMaxSlider = document.getElementById('year-slider-max');
+        const yearDisplay = document.getElementById('year-display');
+        
+        const bounds = this.scenarioYearRanges[this.currentScenario];
+        
+        yearMinSlider.min = bounds.min;
+        yearMinSlider.max = bounds.max;
+        yearMinSlider.value = bounds.min;
+        
+        yearMaxSlider.min = bounds.min;
+        yearMaxSlider.max = bounds.max;
+        yearMaxSlider.value = bounds.max;
+        
+        yearDisplay.textContent = `${bounds.min} - ${bounds.max}`;
+        this.yearRange = null;
+        
+        this.updateSliderRange();
+    }
+
+
+    showZoomLockNotice() {
+        if (!document.getElementById('zoom-lock-notice')) {
+            const notice = document.createElement('div');
+            notice.id = 'zoom-lock-notice';
+            notice.className = 'zoom-lock-notice';
+            notice.innerHTML = `
+                <div class="notice-content">
+                    <span class="notice-icon">🔒</span>
+                    <span>Zoom is locked in heatmap view for optimal visualization</span>
+                </div>
+            `;
+            document.getElementById('map').appendChild(notice);
+        }
+    }
+
+    removeZoomLockNotice() {
+        const notice = document.getElementById('zoom-lock-notice');
+        if (notice) {
+            notice.remove();
+        }
+    }
+
+handleScenarioChange(e) {
         document.querySelectorAll('.scenario-btn').forEach(btn => {
             btn.classList.remove('active');
         });
         e.target.classList.add('active');
         this.currentScenario = e.target.dataset.scenario;
-
+        
         this.updateEnsembleSelector();
-
+        
         this.updateYearSlider();
-
+        
         this.loadData();
     }
-    
+
+    filterCyclonesByYear(cyclones) {
+        if (!this.yearRange) {
+            return cyclones;
+        }
+        
+        return cyclones.filter(c => 
+            c.year >= this.yearRange.min && c.year <= this.yearRange.max
+        );
+    }
+
     updateEnsembleSelector() {
         const ensembleInfo = document.getElementById('ensemble-info');
         const ensembleSelect = document.getElementById('ensemble-select');
         const sstSelector = document.getElementById('sst-selector');
 
-        const ensembleLimits = {
-            'current': { max: 100, available: 100, note: '(1-100 available)' },
-            '2k': { max: 9, available: 9, note: '(101-109 on server)' },
-            '4k': { max: 15, available: 15, note: '(101-115 on server)' }
+        const ensembleLimits = { //TODO notes probably not needed, reconsider i guess lol
+            'current': { max: 100, available: 100, note: '' },
+            '2k': { max: 9, available: 9, note: '' },
+            '4k': { max: 15, available: 15, note: '' }
         };
         
         const limit = ensembleLimits[this.currentScenario];
@@ -277,27 +386,6 @@ initMap() {
         }
     }
     
-    updateYearSlider() {
-        const yearSlider = document.getElementById('year-slider');
-        const yearDisplay = document.getElementById('year-display');
-
-        if (this.currentScenario === 'current') {
-            yearSlider.min = 1951;
-            yearSlider.max = 2011;
-            yearSlider.value = 1951;
-        } else if (this.currentScenario === '2k') {
-            yearSlider.min = 2031;
-            yearSlider.max = 2090;
-            yearSlider.value = 2031;
-        } else if (this.currentScenario === '4k') {
-            yearSlider.min = 2051;
-            yearSlider.max = 2110;
-            yearSlider.value = 2051;
-        }
-        
-        yearDisplay.textContent = 'All Years';
-        this.yearRange = null;
-    }
     
     toggleLayer(layerName, visible) {
         if (layerName === 'heatmap') {
@@ -372,119 +460,78 @@ initMap() {
         this.layers.heatmap.addTo(this.map);
     }
     
+    //TODO as above, zoom-locked heatmap bodge
     createHeatmap(cyclones) {
+        if (this.layers.heatmap) {
+            this.map.removeLayer(this.layers.heatmap);
+        }
 
-    if (this.layers.heatmap) {
-        this.map.removeLayer(this.layers.heatmap);
-    }
+        this.layers.tracks.clearLayers();
+        this.layers.genesis.clearLayers();
+        this.layers.intensity.clearLayers();
 
-    this.layers.tracks.clearLayers();
-    this.layers.genesis.clearLayers();
-    this.layers.intensity.clearLayers();
+        const heatData = [];
+        
+        cyclones.forEach(cyclone => {
+            if (!cyclone.track || cyclone.track.length === 0) return;
 
-    const heatData = [];
-    
+            for (let i = 0; i < cyclone.track.length; i++) {
+                const point = cyclone.track[i];
 
-    const currentZoom = this.map.getZoom();
-    const zoomFactor = Math.pow(1.5, currentZoom - 4);
-    
-    cyclones.forEach(cyclone => {
-        if (!cyclone.track || cyclone.track.length === 0) return;
+                if (this.filterAustralia && !this.isInAustralianRegion(point.lat, point.lon)) {
+                    continue;
+                }
 
-        for (let i = 0; i < cyclone.track.length; i++) {
-            const point = cyclone.track[i];
-
-            if (this.filterAustralia && !this.isInAustralianRegion(point.lat, point.lon)) {
-                continue;
-            }
-
-            const category = point.category || cyclone.maxCategory || 1;
-            const weight = Math.pow(category / 5, 1.5);
-            
-
-            heatData.push([point.lat, point.lon, weight]);
-            
-
-            if (i < cyclone.track.length - 1) {
-                const nextPoint = cyclone.track[i + 1];
+                const category = point.category || cyclone.maxCategory || 1;
+                const weight = Math.pow(category / 5, 1.5);
                 
-                const latDiff = Math.abs(nextPoint.lat - point.lat);
-                const lonDiff = Math.abs(nextPoint.lon - point.lon);
-                const distance = Math.sqrt(latDiff * latDiff + lonDiff * lonDiff);
+                heatData.push([point.lat, point.lon, weight]);
                 
-                if (distance < 5) { 
-
-                    const interpPoints = Math.min(5, Math.ceil(distance * zoomFactor));
+                // Add interpolation between points for smoother visualization
+                if (i < cyclone.track.length - 1) {
+                    const nextPoint = cyclone.track[i + 1];
+                    const latDiff = Math.abs(nextPoint.lat - point.lat);
+                    const lonDiff = Math.abs(nextPoint.lon - point.lon);
+                    const distance = Math.sqrt(latDiff * latDiff + lonDiff * lonDiff);
                     
-                    for (let j = 1; j < interpPoints; j++) {
-                        const t = j / interpPoints;
-                        const interpLat = point.lat + (nextPoint.lat - point.lat) * t;
-                        const interpLon = point.lon + (nextPoint.lon - point.lon) * t;
+                    if (distance < 5) {
+                        const interpPoints = Math.min(3, Math.ceil(distance));
                         
-
-                        heatData.push([interpLat, interpLon, weight * 0.8]);
+                        for (let j = 1; j < interpPoints; j++) {
+                            const t = j / interpPoints;
+                            const interpLat = point.lat + (nextPoint.lat - point.lat) * t;
+                            const interpLon = point.lon + (nextPoint.lon - point.lon) * t;
+                            heatData.push([interpLat, interpLon, weight * 0.8]);
+                        }
                     }
                 }
             }
-            
-            const spread = 0.2 / zoomFactor; 
-            const angles = [0, 90, 180, 270]; 
-            
-            angles.forEach(angle => {
-                const rad = angle * Math.PI / 180;
-                const offsetLat = point.lat + spread * Math.cos(rad);
-                const offsetLon = point.lon + spread * Math.sin(rad);
-                heatData.push([offsetLat, offsetLon, weight * 0.5]);
-            });
-        }
-    });
-    
-    // these need fixing, i dont like the scale
-    const gradient = {
-        0.0: 'rgba(255, 255, 200, 0.0)',
-        0.1: 'rgba(255, 255, 100, 0.3)',
-        0.2: 'rgba(255, 255, 0, 0.5)',
-        0.5: 'rgba(255, 220, 0, 0.6)',
-        0.62: 'rgba(255, 165, 0, 0.7)',
-        0.7: 'rgba(255, 69, 0, 0.8)',
-        0.85: 'rgba(255, 0, 0, 0.9)',
-        0.95: 'rgba(139, 0, 0, 0.95)',
-        1.0: 'rgba(0, 0, 0, 1.0)'
-    };
-    
-    //i tried to fix breaking of points with zoom, hasnt quite worked but hey its better
-    const baseRadius = 25;
-    const radius = baseRadius * Math.pow(2, (currentZoom - 4) * 0.7);
-    const blur = 15 + (currentZoom - 4) * 3;
-
-    this.layers.heatmap = L.heatLayer(heatData, {
-        radius: Math.min(80, Math.max(15, radius)), 
-        blur: Math.min(40, Math.max(10, blur)),     
-        maxZoom: 17,
-        max: 1.0,
-        gradient: gradient,
-        minOpacity: 0.3
-    });
-    
-    this.layers.heatmap.addTo(this.map);
-
-    this.heatmapConfig = {
-        baseRadius: baseRadius,
-        data: heatData,
-        gradient: gradient
-    };
-
-    this.updateHeatmapLegend();
-
-    //honestly this should just display all the time
-    const comparisonPanel = document.getElementById('scenario-comparison');
-    if (comparisonPanel) {
-        comparisonPanel.classList.add('active');
+        });
         
-        const metrics = this.calculateIntensityMetrics(cyclones);
-        this.updateComparisonPanel(metrics);
+        const gradient = {
+            0.0: 'rgba(255, 255, 200, 0.0)',
+            0.1: 'rgba(255, 255, 100, 0.3)',
+            0.2: 'rgba(255, 255, 0, 0.5)',
+            0.5: 'rgba(255, 220, 0, 0.6)',
+            0.62: 'rgba(255, 165, 0, 0.7)',
+            0.7: 'rgba(255, 69, 0, 0.8)',
+            0.85: 'rgba(255, 0, 0, 0.9)',
+            0.95: 'rgba(139, 0, 0, 0.95)',
+            1.0: 'rgba(0, 0, 0, 1.0)'
+        };
+        
+        this.layers.heatmap = L.heatLayer(heatData, {
+            radius: 35,
+            blur: 20,
+            maxZoom: 17,
+            max: 1.0,
+            gradient: gradient,
+            minOpacity: 0.3
+        });
+        
+        this.layers.heatmap.addTo(this.map);
+        this.updateHeatmapLegend();
     }
-}
     
     async loadData(forceRefresh = false) {
         this.showLoading(true);
@@ -501,14 +548,13 @@ initMap() {
                 return;
             }
             
-            const useSample = document.getElementById('use-sample-data').checked;
             
             const params = new URLSearchParams({
                 action: 'getCycloneData',
                 scenario: this.currentScenario,
                 ensemble: this.currentEnsemble,
                 filter: this.filterAustralia ? 'australia' : 'all',
-                use_sample: useSample ? 'true' : 'false',
+                use_sample: 'false',
                 debug: 'true' 
             });
             
@@ -576,15 +622,15 @@ initMap() {
     this.heatmapConfig = null;
     
     const cacheKey = this.currentScenario === 'current' 
-        ? `${this.currentScenario}_${this.currentEnsemble}`
-        : `${this.currentScenario}_${this.currentEnsemble}_${this.currentSSTModel}`;
-    const data = this.cycloneData[cacheKey];
-    if (!data || !data.cyclones) return;
-    
-    let cyclones = data.cyclones;
-    if (this.yearRange) {
-        cyclones = cyclones.filter(c => c.year === this.yearRange);
-    }
+            ? `${this.currentScenario}_${this.currentEnsemble}`
+            : `${this.currentScenario}_${this.currentEnsemble}_${this.currentSSTModel}`;
+        const data = this.cycloneData[cacheKey];
+        if (!data || !data.cyclones) return;
+        
+        let cyclones = this.filterCyclonesByYear(data.cyclones);
+        
+        const metrics = this.calculateIntensityMetrics(cyclones);
+        this.updateComparisonPanel(metrics, cyclones.length, data.cyclones.length);
     
 
     const heatmapCheckbox = document.getElementById('show-heatmap');
@@ -768,12 +814,12 @@ initMap() {
         if (!document.getElementById('scenario-comparison')) {
             const panel = document.createElement('div');
             panel.id = 'scenario-comparison';
-            panel.className = 'scenario-comparison';
+            panel.className = 'scenario-comparison active';
             panel.innerHTML = `
-                <h4>Scenario Comparison</h4>
+                <h4>Scenario Analysis</h4>
                 <div id="comparison-content">
                     <p style="font-size: 12px; color: #666;">
-                        Switch between scenarios to compare TC severity patterns
+                        Loading cyclone data...
                     </p>
                 </div>
             `;
@@ -844,7 +890,7 @@ initMap() {
         return metrics;
     }
     
-    updateComparisonPanel(metrics) {
+    updateComparisonPanel(metrics, displayedCount, totalCount) {
         const panel = document.getElementById('scenario-comparison');
         if (!panel) return;
         
@@ -852,19 +898,44 @@ initMap() {
         
         panel.classList.add('active');
         
+        const yearRangeText = this.yearRange 
+            ? `${this.yearRange.min} - ${this.yearRange.max}` 
+            : '';
+        
+        const filteredText = displayedCount < totalCount 
+            ? ` of ${totalCount}` 
+            : '';
+        
         content.innerHTML = `
             <div class="comparison-item">
-                <div class="scenario-label">${this.currentScenario === 'current' ? 'Historical' : '+' + this.currentScenario.toUpperCase() + ' Warming'}</div>
-                <div class="metric">Total Cyclones: ${metrics.totalCyclones}</div>
-                <div class="metric">Severe (Cat 3+): ${metrics.severeCyclones} (${((metrics.severeCyclones/metrics.totalCyclones)*100).toFixed(1)}%)</div>
+                <div class="scenario-label">${this.currentScenario === 'current' ? 'Historical' : '+' + this.currentScenario.toUpperCase() + ' Warming'} ${yearRangeText}</div>
+                <div class="metric">Displayed Cyclones: ${displayedCount}${filteredText}</div>
+                <div class="metric">Severe (Cat 3+): ${metrics.severeCyclones} (${metrics.totalCyclones > 0 ? ((metrics.severeCyclones/metrics.totalCyclones)*100).toFixed(1) : 0}%)</div>
                 <div class="metric">Avg Category: ${metrics.avgMaxCategory}</div>
                 <div class="metric">Max Wind: ${metrics.maxWindSpeed} km/h</div>
                 <div class="metric">Landfalls: ${metrics.landfallCount}</div>
+                <div class="metric">Annual Average: ${this.calculateAnnualAverage(displayedCount).toFixed(1)}</div>
             </div>
             <p style="font-size: 11px; color: #666; margin-top: 10px;">
                 ${this.getScenarioInsight()}
             </p>
         `;
+    }
+
+    calculateAnnualAverage(cycloneCount) {
+        if (!this.yearRange) {
+            //TODO I have a bad feeling about this code's ability to work, but we'll see
+            const ranges = {
+                'current': 60, // 2011 - 1951 + 1
+                '2k': 60,      // 2090 - 2031 + 1
+                '4k': 60       // 2110 - 2051 + 1
+            };
+            return cycloneCount / ranges[this.currentScenario];
+        } else {
+            // Use selected range
+            const years = this.yearRange.max - this.yearRange.min + 1;
+            return cycloneCount / years;
+        }
     }
     
     getScenarioInsight() {

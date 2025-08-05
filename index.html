@@ -23,6 +23,20 @@
                 </div>
             </div>
             
+
+            
+            <div class="control-group" id="sst-selector" style="display: none;">
+                <label>SST Model:</label>
+                <select id="sst-select">
+                    <option value="CC">CCSM4 (CC)</option>
+                    <option value="GF">GFDL-CM3 (GF)</option>
+                    <option value="HA">HadGEM-AO2 (HA)</option>
+                    <option value="MI">MIROC5 (MI)</option>
+                    <option value="MP">MPI-ESM-MR (MP)</option>
+                    <option value="MR">MRI-CGCM3 (MR)</option>
+                </select>
+            </div>
+            
             <div class="control-group">
                 <label>Ensemble Member:</label>
                 <select id="ensemble-select">
@@ -38,19 +52,7 @@
                 </select>
                 <span id="ensemble-info" style="font-size: 0.8rem; color: #7f8c8d; margin-left: 0.5rem;"></span>
             </div>
-            
-            <div class="control-group" id="sst-selector" style="display: none;">
-                <label>SST Model:</label>
-                <select id="sst-select">
-                    <option value="CC">CCSM4 (CC)</option>
-                    <option value="GF">GFDL-CM3 (GF)</option>
-                    <option value="HA">HadGEM-AO2 (HA)</option>
-                    <option value="MI">MIROC5 (MI)</option>
-                    <option value="MP">MPI-ESM-MR (MP)</option>
-                    <option value="MR">MRI-CGCM3 (MR)</option>
-                </select>
-            </div>
-            
+
             <div class="control-group">
                 <label>Display Options:</label>
                 <div class="toggle-options">
@@ -72,23 +74,23 @@
                 </div>
             </div>
             
-            <div class="control-group">
-                <label>Year Range:</label>
-                <input type="range" id="year-slider" min="1951" max="2111" value="2000" step="1">
-                <span id="year-display">All Years</span>
-            </div>
             
             <div class="control-group">
                 <button id="export-data" class="export-btn">Export Data (CSV)</button>
                 <button id="refresh-data" class="export-btn" style="background-color: #3498db;">Refresh Data</button>
             </div>
-            
-            <div class="control-group" style="font-size: 0.8rem; color: #7f8c8d;">
-                <label class="checkbox-label">
-                    <input type="checkbox" id="use-sample-data"> Use sample data (faster)
-                </label>
-                <div id="data-status" style="margin-top: 0.5rem;"></div>
-            </div>
+<div class="control-group">
+    <label>Year Range:</label>
+    <div class="year-range-container">
+        <div class="range-slider">
+            <input type="range" id="year-slider-min" class="year-slider" min="1951" max="2010" value="1951" step="1">
+            <input type="range" id="year-slider-max" class="year-slider" min="1952" max="2011" value="2011" step="1">
+            <div class="slider-track"></div>
+            <div class="slider-range"></div>
+        </div>
+    </div>
+    <div id="year-display" class="year-display">1951-2011</div>
+</div>
         </div>
         <div id="map-container">
             <div id="map"></div>
