@@ -1,15 +1,18 @@
 # Tropical Cyclone Track Visualization Prototype
-# Version 0.7.0
-This is a very, very barebones prototype / Proof of Concept. It is designed to be run through XAMPP, and then launched in the browser as localhost/YOUR_PROJECT_DIRECTORY_INSIDE_HTDOCS/index.html
+# Version 0.7.5
+This is designed to be run through XAMPP, and then launched in the browser as localhost/YOUR_PROJECT_DIRECTORY_INSIDE_HTDOCS/index.html
 Any issues with this, hit me up. The instructions below may not be super accurate, but I have implemented/tested it through Linux, Windows, and MacOS so happy to help you get it running if needed.
 -Mackenzie
 
 
 
-## May's Immediate Roadmap
-- Add ability to select year ranges, rather than just all years or single year
+## Immediate Roadmap
+- ~~Add ability to select year ranges, rather than just all years or single year~~
 - Add additional data to TC selection pop-up
-- Remove sample data functionality - no longer needed with data curl working
+- ~~Remove sample data functionality - no longer needed with data curl working~~
+- ~~Fix heatmap display~~
+- Validate data (I have only partially validated curled TC D4PDF data checking speeds and pressures - May)
+
 
 ## Client Notes:
 - Density and frequency maps. Include a unit converted to something / per year. Allows for experiment comparison – defined unit for everything.  
@@ -38,10 +41,6 @@ Any issues with this, hit me up. The instructions below may not be super accurat
 - Overall map with heat maps for complete historical data.  
 
 - Need to implement longitude and latitude and implement tick boxes to divide the map into regions. Define the categories for each region's individual category classifications.  
-
-## Other Needs
-- Fix heatmap display
-- Validate data (I have only partially validated curled TC D4PDF data checking speeds and pressures - May)
 
 ## Overview
 Project Aim:
