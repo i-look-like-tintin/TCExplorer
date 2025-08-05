@@ -854,9 +854,10 @@ handleScenarioChange(e) {
                     <span>Extreme</span>
                 </div>
             </div>
-            <p style="font-size: 11px; margin-top: 10px; font-style: italic;">
-                Colors show average cyclone severity.<br>
-                Compare scenarios to see warming impact.
+            <p style="font-size: 11px; margin-top: 10px;">
+                Colors represent cyclone intensity-weighted density.<br>
+                Combines frequency (tracks) × intensity (category).<br>
+                Darker = more frequent and/or stronger cyclones.
             </p>
         `;
         
