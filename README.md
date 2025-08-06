@@ -1,5 +1,5 @@
 # Tropical Cyclone Track Visualization Prototype
-# Version 0.8.2
+# Version 0.8.3
 This is designed to be run through XAMPP, and then launched in the browser as localhost/YOUR_PROJECT_DIRECTORY_INSIDE_HTDOCS/index.html
 Any issues with this, hit me up. The instructions below may not be super accurate, but I have implemented/tested it through Linux, Windows, and MacOS so happy to help you get it running if needed.
 -May
@@ -15,7 +15,7 @@ Any issues with this, hit me up. The instructions below may not be super accurat
 
 ## Other Needs:
 - Validate data (I have only partially validated curled TC D4PDF data checking speeds and pressures - May)
-- Fix CSS display elements. Info boxes do not fit correctly on sub-1440p displays. Some control bar elements are misaligned. 
+- ~~Fix CSS display elements. Info boxes do not fit correctly on sub-1440p displays. Some control bar elements are misaligned.~~ <-- Working better now, tad more tweaking required tho - May
 
 ## Client Notes:
 - Density and frequency maps. Include a unit converted to something / per year. Allows for experiment comparison – defined unit for everything.  <-- ~~In progress - May~~ Complete, but needs tweak.
