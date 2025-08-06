@@ -211,6 +211,14 @@ class TCVisualization {
                 }
                 
                 this.removeZoomLockNotice();
+
+                const yearMinSlider = document.getElementById('year-slider-min');
+                const yearMaxSlider = document.getElementById('year-slider-max');
+                const yearDisplay = document.getElementById('year-display');
+                yearMinSlider.disabled = false;
+                yearMaxSlider.disabled = false;
+                yearDisplay.classList.remove('disabled');
+                this.updateYearDisplay();
             }
             this.updateVisualization();
         });
