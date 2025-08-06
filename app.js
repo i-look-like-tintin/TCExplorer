@@ -188,7 +188,7 @@ class TCVisualization {
                 yearMaxSlider.disabled = true;
                 yearMinSlider.value = bounds.min;
                 yearMaxSlider.value = bounds.max;
-                yearDisplay.textContent = 'All Years (Density Mode)';
+                yearDisplay.textContent = 'All Years (Severity Mode)';
                 yearDisplay.classList.add('disabled');
                 this.yearRange = null;
                 this.updateSliderRange();
