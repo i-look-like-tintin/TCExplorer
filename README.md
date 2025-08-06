@@ -15,6 +15,7 @@ Any issues with this, hit me up. The instructions below may not be super accurat
 
 ## Other Needs:
 - Validate data (I have only partially validated curled TC D4PDF data checking speeds and pressures - May)
+- Fix CSS display elements. Info boxes do not fit correctly on sub-1440p displays. Some control bar elements are misaligned. 
 
 ## Client Notes:
 - Density and frequency maps. Include a unit converted to something / per year. Allows for experiment comparison – defined unit for everything.  <-- ~~In progress - May~~ Complete, but needs tweak.
