@@ -60,6 +60,9 @@
                         <input type="checkbox" id="show-heatmap"> Show Severity Heatmap
                     </label>
                     <label class="checkbox-label">
+                        <input type="checkbox" id="show-density-heatmap"> Show TC Density per Year
+                    </label>
+                    <label class="checkbox-label">
                         <input type="checkbox" id="show-tracks" checked> Show Tracks
                     </label>
                     <label class="checkbox-label">
@@ -82,14 +85,16 @@
 <div class="control-group">
     <label>Year Range:</label>
     <div class="year-range-container">
-        <div class="range-slider">
-            <input type="range" id="year-slider-min" class="year-slider" min="1951" max="2010" value="1951" step="1">
-            <input type="range" id="year-slider-max" class="year-slider" min="1952" max="2011" value="2011" step="1">
-            <div class="slider-track"></div>
-            <div class="slider-range"></div>
+        <div class="range-slider-container">
+            <div class="range-slider">
+                <input type="range" id="year-slider-min" class="year-slider" min="1951" max="2111" value="1951" step="1">
+                <input type="range" id="year-slider-max" class="year-slider" min="1951" max="2111" value="2111" step="1">
+                <div class="slider-track"></div>
+                <div class="slider-range"></div>
+            </div>
         </div>
     </div>
-    <div id="year-display" class="year-display">1951-2011</div>
+    <div id="year-display" class="year-display">All Years</div>
 </div>
         </div>
         <div id="map-container">

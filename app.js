@@ -1,4 +1,3 @@
-
 class TCVisualization {
     constructor() {
         this.map = null;
@@ -20,14 +19,13 @@ class TCVisualization {
             '2k': { min: 2031, max: 2090 },
             '4k': { min: 2051, max: 2110 }
         };
-        this.showHeatmap = false;
-        this.heatmapData = null; 
-        this.currentZoom = 4; 
-        //Added these sections to facilitate heatmap zoom locking
-        //Not the best solution so could look to change TODO
         this.heatmapZoomLevel = 4;
         this.previousZoom = null;
         this.previousCenter = null;
+        this.showHeatmap = false;
+        this.showDensityHeatmap = false;
+        this.heatmapData = null; 
+        this.currentZoom = 4; 
         
         this.init();
     }
@@ -54,15 +52,50 @@ class TCVisualization {
         
         this.addAustraliaBoundaries();
         
+        let zoomTimeout;
+        this.map.on('zoomstart', () => {
+            if (this.layers.heatmap) {
+                this.map.getContainer().classList.add('zooming');
+            }
+        });
+        
+        this.map.on('zoomend', () => {
+            clearTimeout(zoomTimeout);
+            zoomTimeout = setTimeout(() => {
+                if ((this.showHeatmap || this.showDensityHeatmap) && this.heatmapConfig) {
+                    const currentZoom = this.map.getZoom();
+                    const radius = this.heatmapConfig.baseRadius * Math.pow(2, (currentZoom - 4) * 0.7);
+                    const blur = 15 + (currentZoom - 4) * 3;
+                    
+                    if (this.layers.heatmap) {
+                        this.map.removeLayer(this.layers.heatmap);
+                    }
+                    
+                    const heatmapOptions = {
+                        radius: Math.min(80, Math.max(15, radius)),
+                        blur: Math.min(40, Math.max(10, blur)),
+                        maxZoom: 17,
+                        max: this.heatmapConfig.maxValue || 1.0,
+                        gradient: this.heatmapConfig.gradient,
+                        minOpacity: this.showDensityHeatmap ? 0.4 : 0.3
+                    };
+                    
+                    this.layers.heatmap = L.heatLayer(this.heatmapConfig.data, heatmapOptions);
+                    
+                    this.layers.heatmap.addTo(this.map);
+                }
+                
+                this.map.getContainer().classList.remove('zooming');
+            }, 100);
+        });
     }
 
     
     addAustraliaBoundaries() {
-
         fetch('https://raw.githubusercontent.com/nvkelso/natural-earth-vector/master/geojson/ne_50m_admin_0_countries.geojson')
             .then(response => response.json())
             .then(data => {
-
+                // Find Australia in the features
                 const australia = data.features.find(f => f.properties.NAME === 'Australia');
                 
                 if (australia) {
@@ -85,7 +118,7 @@ class TCVisualization {
     }
     
     addSimplifiedAustraliaBoundaries() {
-        // Simplified Australia polygon  -again, pretty terrible - look to fix or just remove
+        // Simplified Australia polygon  -again, pretty terrible
         const australiaBounds = [
             [-10.6, 113.3], [-13.7, 130.8], [-12.5, 136.7], [-14.5, 145.4],
             [-18.3, 146.3], [-24.5, 153.6], [-32.5, 152.5], [-37.5, 149.9],
@@ -107,26 +140,25 @@ class TCVisualization {
         document.querySelectorAll('.scenario-btn').forEach(btn => {
             btn.addEventListener('click', (e) => this.handleScenarioChange(e));
         });
-        
 
         document.getElementById('ensemble-select').addEventListener('change', (e) => {
             this.currentEnsemble = parseInt(e.target.value);
             this.loadData();
         });
         
-
         document.getElementById('sst-select').addEventListener('change', (e) => {
             this.currentSSTModel = e.target.value;
             this.loadData();
         });
         
-        //TODO as above, locking heatmap zoom bodge solution
         document.getElementById('show-heatmap').addEventListener('change', (e) => {
             this.showHeatmap = e.target.checked;
             if (this.showHeatmap) {
                 this.previousZoom = this.map.getZoom();
                 this.previousCenter = this.map.getCenter();
                 
+                document.getElementById('show-density-heatmap').checked = false;
+                this.showDensityHeatmap = false;
                 document.getElementById('show-tracks').checked = false;
                 document.getElementById('show-genesis').checked = false;
                 document.getElementById('show-intensity').checked = false;
@@ -147,6 +179,20 @@ class TCVisualization {
                 
                 this.map.zoomControl.remove();
                 
+                const yearMinSlider = document.getElementById('year-slider-min');
+                const yearMaxSlider = document.getElementById('year-slider-max');
+                const yearDisplay = document.getElementById('year-display');
+                const bounds = this.scenarioYearRanges[this.currentScenario];
+                
+                yearMinSlider.disabled = true;
+                yearMaxSlider.disabled = true;
+                yearMinSlider.value = bounds.min;
+                yearMaxSlider.value = bounds.max;
+                yearDisplay.textContent = 'All Years (Density Mode)';
+                yearDisplay.classList.add('disabled');
+                this.yearRange = null;
+                this.updateSliderRange();
+
                 this.showZoomLockNotice();
             } else {
                 this.map.scrollWheelZoom.enable();
@@ -170,28 +216,193 @@ class TCVisualization {
         });
         
         
-        document.getElementById('show-tracks').addEventListener('change', (e) => {
-            if (e.target.checked && this.showHeatmap) {
+        document.getElementById('show-density-heatmap').addEventListener('change', (e) => {
+            this.showDensityHeatmap = e.target.checked;
+            if (this.showDensityHeatmap) {
+                this.previousZoom = this.map.getZoom();
+                this.previousCenter = this.map.getCenter();
+                
                 document.getElementById('show-heatmap').checked = false;
                 this.showHeatmap = false;
+                document.getElementById('show-tracks').checked = false;
+                document.getElementById('show-genesis').checked = false;
+                document.getElementById('show-intensity').checked = false;
+                this.toggleLayer('tracks', false);
+                this.toggleLayer('genesis', false);
+                this.toggleLayer('intensity', false);
+                
+                this.map.setView([-25.2744, 133.7751], this.heatmapZoomLevel, {
+                    animate: true,
+                    duration: 0.5
+                });
+                
+                this.map.scrollWheelZoom.disable();
+                this.map.doubleClickZoom.disable();
+                this.map.touchZoom.disable();
+                this.map.boxZoom.disable();
+                this.map.keyboard.disable();
+                
+                this.map.zoomControl.remove();
+                
+                this.showZoomLockNotice();
+                
+                const yearMinSlider = document.getElementById('year-slider-min');
+                const yearMaxSlider = document.getElementById('year-slider-max');
+                const yearDisplay = document.getElementById('year-display');
+                const bounds = this.scenarioYearRanges[this.currentScenario];
+                
+                yearMinSlider.disabled = true;
+                yearMaxSlider.disabled = true;
+                yearMinSlider.value = bounds.min;
+                yearMaxSlider.value = bounds.max;
+                yearDisplay.textContent = 'All Years (Density Mode)';
+                yearDisplay.classList.add('disabled');
+                this.yearRange = null;
+                this.updateSliderRange();
+            } else {
+                this.map.scrollWheelZoom.enable();
+                this.map.doubleClickZoom.enable();
+                this.map.touchZoom.enable();
+                this.map.boxZoom.enable();
+                this.map.keyboard.enable();
+                
+                this.map.zoomControl.addTo(this.map);
+                
+                if (this.previousZoom && this.previousCenter) {
+                    this.map.setView(this.previousCenter, this.previousZoom, {
+                        animate: true,
+                        duration: 0.5
+                    });
+                }
+                
+                this.removeZoomLockNotice();
+                
+                const yearMinSlider = document.getElementById('year-slider-min');
+                const yearMaxSlider = document.getElementById('year-slider-max');
+                const yearDisplay = document.getElementById('year-display');
+                yearMinSlider.disabled = false;
+                yearMaxSlider.disabled = false;
+                yearDisplay.classList.remove('disabled');
+                this.updateYearDisplay();
+            }
+            this.updateVisualization();
+        });
+        
+        document.getElementById('show-tracks').addEventListener('change', (e) => {
+            if (e.target.checked && (this.showHeatmap || this.showDensityHeatmap)) {
+                document.getElementById('show-heatmap').checked = false;
+                document.getElementById('show-density-heatmap').checked = false;
+                this.showHeatmap = false;
+                this.showDensityHeatmap = false;
+                const yearMinSlider = document.getElementById('year-slider-min');
+                const yearMaxSlider = document.getElementById('year-slider-max');
+                const yearDisplay = document.getElementById('year-display');
+                yearMinSlider.disabled = false;
+                yearMaxSlider.disabled = false;
+                yearDisplay.classList.remove('disabled');
+                this.updateYearDisplay();
+
+                this.map.scrollWheelZoom.enable();
+                this.map.doubleClickZoom.enable();
+                this.map.touchZoom.enable();
+                this.map.boxZoom.enable();
+                this.map.keyboard.enable();
+                
+                this.map.zoomControl.addTo(this.map);
+                
+                if (this.previousZoom && this.previousCenter) {
+                    this.map.setView(this.previousCenter, this.previousZoom, {
+                        animate: true,
+                        duration: 0.5
+                    });
+                }
+                
+                this.removeZoomLockNotice();
+                
+                yearMinSlider.disabled = false;
+                yearMaxSlider.disabled = false;
+                yearDisplay.classList.remove('disabled');
+                this.updateYearDisplay();
             }
             this.toggleLayer('tracks', e.target.checked);
             this.updateVisualization();
         });
         
         document.getElementById('show-genesis').addEventListener('change', (e) => {
-            if (e.target.checked && this.showHeatmap) {
+            if (e.target.checked && (this.showHeatmap || this.showDensityHeatmap)) {
                 document.getElementById('show-heatmap').checked = false;
+                document.getElementById('show-density-heatmap').checked = false;
                 this.showHeatmap = false;
+                this.showDensityHeatmap = false;
+                const yearMinSlider = document.getElementById('year-slider-min');
+                const yearMaxSlider = document.getElementById('year-slider-max');
+                const yearDisplay = document.getElementById('year-display');
+                yearMinSlider.disabled = false;
+                yearMaxSlider.disabled = false;
+                yearDisplay.classList.remove('disabled');
+                this.updateYearDisplay();
+
+                this.map.scrollWheelZoom.enable();
+                this.map.doubleClickZoom.enable();
+                this.map.touchZoom.enable();
+                this.map.boxZoom.enable();
+                this.map.keyboard.enable();
+                
+                this.map.zoomControl.addTo(this.map);
+                
+                if (this.previousZoom && this.previousCenter) {
+                    this.map.setView(this.previousCenter, this.previousZoom, {
+                        animate: true,
+                        duration: 0.5
+                    });
+                }
+                
+                this.removeZoomLockNotice();
+                
+                yearMinSlider.disabled = false;
+                yearMaxSlider.disabled = false;
+                yearDisplay.classList.remove('disabled');
+                this.updateYearDisplay();
             }
             this.toggleLayer('genesis', e.target.checked);
             this.updateVisualization();
         });
         
         document.getElementById('show-intensity').addEventListener('change', (e) => {
-            if (e.target.checked && this.showHeatmap) {
+            if (e.target.checked && (this.showHeatmap || this.showDensityHeatmap)) {
                 document.getElementById('show-heatmap').checked = false;
+                document.getElementById('show-density-heatmap').checked = false;
                 this.showHeatmap = false;
+                this.showDensityHeatmap = false;
+                const yearMinSlider = document.getElementById('year-slider-min');
+                const yearMaxSlider = document.getElementById('year-slider-max');
+                const yearDisplay = document.getElementById('year-display');
+                yearMinSlider.disabled = false;
+                yearMaxSlider.disabled = false;
+                yearDisplay.classList.remove('disabled');
+                this.updateYearDisplay();
+
+                this.map.scrollWheelZoom.enable();
+                this.map.doubleClickZoom.enable();
+                this.map.touchZoom.enable();
+                this.map.boxZoom.enable();
+                this.map.keyboard.enable();
+                
+                this.map.zoomControl.addTo(this.map);
+                
+                if (this.previousZoom && this.previousCenter) {
+                    this.map.setView(this.previousCenter, this.previousZoom, {
+                        animate: true,
+                        duration: 0.5
+                    });
+                }
+                
+                this.removeZoomLockNotice();
+
+                yearMinSlider.disabled = false;
+                yearMaxSlider.disabled = false;
+                yearDisplay.classList.remove('disabled');
+                this.updateYearDisplay();
             }
             this.toggleLayer('intensity', e.target.checked);
             this.updateVisualization();
@@ -201,11 +412,28 @@ class TCVisualization {
             this.filterAustralia = e.target.checked;
             this.loadData();
         });
+        
         const yearMinSlider = document.getElementById('year-slider-min');
         const yearMaxSlider = document.getElementById('year-slider-max');
         const yearDisplay = document.getElementById('year-display');
         
-                const updateYearRange = () => {
+        yearMinSlider.addEventListener('input', (e) => {
+            this.lastChangedSlider = 'min';
+            updateYearRange();
+        });
+        
+        yearMaxSlider.addEventListener('input', (e) => {
+            this.lastChangedSlider = 'max';
+            updateYearRange();
+        });
+
+        this.updateSliderRange();
+
+        const updateYearRange = () => {
+            if (yearMinSlider.disabled) {
+                return;
+            }
+            
             let min = parseInt(yearMinSlider.value);
             let max = parseInt(yearMaxSlider.value);
             
@@ -234,7 +462,7 @@ class TCVisualization {
                 this.yearRange = null;
             } else if (min === max) {
                 yearDisplay.textContent = `Year: ${min}`;
-                this.yearRange = { min: min, max: min };
+                this.yearRange = { min: min, max: max };
             } else {
                 yearDisplay.textContent = `${min} - ${max}`;
                 this.yearRange = { min: min, max: max };
@@ -242,25 +470,15 @@ class TCVisualization {
             
             this.updateVisualization();
         };
-        
-        yearMinSlider.addEventListener('input', (e) => {
-            this.lastChangedSlider = 'min';
-            updateYearRange();
-        });
-        
-        yearMaxSlider.addEventListener('input', (e) => {
-            this.lastChangedSlider = 'max';
-            updateYearRange();
-        });
-        
-        this.updateSliderRange();
 
         document.getElementById('export-data').addEventListener('click', () => {
             this.exportData();
         });
+        
         document.getElementById('refresh-data').addEventListener('click', () => {
             this.loadData(true);
         });
+        
     }
     
     updateSliderRange() {
@@ -279,6 +497,60 @@ class TCVisualization {
         sliderRange.style.left = `${minPercent}%`;
         sliderRange.style.width = `${maxPercent - minPercent}%`;
     }
+
+    handleScenarioChange(e) {
+        document.querySelectorAll('.scenario-btn').forEach(btn => {
+            btn.classList.remove('active');
+        });
+        e.target.classList.add('active');
+        this.currentScenario = e.target.dataset.scenario;
+        
+        this.updateEnsembleSelector();
+        
+        this.updateYearSlider();
+        
+        this.loadData();
+    }
+    
+    updateEnsembleSelector() {
+        const ensembleInfo = document.getElementById('ensemble-info');
+        const ensembleSelect = document.getElementById('ensemble-select');
+        const sstSelector = document.getElementById('sst-selector');
+        
+        const ensembleLimits = {
+            'current': { max: 100, available: 100, note: '(1-100 available)' },
+            '2k': { max: 9, available: 9, note: '(101-109 on server)' },
+            '4k': { max: 15, available: 15, note: '(101-115 on server)' }
+        };
+        
+        const limit = ensembleLimits[this.currentScenario];
+        
+        ensembleInfo.textContent = limit.note;
+        
+        if (this.currentScenario === '2k' || this.currentScenario === '4k') {
+            sstSelector.style.display = 'flex';
+        } else {
+            sstSelector.style.display = 'none';
+        }
+        
+        const currentValue = parseInt(ensembleSelect.value);
+        ensembleSelect.innerHTML = '';
+        
+        for (let i = 1; i <= Math.min(limit.max, 15); i++) {
+            const option = document.createElement('option');
+            option.value = i;
+            option.textContent = `Ensemble ${i}`;
+            ensembleSelect.appendChild(option);
+        }
+        
+        if (currentValue <= limit.max) {
+            ensembleSelect.value = currentValue;
+        } else {
+            ensembleSelect.value = 1;
+            this.currentEnsemble = 1;
+        }
+    }
+    
     updateYearSlider() {
         const yearMinSlider = document.getElementById('year-slider-min');
         const yearMaxSlider = document.getElementById('year-slider-max');
@@ -299,93 +571,28 @@ class TCVisualization {
         
         this.updateSliderRange();
     }
-
-
-    showZoomLockNotice() {
-        if (!document.getElementById('zoom-lock-notice')) {
-            const notice = document.createElement('div');
-            notice.id = 'zoom-lock-notice';
-            notice.className = 'zoom-lock-notice';
-            notice.innerHTML = `
-                <div class="notice-content">
-                    <span class="notice-icon">🔒</span>
-                    <span>Zoom is locked in heatmap view for optimal visualization</span>
-                </div>
-            `;
-            document.getElementById('map').appendChild(notice);
-        }
-    }
-
-    removeZoomLockNotice() {
-        const notice = document.getElementById('zoom-lock-notice');
-        if (notice) {
-            notice.remove();
-        }
-    }
-
-handleScenarioChange(e) {
-        document.querySelectorAll('.scenario-btn').forEach(btn => {
-            btn.classList.remove('active');
-        });
-        e.target.classList.add('active');
-        this.currentScenario = e.target.dataset.scenario;
-        
-        this.updateEnsembleSelector();
-        
-        this.updateYearSlider();
-        
-        this.loadData();
-    }
-
-    filterCyclonesByYear(cyclones) {
-        if (!this.yearRange) {
-            return cyclones;
-        }
-        
-        return cyclones.filter(c => 
-            c.year >= this.yearRange.min && c.year <= this.yearRange.max
-        );
-    }
-
-    updateEnsembleSelector() {
-        const ensembleInfo = document.getElementById('ensemble-info');
-        const ensembleSelect = document.getElementById('ensemble-select');
-        const sstSelector = document.getElementById('sst-selector');
-
-        const ensembleLimits = { //TODO notes probably not needed, reconsider i guess lol
-            'current': { max: 100, available: 100, note: '' },
-            '2k': { max: 9, available: 9, note: '' },
-            '4k': { max: 15, available: 15, note: '' }
-        };
-        
-        const limit = ensembleLimits[this.currentScenario];
-
-        ensembleInfo.textContent = limit.note;
-
-        if (this.currentScenario === '2k' || this.currentScenario === '4k') {
-            sstSelector.style.display = 'flex';
-        } else {
-            sstSelector.style.display = 'none';
-        }
-
-        const currentValue = parseInt(ensembleSelect.value);
-        ensembleSelect.innerHTML = '';
-        
-        for (let i = 1; i <= Math.min(limit.max, 15); i++) { 
-            const option = document.createElement('option');
-            option.value = i;
-            option.textContent = `Ensemble ${i}`;
-            ensembleSelect.appendChild(option);
-        }
-
-        if (currentValue <= limit.max) {
-            ensembleSelect.value = currentValue;
-        } else {
-            ensembleSelect.value = 1;
-            this.currentEnsemble = 1;
-        }
-    }
     
+    updateYearDisplay() {
+        const yearMinSlider = document.getElementById('year-slider-min');
+        const yearMaxSlider = document.getElementById('year-slider-max');
+        const yearDisplay = document.getElementById('year-display');
+        
+        if (this.showDensityHeatmap) {
+            yearDisplay.textContent = 'All Years (Density Mode)';
+        } else {
+            const bounds = this.scenarioYearRanges[this.currentScenario];
+            const min = parseInt(yearMinSlider.value);
+            const max = parseInt(yearMaxSlider.value);
+            
+            if (min === bounds.min && max === bounds.max) {
+                yearDisplay.textContent = `${bounds.min} - ${bounds.max}`;
+            } else if (min === max) {
+                yearDisplay.textContent = `Year: ${min}`;
+            } else {
+                yearDisplay.textContent = `${min} - ${max}`;
+            }
+        }
+    }
     
     toggleLayer(layerName, visible) {
         if (layerName === 'heatmap') {
@@ -403,29 +610,22 @@ handleScenarioChange(e) {
         }
     }
     
-
     isInAustralianRegion(lat, lon) {
-
         return lat >= -45 && lat <= -5 && lon >= 105 && lon <= 160;
     }
 
     calculateHeatmapRadius(zoom) {
-
         const baseRadius = 30;
         const baseZoom = 4;
         
-
         const zoomDiff = zoom - baseZoom;
         const scaleFactor = Math.pow(2, zoomDiff);
         
-
         const radius = baseRadius * scaleFactor;
-        //probs should fiddle with this clamp some more
         return Math.max(15, Math.min(200, radius));
     }
 
     calculateHeatmapBlur(zoom) {
-
         const baseBlur = 20;
         const baseZoom = 4;
         
@@ -439,7 +639,7 @@ handleScenarioChange(e) {
 
     redrawHeatmap() {
         if (!this.heatmapData || this.heatmapData.length === 0) return;
-
+        
         if (this.layers.heatmap) {
             this.map.removeLayer(this.layers.heatmap);
         }
@@ -447,7 +647,7 @@ handleScenarioChange(e) {
         const currentZoom = this.map.getZoom();
         const radius = this.calculateHeatmapRadius(currentZoom);
         const blur = this.calculateHeatmapBlur(currentZoom);
-
+        
         this.layers.heatmap = L.heatLayer(this.heatmapData, {
             radius: radius,
             blur: blur,
@@ -460,7 +660,244 @@ handleScenarioChange(e) {
         this.layers.heatmap.addTo(this.map);
     }
     
-    //TODO as above, zoom-locked heatmap bodge
+    createDensityHeatmap(cyclones) {
+        //TODO i dont exactly like how this turns out. need to have a deeper tweak
+        if (this.layers.heatmap) {
+            this.map.removeLayer(this.layers.heatmap);
+        }
+
+        this.layers.tracks.clearLayers();
+        this.layers.genesis.clearLayers();
+        this.layers.intensity.clearLayers();
+
+        const heatData = [];
+        const gridSize = 1.0; 
+        const densityGrid = {};
+        
+        let yearMin, yearMax;
+        if (this.currentScenario === 'current') {
+            yearMin = 1951;
+            yearMax = 2011;
+        } else if (this.currentScenario === '2k') {
+            yearMin = 2031;
+            yearMax = 2090;
+        } else if (this.currentScenario === '4k') {
+            yearMin = 2051;
+            yearMax = 2110;
+        }
+        const totalYears = yearMax - yearMin + 1;
+        
+        cyclones.forEach(cyclone => {
+            if (!cyclone.track || cyclone.track.length === 0) return;
+            
+            if (cyclone.maxCategory < 1) return;
+            
+            const visitedCells = new Set();
+            
+            cyclone.track.forEach(point => {
+                if (this.filterAustralia && !this.isInAustralianRegion(point.lat, point.lon)) {
+                    return;
+                }
+                
+                if (point.category < 1) return;
+                
+                const gridLat = Math.floor(point.lat / gridSize) * gridSize;
+                const gridLon = Math.floor(point.lon / gridSize) * gridSize;
+                const cellKey = `${gridLat},${gridLon}`;
+                
+                const cycloneCellKey = `${cyclone.id}_${cellKey}`;
+                if (!visitedCells.has(cycloneCellKey)) {
+                    visitedCells.add(cycloneCellKey);
+                    
+                    if (!densityGrid[cellKey]) {
+                        densityGrid[cellKey] = {
+                            lat: gridLat + gridSize / 2,
+                            lon: gridLon + gridSize / 2,
+                            count: 0
+                        };
+                    }
+                    densityGrid[cellKey].count++;
+                }
+            });
+        });
+        
+        let maxDensity = 0;
+        Object.values(densityGrid).forEach(cell => {
+            const annualDensity = cell.count / totalYears;
+            maxDensity = Math.max(maxDensity, annualDensity);
+            
+            heatData.push([cell.lat, cell.lon, annualDensity]);
+            
+            const offset = gridSize / 3;
+            const surroundingOffsets = [
+                [offset, 0], [-offset, 0], [0, offset], [0, -offset],
+                [offset, offset], [-offset, offset], [offset, -offset], [-offset, -offset]
+            ];
+            
+            surroundingOffsets.forEach(([latOff, lonOff]) => {
+                heatData.push([cell.lat + latOff, cell.lon + lonOff, annualDensity * 0.7]);
+            });
+        });
+        
+        //TODO maybe tweak colours?
+        const gradient = {
+            0.0: 'rgba(255, 255, 255, 0)',
+            0.1: 'rgba(254, 235, 226, 0.6)',
+            0.2: 'rgba(252, 197, 192, 0.7)',
+            0.3: 'rgba(250, 159, 181, 0.8)',
+            0.4: 'rgba(247, 104, 161, 0.85)',
+            0.5: 'rgba(221, 52, 151, 0.9)',
+            0.6: 'rgba(174, 1, 126, 0.95)',
+            0.8: 'rgba(122, 1, 119, 1)',
+            1.0: 'rgba(73, 0, 106, 1)'
+        };
+        
+        const currentZoom = this.map.getZoom();
+        const baseRadius = 40;
+        const radius = baseRadius * Math.pow(2, (currentZoom - 4) * 0.5);
+        const blur = 20 + (currentZoom - 4) * 2;
+        
+        this.layers.heatmap = L.heatLayer(heatData, {
+            radius: Math.min(100, Math.max(20, radius)),
+            blur: Math.min(35, Math.max(15, blur)),
+            maxZoom: 17,
+            max: maxDensity > 0 ? maxDensity : 1,
+            gradient: gradient,
+            minOpacity: 0.4
+        });
+        
+        this.layers.heatmap.addTo(this.map);
+        
+        this.heatmapConfig = {
+            baseRadius: baseRadius,
+            data: heatData,
+            gradient: gradient,
+            maxValue: maxDensity
+        };
+        
+        this.updateDensityLegend(maxDensity, totalYears);
+        
+        const comparisonPanel = document.getElementById('scenario-comparison');
+        if (comparisonPanel) {
+            comparisonPanel.classList.add('active');
+            
+            const metrics = this.calculateDensityMetrics(cyclones, totalYears);
+            this.updateDensityComparisonPanel(metrics);
+        }
+    }
+    
+    calculateDensityMetrics(cyclones, totalYears) {
+        const cat1Plus = cyclones.filter(c => c.maxCategory >= 1).length;
+        const avgPerYear = (cat1Plus / totalYears).toFixed(2);
+        
+        const genesisCounts = {};
+        cyclones.forEach(cyclone => {
+            if (cyclone.maxCategory >= 1) {
+                const lat = Math.floor(cyclone.genesis_lat / 5) * 5;
+                const lon = Math.floor(cyclone.genesis_lon / 5) * 5;
+                const key = `${lat},${lon}`;
+                genesisCounts[key] = (genesisCounts[key] || 0) + 1;
+            }
+        });
+        
+        const maxGenesisCount = Math.max(...Object.values(genesisCounts), 0);
+        const avgGenesisPerCell = Object.values(genesisCounts).reduce((a, b) => a + b, 0) / Object.keys(genesisCounts).length || 0;
+        
+        return {
+            totalCat1Plus: cat1Plus,
+            avgPerYear: avgPerYear,
+            maxGenesisCount: maxGenesisCount,
+            avgGenesisPerCell: avgGenesisPerCell.toFixed(2),
+            totalYears: totalYears
+        };
+    }
+    
+    updateDensityLegend(maxDensity) {
+        let densityLegend = document.getElementById('density-legend');
+        if (!densityLegend) {
+            densityLegend = document.createElement('div');
+            densityLegend.id = 'density-legend';
+            densityLegend.className = 'legend-box';
+            document.getElementById('legend').appendChild(densityLegend);
+        }
+        
+        const scenarioInfo = {
+            'current': 'Historical Baseline (1951-2011)',
+            '2k': '+2K Warming Scenario (2031-2090)',
+            '4k': '+4K Warming Scenario (2051-2110)'
+        };
+        
+        const legendValues = [0, 0.25, 0.5, 0.75, 1.0].map(v => (v * maxDensity).toFixed(2));
+        
+        densityLegend.innerHTML = `
+            <h4>TC Density (Cat 1+/year)</h4>
+            <p style="font-size: 12px; margin: 5px 0;">${scenarioInfo[this.currentScenario]}</p>
+            <div class="heatmap-gradient">
+                <div class="gradient-bar" style="background: linear-gradient(to right, 
+                    rgba(255, 255, 255, 0) 0%,
+                    rgba(254, 235, 226, 0.8) 10%,
+                    rgba(252, 197, 192, 0.9) 20%,
+                    rgba(250, 159, 181, 0.95) 35%,
+                    rgba(247, 104, 161, 1) 50%,
+                    rgba(221, 52, 151, 1) 65%,
+                    rgba(174, 1, 126, 1) 80%,
+                    rgba(122, 1, 119, 1) 90%,
+                    rgba(73, 0, 106, 1) 100%
+                );"></div>
+                <div class="gradient-labels">
+                    <span>0</span>
+                    <span>${legendValues[1]}</span>
+                    <span>${legendValues[2]}</span>
+                    <span>${legendValues[3]}</span>
+                    <span>${legendValues[4]}</span>
+                </div>
+            </div>
+            <p style="font-size: 11px; margin-top: 10px; font-style: italic;">
+                Annual density of Category 1+ cyclones.<br>
+                Compare scenarios to see spatial shifts.
+            </p>
+        `;
+        
+        densityLegend.style.display = this.showDensityHeatmap ? 'block' : 'none';
+        
+        const heatmapLegend = document.getElementById('heatmap-legend');
+        if (heatmapLegend) {
+            heatmapLegend.style.display = 'none';
+        }
+    }
+    
+    updateDensityComparisonPanel(metrics) {
+        const panel = document.getElementById('scenario-comparison');
+        if (!panel) return;
+        
+        const content = document.getElementById('comparison-content');
+        
+        panel.classList.add('active');
+        
+        content.innerHTML = `
+            <div class="comparison-item">
+                <div class="scenario-label">${this.currentScenario === 'current' ? 'Historical' : '+' + this.currentScenario.toUpperCase() + ' Warming'}</div>
+                <div class="metric">Period: ${metrics.totalYears} years</div>
+                <div class="metric">Cat 1+ Cyclones: ${metrics.totalCat1Plus}</div>
+                <div class="metric">Average per Year: ${metrics.avgPerYear}</div>
+                <div class="metric">Peak Genesis Density: ${metrics.maxGenesisCount}</div>
+                <div class="metric">Avg Genesis per Cell: ${metrics.avgGenesisPerCell}</div>
+            </div>
+            <p style="font-size: 11px; color: #666; margin-top: 10px;">
+                ${this.getDensityScenarioInsight()}
+            </p>
+        `;
+    }
+    
+    getDensityScenarioInsight() {
+        const insights = {
+            'current': 'Historical cyclone density patterns showing natural distribution.',
+            '2k': 'Moderate warming shows shifts in cyclone density and genesis regions.',
+            '4k': 'Severe warming reveals significant changes in spatial cyclone distribution.'
+        };
+        return insights[this.currentScenario] || '';
+    }
+    
     createHeatmap(cyclones) {
         if (this.layers.heatmap) {
             this.map.removeLayer(this.layers.heatmap);
@@ -471,6 +908,9 @@ handleScenarioChange(e) {
         this.layers.intensity.clearLayers();
 
         const heatData = [];
+        
+        const currentZoom = this.map.getZoom();
+        const zoomFactor = Math.pow(1.5, currentZoom - 4);
         
         cyclones.forEach(cyclone => {
             if (!cyclone.track || cyclone.track.length === 0) return;
@@ -487,27 +927,40 @@ handleScenarioChange(e) {
                 
                 heatData.push([point.lat, point.lon, weight]);
                 
-                // Add interpolation between points for smoother visualization
                 if (i < cyclone.track.length - 1) {
                     const nextPoint = cyclone.track[i + 1];
+                    
                     const latDiff = Math.abs(nextPoint.lat - point.lat);
                     const lonDiff = Math.abs(nextPoint.lon - point.lon);
                     const distance = Math.sqrt(latDiff * latDiff + lonDiff * lonDiff);
                     
-                    if (distance < 5) {
-                        const interpPoints = Math.min(3, Math.ceil(distance));
+                    if (distance < 5) { // Only interpolate if points are reasonably close
+                        // Number of interpolation points based on distance and zoom
+                        const interpPoints = Math.min(5, Math.ceil(distance * zoomFactor));
                         
                         for (let j = 1; j < interpPoints; j++) {
                             const t = j / interpPoints;
                             const interpLat = point.lat + (nextPoint.lat - point.lat) * t;
                             const interpLon = point.lon + (nextPoint.lon - point.lon) * t;
+                            
                             heatData.push([interpLat, interpLon, weight * 0.8]);
                         }
                     }
                 }
+                
+                const spread = 0.2 / zoomFactor; 
+                const angles = [0, 90, 180, 270]; 
+                
+                angles.forEach(angle => {
+                    const rad = angle * Math.PI / 180;
+                    const offsetLat = point.lat + spread * Math.cos(rad);
+                    const offsetLon = point.lon + spread * Math.sin(rad);
+                    heatData.push([offsetLat, offsetLon, weight * 0.5]);
+                });
             }
         });
         
+        // these need fixing, i dont like the scale
         const gradient = {
             0.0: 'rgba(255, 255, 200, 0.0)',
             0.1: 'rgba(255, 255, 100, 0.3)',
@@ -520,9 +973,14 @@ handleScenarioChange(e) {
             1.0: 'rgba(0, 0, 0, 1.0)'
         };
         
+        //i tried to fix breaking of points with zoom, hasnt quite worked but hey its better
+        const baseRadius = 25;
+        const radius = baseRadius * Math.pow(2, (currentZoom - 4) * 0.7);
+        const blur = 15 + (currentZoom - 4) * 3;
+
         this.layers.heatmap = L.heatLayer(heatData, {
-            radius: 35,
-            blur: 20,
+            radius: Math.min(80, Math.max(15, radius)), 
+            blur: Math.min(40, Math.max(10, blur)),     
             maxZoom: 17,
             max: 1.0,
             gradient: gradient,
@@ -530,7 +988,23 @@ handleScenarioChange(e) {
         });
         
         this.layers.heatmap.addTo(this.map);
+
+        this.heatmapConfig = {
+            baseRadius: baseRadius,
+            data: heatData,
+            gradient: gradient
+        };
+
         this.updateHeatmapLegend();
+
+        //honestly this should just display all the time
+        const comparisonPanel = document.getElementById('scenario-comparison');
+        if (comparisonPanel) {
+            comparisonPanel.classList.add('active');
+            
+            const metrics = this.calculateIntensityMetrics(cyclones);
+            this.updateComparisonPanel(metrics);
+        }
     }
     
     async loadData(forceRefresh = false) {
@@ -547,7 +1021,7 @@ handleScenarioChange(e) {
                 this.showLoading(false);
                 return;
             }
-            
+        
             
             const params = new URLSearchParams({
                 action: 'getCycloneData',
@@ -609,69 +1083,102 @@ handleScenarioChange(e) {
         this.updateDataStatus(statusMsg, 'success');
     }
     
-    updateVisualization() {
-    this.layers.tracks.clearLayers();
-    this.layers.genesis.clearLayers();
-    this.layers.intensity.clearLayers();
-    
-    if (this.layers.heatmap) {
-        this.map.removeLayer(this.layers.heatmap);
-        this.layers.heatmap = null;
-    }
-    
-    this.heatmapConfig = null;
-    
-    const cacheKey = this.currentScenario === 'current' 
+    updateVisualization() {        
+        this.layers.tracks.clearLayers();
+        this.layers.genesis.clearLayers();
+        this.layers.intensity.clearLayers();
+        
+        if (this.layers.heatmap) {
+            this.map.removeLayer(this.layers.heatmap);
+            this.layers.heatmap = null;
+        }
+        
+        this.heatmapConfig = null;
+        
+        const cacheKey = this.currentScenario === 'current' 
             ? `${this.currentScenario}_${this.currentEnsemble}`
             : `${this.currentScenario}_${this.currentEnsemble}_${this.currentSSTModel}`;
         const data = this.cycloneData[cacheKey];
         if (!data || !data.cyclones) return;
         
-        let cyclones = this.filterCyclonesByYear(data.cyclones);
+        let cyclones = data.cyclones;
         
-        const metrics = this.calculateIntensityMetrics(cyclones);
-        this.updateComparisonPanel(metrics, cyclones.length, data.cyclones.length);
-    
 
-    const heatmapCheckbox = document.getElementById('show-heatmap');
-    const isHeatmapMode = heatmapCheckbox && heatmapCheckbox.checked;
-    this.showHeatmap = isHeatmapMode;
+        if (!this.showDensityHeatmap && this.yearRange) {
+            cyclones = cyclones.filter(c => 
+                c.year >= this.yearRange.min && c.year <= this.yearRange.max
+            );
+        }
+        
+        const heatmapCheckbox = document.getElementById('show-heatmap');
+        const densityCheckbox = document.getElementById('show-density-heatmap');
+        const isHeatmapMode = heatmapCheckbox && heatmapCheckbox.checked;
+        const isDensityMode = densityCheckbox && densityCheckbox.checked;
+        this.showHeatmap = isHeatmapMode;
+        this.showDensityHeatmap = isDensityMode;
 
-    const comparisonPanel = document.getElementById('scenario-comparison');
-    if (comparisonPanel) {
-        comparisonPanel.classList.remove('active');
+        const comparisonPanel = document.getElementById('scenario-comparison');
+        if (comparisonPanel) {
+            comparisonPanel.classList.remove('active');
+        }
+        
+        const heatmapLegend = document.getElementById('heatmap-legend');
+        const densityLegend = document.getElementById('density-legend');
+        if (heatmapLegend) heatmapLegend.style.display = 'none';
+        if (densityLegend) densityLegend.style.display = 'none';
+        
+        if (isDensityMode) {
+            this.createDensityHeatmap(cyclones);
+            document.getElementById('map').classList.add('heatmap-active');
+        } else if (isHeatmapMode) {
+            this.createHeatmap(cyclones);
+            document.getElementById('map').classList.add('heatmap-active');
+        } else {
+            document.getElementById('map').classList.remove('heatmap-active');
+            
+            const showTracks = document.getElementById('show-tracks').checked;
+            const showGenesis = document.getElementById('show-genesis').checked;
+            const showIntensity = document.getElementById('show-intensity').checked;
+            
+            cyclones.forEach(cyclone => {
+                if (showTracks) {
+                    this.drawCycloneTrack(cyclone);
+                }
+                if (showGenesis) {
+                    this.drawGenesisPoint(cyclone);
+                }
+                if (showIntensity) {
+                    this.drawIntensityTrack(cyclone);
+                }
+            });
+        }
+        
+        const displayMode = isDensityMode ? 'density heatmap' : (isHeatmapMode ? 'severity heatmap' : 'tracks');
+        console.log(`Showing ${cyclones.length} cyclones in ${displayMode} mode`);
     }
     
-    if (isHeatmapMode) {
- 
-        this.createHeatmap(cyclones);
-        document.getElementById('map').classList.add('heatmap-active');
-    } else {
-
-        document.getElementById('map').classList.remove('heatmap-active');
-        
-
-        const showTracks = document.getElementById('show-tracks').checked;
-        const showGenesis = document.getElementById('show-genesis').checked;
-        const showIntensity = document.getElementById('show-intensity').checked;
-        
-        cyclones.forEach(cyclone => {
-            if (showTracks) {
-                this.drawCycloneTrack(cyclone);
-            }
-            if (showGenesis) {
-                this.drawGenesisPoint(cyclone);
-            }
-            if (showIntensity) {
-                this.drawIntensityTrack(cyclone);
-            }
-        });
+    showZoomLockNotice() {
+        if (!document.getElementById('zoom-lock-notice')) {
+            const notice = document.createElement('div');
+            notice.id = 'zoom-lock-notice';
+            notice.className = 'zoom-lock-notice';
+            notice.innerHTML = `
+                <div class="notice-content">
+                    <span class="notice-icon">🔒</span>
+                    <span>Zoom is locked in heatmap view for optimal visualization</span>
+                </div>
+            `;
+            document.getElementById('map').appendChild(notice);
+        }
     }
-    
-    const displayMode = isHeatmapMode ? 'heatmap' : 'tracks';
-    console.log(`Showing ${cyclones.length} cyclones in ${displayMode} mode`);
-}
-    
+
+    removeZoomLockNotice() {
+        const notice = document.getElementById('zoom-lock-notice');
+        if (notice) {
+            notice.remove();
+        }
+    }
+
     drawCycloneTrack(cyclone) {
         if (!cyclone.track || cyclone.track.length < 2) return;
         
@@ -814,12 +1321,12 @@ handleScenarioChange(e) {
         if (!document.getElementById('scenario-comparison')) {
             const panel = document.createElement('div');
             panel.id = 'scenario-comparison';
-            panel.className = 'scenario-comparison active';
+            panel.className = 'scenario-comparison';
             panel.innerHTML = `
-                <h4>Scenario Analysis</h4>
+                <h4>Scenario Comparison</h4>
                 <div id="comparison-content">
                     <p style="font-size: 12px; color: #666;">
-                        Loading cyclone data...
+                        Switch between scenarios to compare TC severity patterns
                     </p>
                 </div>
             `;
@@ -854,10 +1361,9 @@ handleScenarioChange(e) {
                     <span>Extreme</span>
                 </div>
             </div>
-            <p style="font-size: 11px; margin-top: 10px;">
-                Colors represent cyclone intensity-weighted density.<br>
-                Combines frequency (tracks) × intensity (category).<br>
-                Darker = more frequent and/or stronger cyclones.
+            <p style="font-size: 11px; margin-top: 10px; font-style: italic;">
+                Colors show average cyclone severity.<br>
+                Compare scenarios to see warming impact.
             </p>
         `;
         
@@ -891,7 +1397,7 @@ handleScenarioChange(e) {
         return metrics;
     }
     
-    updateComparisonPanel(metrics, displayedCount, totalCount) {
+    updateComparisonPanel(metrics) {
         const panel = document.getElementById('scenario-comparison');
         if (!panel) return;
         
@@ -899,44 +1405,19 @@ handleScenarioChange(e) {
         
         panel.classList.add('active');
         
-        const yearRangeText = this.yearRange 
-            ? `${this.yearRange.min} - ${this.yearRange.max}` 
-            : '';
-        
-        const filteredText = displayedCount < totalCount 
-            ? ` of ${totalCount}` 
-            : '';
-        
         content.innerHTML = `
             <div class="comparison-item">
-                <div class="scenario-label">${this.currentScenario === 'current' ? 'Historical' : '+' + this.currentScenario.toUpperCase() + ' Warming'} ${yearRangeText}</div>
-                <div class="metric">Displayed Cyclones: ${displayedCount}${filteredText}</div>
-                <div class="metric">Severe (Cat 3+): ${metrics.severeCyclones} (${metrics.totalCyclones > 0 ? ((metrics.severeCyclones/metrics.totalCyclones)*100).toFixed(1) : 0}%)</div>
+                <div class="scenario-label">${this.currentScenario === 'current' ? 'Historical' : '+' + this.currentScenario.toUpperCase() + ' Warming'}</div>
+                <div class="metric">Total Cyclones: ${metrics.totalCyclones}</div>
+                <div class="metric">Severe (Cat 3+): ${metrics.severeCyclones} (${((metrics.severeCyclones/metrics.totalCyclones)*100).toFixed(1)}%)</div>
                 <div class="metric">Avg Category: ${metrics.avgMaxCategory}</div>
                 <div class="metric">Max Wind: ${metrics.maxWindSpeed} km/h</div>
                 <div class="metric">Landfalls: ${metrics.landfallCount}</div>
-                <div class="metric">Annual Average: ${this.calculateAnnualAverage(displayedCount).toFixed(1)}</div>
             </div>
             <p style="font-size: 11px; color: #666; margin-top: 10px;">
                 ${this.getScenarioInsight()}
             </p>
         `;
-    }
-
-    calculateAnnualAverage(cycloneCount) {
-        if (!this.yearRange) {
-            //TODO I have a bad feeling about this code's ability to work, but we'll see
-            const ranges = {
-                'current': 60, // 2011 - 1951 + 1
-                '2k': 60,      // 2090 - 2031 + 1
-                '4k': 60       // 2110 - 2051 + 1
-            };
-            return cycloneCount / ranges[this.currentScenario];
-        } else {
-            // Use selected range
-            const years = this.yearRange.max - this.yearRange.min + 1;
-            return cycloneCount / years;
-        }
     }
     
     getScenarioInsight() {
