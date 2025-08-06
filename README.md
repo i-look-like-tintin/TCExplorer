@@ -1,5 +1,5 @@
 # Tropical Cyclone Track Visualization Prototype
-# Version 0.7.6
+# Version 0.8.0
 This is designed to be run through XAMPP, and then launched in the browser as localhost/YOUR_PROJECT_DIRECTORY_INSIDE_HTDOCS/index.html
 Any issues with this, hit me up. The instructions below may not be super accurate, but I have implemented/tested it through Linux, Windows, and MacOS so happy to help you get it running if needed.
 -May
@@ -11,13 +11,13 @@ Any issues with this, hit me up. The instructions below may not be super accurat
 - Add additional data to TC selection pop-up
 - ~~Remove sample data functionality - no longer needed with data curl working~~
 - ~~Fix heatmap display~~
-- Density and frequency maps. Include a unit converted to something / per year. Allows for experiment comparison – defined unit for everything
+- ~~Density and frequency maps. Include a unit converted to something / per year. Allows for experiment comparison – defined unit for everything~~ This is done, but I dont love it. I will tweak and adjust.
 
 ## Other Needs:
 - Validate data (I have only partially validated curled TC D4PDF data checking speeds and pressures - May)
 
 ## Client Notes:
-- Density and frequency maps. Include a unit converted to something / per year. Allows for experiment comparison – defined unit for everything.  <-- In progress - May
+- Density and frequency maps. Include a unit converted to something / per year. Allows for experiment comparison – defined unit for everything.  <-- ~~In progress - May~~ Complete, but needs tweak.
 -  Genesis locations - Refine and include a much more accurate genesis location when cyclone speed reaching 34 knots (17m/s). Ignore path prior to genesis.  
 
 - Checks to see how the genesis will change as the warming increases.  
