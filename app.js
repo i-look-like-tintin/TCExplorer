@@ -749,15 +749,15 @@ class TCVisualization {
         
         //TODO maybe tweak colours?
         const gradient = {
-            0.0: 'rgba(255, 255, 255, 0)',
-            0.1: 'rgba(254, 235, 226, 0.6)',
-            0.2: 'rgba(252, 197, 192, 0.7)',
-            0.3: 'rgba(250, 159, 181, 0.8)',
-            0.4: 'rgba(247, 104, 161, 0.85)',
-            0.5: 'rgba(221, 52, 151, 0.9)',
-            0.6: 'rgba(174, 1, 126, 0.95)',
-            0.8: 'rgba(122, 1, 119, 1)',
-            1.0: 'rgba(73, 0, 106, 1)'
+            0.0: 'rgba(111, 0, 255, 0.27)',
+            0.1: 'rgba(68, 0, 255, 0.4)',
+            0.2: 'rgba(0, 47, 255, 0.57)',
+            0.3: 'rgba(0, 152, 253, 0.72)',
+            0.4: 'rgba(0, 225, 255, 0.8)',
+            0.5: 'rgba(0, 255, 191, 0.82)',
+            0.6: 'rgba(0, 255, 42, 0.95)',
+            0.8: 'rgb(185, 206, 0)',
+            1.0: 'rgb(255, 102, 0)'
         };
         
         const currentZoom = this.map.getZoom();
@@ -842,15 +842,15 @@ class TCVisualization {
             <p style="font-size: 12px; margin: 5px 0;">${scenarioInfo[this.currentScenario]}</p>
             <div class="heatmap-gradient">
                 <div class="gradient-bar" style="background: linear-gradient(to right, 
-                    rgba(255, 255, 255, 0) 0%,
-                    rgba(254, 235, 226, 0.8) 10%,
-                    rgba(252, 197, 192, 0.9) 20%,
-                    rgba(250, 159, 181, 0.95) 35%,
-                    rgba(247, 104, 161, 1) 50%,
-                    rgba(221, 52, 151, 1) 65%,
-                    rgba(174, 1, 126, 1) 80%,
-                    rgba(122, 1, 119, 1) 90%,
-                    rgba(73, 0, 106, 1) 100%
+                    rgba(111, 0, 255, 0.27) 0%,
+                    rgba(68, 0, 255, 0.4) 10%,
+                    rgba(0, 47, 255, 0.57) 20%,
+                    rgba(0, 152, 253, 0.72) 35%,
+                    rgba(0, 225, 255, 0.8) 50%,
+                    rgba(0, 255, 191, 0.82) 65%,
+                    rgba(0, 255, 42, 0.95) 80%,
+                    rgba(185, 206, 0, 1) 90%,
+                    rgba(255, 102, 0, 1) 100%
                 );"></div>
                 <div class="gradient-labels">
                     <span>0</span>
