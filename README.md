@@ -22,7 +22,7 @@ Any issues with this, hit me up. The instructions below may not be super accurat
 
 ## Client Notes:
 - ~~Density and frequency maps. Include a unit converted to something / per year. Allows for experiment comparison – defined unit for everything.~~
--  Genesis locations - Refine and include a much more accurate genesis location when cyclone speed reaching 34 knots (17m/s). Ignore path prior to genesis. <-- In progress - May 
+-  Genesis locations - Refine and include a much more accurate genesis location when cyclone speed reaching 34 knots (17m/s). Ignore path prior to genesis. <-- In progress - Markey
 
 - Checks to see how the genesis will change as the warming increases.  
 
