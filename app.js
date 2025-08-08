@@ -1,31 +1,57 @@
 class TCVisualization {
     constructor() {
+        // Core map and data properties
         this.map = null;
+        this.cycloneData = {};
+        this.selectedCyclone = null;
+        
+        // Current state settings
         this.currentScenario = 'current';
         this.currentEnsemble = 1;
         this.currentSSTModel = 'CC';
-        this.cycloneData = {};
+        this.filterAustralia = true;
+        this.yearRange = null;
+        
+        // Visualization state
+        this.showHeatmap = false;
+        this.showDensityHeatmap = false;
+        this.heatmapData = null;
+        this.heatmapConfig = null;
+        
+        // Map state for heatmap mode
+        this.heatmapZoomLevel = 4;
+        this.currentZoom = 4;
+        this.previousZoom = null;
+        this.previousCenter = null;
+        
+        // Layer groups for different visualization types
         this.layers = {
             tracks: L.layerGroup(),
             genesis: L.layerGroup(),
             intensity: L.layerGroup(),
             heatmap: null
         };
-        this.selectedCyclone = null;
-        this.filterAustralia = true;
-        this.yearRange = null;
-        this.scenarioYearRanges = {
+        
+        // Configuration constants
+        this.SCENARIO_YEAR_RANGES = {
             'current': { min: 1951, max: 2011 },
             '2k': { min: 2031, max: 2090 },
             '4k': { min: 2051, max: 2110 }
         };
-        this.heatmapZoomLevel = 4;
-        this.previousZoom = null;
-        this.previousCenter = null;
-        this.showHeatmap = false;
-        this.showDensityHeatmap = false;
-        this.heatmapData = null; 
-        this.currentZoom = 4; 
+        
+        // Australia center coordinates for map initialization
+        this.AUSTRALIA_CENTER = [-25.2744, 133.7751];
+        this.DEFAULT_ZOOM = 4;
+        
+        // Color schemes for visualization
+        this.CATEGORY_COLORS = {
+            0: '#999999',  // Depression/Low
+            1: '#1f78b4',  // Category 1
+            2: '#33a02c',  // Category 2
+            3: '#ff7f00',  // Category 3
+            4: '#e31a1c',  // Category 4
+            5: '#6a3d9a'   // Category 5
+        };
         
         this.init();
     }
@@ -40,19 +66,27 @@ class TCVisualization {
     }
     
     initMap() {
-        this.map = L.map('map').setView([-25.2744, 133.7751], 4);
+        this.map = L.map('map').setView(this.AUSTRALIA_CENTER, this.DEFAULT_ZOOM);
         
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
             attribution: '© OpenStreetMap contributors | Data: d4PDF'
         }).addTo(this.map);
         
+        // Add layer groups to map
         this.layers.tracks.addTo(this.map);
         this.layers.genesis.addTo(this.map);
         this.layers.intensity.addTo(this.map);
         
         this.addAustraliaBoundaries();
-        
+        this.setupMapZoomHandlers();
+    }
+
+    /**
+     * Sets up zoom event handlers for heatmap responsiveness
+     */
+    setupMapZoomHandlers() {
         let zoomTimeout;
+        
         this.map.on('zoomstart', () => {
             if (this.layers.heatmap) {
                 this.map.getContainer().classList.add('zooming');
@@ -62,40 +96,47 @@ class TCVisualization {
         this.map.on('zoomend', () => {
             clearTimeout(zoomTimeout);
             zoomTimeout = setTimeout(() => {
-                if ((this.showHeatmap || this.showDensityHeatmap) && this.heatmapConfig) {
-                    const currentZoom = this.map.getZoom();
-                    const radius = this.heatmapConfig.baseRadius * Math.pow(2, (currentZoom - 4) * 0.7);
-                    const blur = 15 + (currentZoom - 4) * 3;
-                    
-                    if (this.layers.heatmap) {
-                        this.map.removeLayer(this.layers.heatmap);
-                    }
-                    
-                    const heatmapOptions = {
-                        radius: Math.min(80, Math.max(15, radius)),
-                        blur: Math.min(40, Math.max(10, blur)),
-                        maxZoom: 17,
-                        max: this.heatmapConfig.maxValue || 1.0,
-                        gradient: this.heatmapConfig.gradient,
-                        minOpacity: this.showDensityHeatmap ? 0.4 : 0.3
-                    };
-                    
-                    this.layers.heatmap = L.heatLayer(this.heatmapConfig.data, heatmapOptions);
-                    
-                    this.layers.heatmap.addTo(this.map);
-                }
-                
+                this.handleZoomEndForHeatmap();
                 this.map.getContainer().classList.remove('zooming');
             }, 100);
         });
     }
 
+    /**
+     * Handles heatmap updates when zoom level changes
+     */
+    handleZoomEndForHeatmap() {
+        if ((this.showHeatmap || this.showDensityHeatmap) && this.heatmapConfig) {
+            const currentZoom = this.map.getZoom();
+            const radius = this.heatmapConfig.baseRadius * Math.pow(2, (currentZoom - 4) * 0.7);
+            const blur = 15 + (currentZoom - 4) * 3;
+            
+            if (this.layers.heatmap) {
+                this.map.removeLayer(this.layers.heatmap);
+            }
+            
+            const heatmapOptions = {
+                radius: Math.min(80, Math.max(15, radius)),
+                blur: Math.min(40, Math.max(10, blur)),
+                maxZoom: 17,
+                max: this.heatmapConfig.maxValue || 1.0,
+                gradient: this.heatmapConfig.gradient,
+                minOpacity: this.showDensityHeatmap ? 0.4 : 0.3
+            };
+            
+            this.layers.heatmap = L.heatLayer(this.heatmapConfig.data, heatmapOptions);
+            this.layers.heatmap.addTo(this.map);
+        }
+    }
+
     
+    /**
+     * Adds Australia country boundaries to the map
+     */
     addAustraliaBoundaries() {
         fetch('https://raw.githubusercontent.com/nvkelso/natural-earth-vector/master/geojson/ne_50m_admin_0_countries.geojson')
             .then(response => response.json())
             .then(data => {
-                // Find Australia in the features
                 const australia = data.features.find(f => f.properties.NAME === 'Australia');
                 
                 if (australia) {
@@ -112,13 +153,14 @@ class TCVisualization {
             })
             .catch(error => {
                 console.error('Failed to load Australia boundaries:', error);
-                // Fallback to simplified polygon - its pretty terrible tho so could probs remove
                 this.addSimplifiedAustraliaBoundaries();
             });
     }
     
+    /**
+     * Fallback method to add simplified Australia boundaries
+     */
     addSimplifiedAustraliaBoundaries() {
-        // Simplified Australia polygon  -again, pretty terrible
         const australiaBounds = [
             [-10.6, 113.3], [-13.7, 130.8], [-12.5, 136.7], [-14.5, 145.4],
             [-18.3, 146.3], [-24.5, 153.6], [-32.5, 152.5], [-37.5, 149.9],
@@ -257,7 +299,7 @@ class TCVisualization {
                 const yearMinSlider = document.getElementById('year-slider-min');
                 const yearMaxSlider = document.getElementById('year-slider-max');
                 const yearDisplay = document.getElementById('year-display');
-                const bounds = this.scenarioYearRanges[this.currentScenario];
+                const bounds = this.SCENARIO_YEAR_RANGES[this.currentScenario];
                 
                 yearMinSlider.disabled = true;
                 yearMaxSlider.disabled = true;
@@ -445,7 +487,7 @@ class TCVisualization {
             let min = parseInt(yearMinSlider.value);
             let max = parseInt(yearMaxSlider.value);
             
-            const bounds = this.scenarioYearRanges[this.currentScenario];
+            const bounds = this.SCENARIO_YEAR_RANGES[this.currentScenario];
             
             min = Math.max(bounds.min, Math.min(bounds.max, min));
             max = Math.max(bounds.min, Math.min(bounds.max, max));
@@ -514,9 +556,7 @@ class TCVisualization {
         this.currentScenario = e.target.dataset.scenario;
         
         this.updateEnsembleSelector();
-        
         this.updateYearSlider();
-        
         this.loadData();
     }
     
@@ -564,7 +604,7 @@ class TCVisualization {
         const yearMaxSlider = document.getElementById('year-slider-max');
         const yearDisplay = document.getElementById('year-display');
         
-        const bounds = this.scenarioYearRanges[this.currentScenario];
+        const bounds = this.SCENARIO_YEAR_RANGES[this.currentScenario];
         
         yearMinSlider.min = bounds.min;
         yearMinSlider.max = bounds.max;
@@ -588,7 +628,7 @@ class TCVisualization {
         if (this.showDensityHeatmap) {
             yearDisplay.textContent = 'All Years (Density Mode)';
         } else {
-            const bounds = this.scenarioYearRanges[this.currentScenario];
+            const bounds = this.SCENARIO_YEAR_RANGES[this.currentScenario];
             const min = parseInt(yearMinSlider.value);
             const max = parseInt(yearMaxSlider.value);
             
@@ -668,8 +708,11 @@ class TCVisualization {
         this.layers.heatmap.addTo(this.map);
     }
     
+    /**
+     * Creates a density heatmap showing cyclone frequency patterns
+     * @param {Array} cyclones - Array of cyclone data
+     */
     createDensityHeatmap(cyclones) {
-        //TODO i dont exactly like how this turns out. need to have a deeper tweak
         if (this.layers.heatmap) {
             this.map.removeLayer(this.layers.heatmap);
         }
@@ -700,9 +743,23 @@ class TCVisualization {
             
             if (cyclone.maxCategory < 1) return;
             
+            // Find the actual genesis point
+            const genesisPoint = this.findGenesisPoint(cyclone);
+            if (!genesisPoint) return;
+            
+            // Find the index of the genesis point in the track
+            let startIndex = 0;
+            for (let i = 0; i < cyclone.track.length; i++) {
+                if (cyclone.track[i] === genesisPoint) {
+                    startIndex = i;
+                    break;
+                }
+            }
+            
             const visitedCells = new Set();
             
-            cyclone.track.forEach(point => {
+            // Only process points from genesis onwards
+            cyclone.track.slice(startIndex).forEach(point => {
                 if (this.filterAustralia && !this.isInAustralianRegion(point.lat, point.lon)) {
                     return;
                 }
@@ -747,7 +804,7 @@ class TCVisualization {
             });
         });
         
-        //TODO maybe tweak colours?
+        // Density heatmap color gradient (purple to orange)
         const gradient = {
             0.0: 'rgba(111, 0, 255, 0.27)',
             0.1: 'rgba(68, 0, 255, 0.4)',
@@ -923,7 +980,21 @@ class TCVisualization {
         cyclones.forEach(cyclone => {
             if (!cyclone.track || cyclone.track.length === 0) return;
 
+            // Find the actual genesis point
+            const genesisPoint = this.findGenesisPoint(cyclone);
+            if (!genesisPoint) return;
+            
+            // Find the index of the genesis point in the track
+            let startIndex = 0;
             for (let i = 0; i < cyclone.track.length; i++) {
+                if (cyclone.track[i] === genesisPoint) {
+                    startIndex = i;
+                    break;
+                }
+            }
+
+            // Only process points from genesis onwards
+            for (let i = startIndex; i < cyclone.track.length; i++) {
                 const point = cyclone.track[i];
 
                 if (this.filterAustralia && !this.isInAustralianRegion(point.lat, point.lon)) {
@@ -1162,7 +1233,7 @@ class TCVisualization {
         }
         
         const displayMode = isDensityMode ? 'density heatmap' : (isHeatmapMode ? 'severity heatmap' : 'tracks');
-        console.log(`Showing ${cyclones.length} cyclones in ${displayMode} mode`);
+        //console.log(`Showing ${cyclones.length} cyclones in ${displayMode} mode`);
     }
     
     showZoomLockNotice() {
@@ -1187,10 +1258,20 @@ class TCVisualization {
         }
     }
 
+    /**
+     * Draws cyclone track on map starting from genesis point
+     * @param {Object} cyclone - Cyclone data with track points
+     */
     drawCycloneTrack(cyclone) {
         if (!cyclone.track || cyclone.track.length < 2) return;
         
-        const latlngs = cyclone.track.map(point => [point.lat, point.lon]);
+        const genesisPoint = this.findGenesisPoint(cyclone);
+        if (!genesisPoint) return;
+        
+        const startIndex = this.findGenesisIndex(cyclone, genesisPoint);
+        if (startIndex >= cyclone.track.length - 1) return;
+        
+        const latlngs = cyclone.track.slice(startIndex).map(point => [point.lat, point.lon]);
         
         const polyline = L.polyline(latlngs, {
             color: this.getTrackColor(cyclone.maxCategory),
@@ -1199,14 +1280,34 @@ class TCVisualization {
         });
         
         polyline.on('click', () => this.showCycloneInfo(cyclone));
-        
         this.layers.tracks.addLayer(polyline);
     }
+
+    /**
+     * Finds the index of genesis point in the cyclone track
+     * @param {Object} cyclone - Cyclone data
+     * @param {Object} genesisPoint - Genesis point object
+     * @returns {number} Index of genesis point
+     */
+    findGenesisIndex(cyclone, genesisPoint) {
+        for (let i = 0; i < cyclone.track.length; i++) {
+            if (cyclone.track[i] === genesisPoint) {
+                return i;
+            }
+        }
+        return 0;
+    }
     
+    /**
+     * Draws genesis point marker on map
+     * @param {Object} cyclone - Cyclone data
+     */
     drawGenesisPoint(cyclone) {
         if (!cyclone.track || cyclone.track.length === 0) return;
         
-        const genesis = cyclone.track[0];
+        const genesis = this.findGenesisPoint(cyclone);
+        if (!genesis) return;
+        
         const marker = L.circleMarker([genesis.lat, genesis.lon], {
             radius: 6,
             fillColor: '#e74c3c',
@@ -1215,15 +1316,28 @@ class TCVisualization {
             fillOpacity: 0.8
         });
         
-        marker.bindPopup(`<strong>${cyclone.name}</strong><br>Genesis: ${genesis.date}<br>Year: ${cyclone.year}`);
+        marker.bindPopup(
+            `<strong>${cyclone.name}</strong><br>` +
+            `Genesis: ${genesis.date || 'N/A'}<br>` +
+            `Year: ${cyclone.year}`
+        );
         
         this.layers.genesis.addLayer(marker);
     }
     
+    /**
+     * Draws intensity track with color-coded segments
+     * @param {Object} cyclone - Cyclone data
+     */
     drawIntensityTrack(cyclone) {
         if (!cyclone.track || cyclone.track.length < 2) return;
         
-        for (let i = 0; i < cyclone.track.length - 1; i++) {
+        const genesisPoint = this.findGenesisPoint(cyclone);
+        if (!genesisPoint) return;
+        
+        const startIndex = this.findGenesisIndex(cyclone, genesisPoint);
+        
+        for (let i = startIndex; i < cyclone.track.length - 1; i++) {
             const start = cyclone.track[i];
             const end = cyclone.track[i + 1];
             
@@ -1240,18 +1354,20 @@ class TCVisualization {
         }
     }
     
+    /**
+     * Gets color for cyclone track based on maximum category
+     * @param {number} category - Maximum category of cyclone
+     * @returns {string} Hex color code
+     */
     getTrackColor(category) {
-        const colors = {
-            0: '#999999', 
-            1: '#1f78b4',
-            2: '#33a02c',
-            3: '#ff7f00',
-            4: '#e31a1c',
-            5: '#6a3d9a'
-        };
-        return colors[category] || '#666666';
+        return this.CATEGORY_COLORS[category] || '#666666';
     }
     
+    /**
+     * Gets color for intensity visualization
+     * @param {number} category - Category at specific point
+     * @returns {string} Hex color code
+     */
     getIntensityColor(category) {
         return this.getTrackColor(category);
     }
@@ -1259,6 +1375,11 @@ class TCVisualization {
     showCycloneInfo(cyclone) {
         const infoPanel = document.getElementById('info-panel');
         const details = document.getElementById('cyclone-details');
+        
+        // Get the actual genesis point using the findGenesisPoint method
+        const genesisPoint = this.findGenesisPoint(cyclone);
+        const genesisLat = genesisPoint ? genesisPoint.lat : (cyclone.genesis_lat || 'N/A');
+        const genesisLon = genesisPoint ? genesisPoint.lon : (cyclone.genesis_lon || 'N/A');
         
         details.innerHTML = `
             <p><strong>ID:</strong> ${cyclone.id}</p>
@@ -1268,7 +1389,7 @@ class TCVisualization {
             <p><strong>Max Wind Speed:</strong> ${cyclone.maxWind} km/h</p>
             <p><strong>Min Pressure:</strong> ${cyclone.minPressure} hPa</p>
             <p><strong>Duration:</strong> ${cyclone.duration_days || cyclone.duration} days</p>
-            <p><strong>Genesis:</strong> ${cyclone.genesis_lat.toFixed(2)}°, ${cyclone.genesis_lon.toFixed(2)}°</p>
+            <p><strong>Genesis:</strong> ${typeof genesisLat === 'number' ? genesisLat.toFixed(2) : genesisLat}°, ${typeof genesisLon === 'number' ? genesisLon.toFixed(2) : genesisLon}°</p>
             <p><strong>Landfall:</strong> ${cyclone.landfall ? 'Yes' : 'No'}</p>
         `;
         
@@ -1435,6 +1556,78 @@ class TCVisualization {
             '4k': 'Severe warming scenario displays significant intensification and expanded severe cyclone zones.'
         };
         return insights[this.currentScenario] || '';
+    }
+    
+    /**
+     * Finds the meteorologically accurate genesis point for a cyclone.
+     * Uses 34-knot wind speed threshold as the standard definition.
+     * @param {Object} cyclone - The cyclone object with track data
+     * @returns {Object|null} The genesis point or null if no track exists
+     */
+    findGenesisPoint(cyclone) {
+        if (!cyclone.track || cyclone.track.length === 0) {
+            return null;
+        }
+
+        // Only log for select cyclones to avoid console spam
+        const shouldLog = cyclone.id && cyclone.id.toString().endsWith('01');
+        
+        if (shouldLog) {
+            console.log('findGenesisPoint called for cyclone:', cyclone.id);
+        }
+
+        // Find first point where wind speed reaches 34 knots (TC threshold)
+        for (let i = 0; i < cyclone.track.length; i++) {
+            const point = cyclone.track[i];
+            const windSpeedKt = this.getWindSpeedInKnots(point);
+            
+            if (windSpeedKt >= 34) {
+                if (shouldLog) {
+                    console.log(`Genesis found for ${cyclone.id} at point ${i} with ${windSpeedKt} kt`);
+                }
+                return point;
+            }
+        }
+
+        // Fallback: Find first Category 1+ point if no 34-knot point exists
+        for (let i = 0; i < cyclone.track.length; i++) {
+            const point = cyclone.track[i];
+            if (point.category >= 1) {
+                if (shouldLog) {
+                    console.log(`Genesis fallback to Cat 1+ for ${cyclone.id} at point ${i}`);
+                }
+                return point;
+            }
+        }
+
+        // Final fallback: Use first point
+        if (shouldLog) {
+            console.log(`Genesis fallback to first point for ${cyclone.id}`);
+        }
+        return cyclone.track[0];
+    }
+
+    /**
+     * Converts wind speed from various units to knots
+     * @param {Object} point - Track point with wind speed data
+     * @returns {number} Wind speed in knots
+     */
+    getWindSpeedInKnots(point) {
+        if (point.wind_speed_kt) {
+            return point.wind_speed_kt;
+        }
+        
+        if (point.wind_speed) {
+            // Convert km/h to knots
+            return point.wind_speed * 0.539957;
+        }
+        
+        // If no wind speed data but has category, assume minimum for that category
+        if (point.category >= 1) {
+            return 34; // Minimum for tropical cyclone
+        }
+        
+        return 0;
     }
 }
 
