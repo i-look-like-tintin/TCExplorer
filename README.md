@@ -4,7 +4,11 @@ This is designed to be run through XAMPP, and then launched in the browser as lo
 Any issues with this, hit me up. The instructions below may not be super accurate, but I have implemented/tested it through Linux, Windows, and MacOS so happy to help you get it running if needed.
 -May
 
-
+## Brady's work goals 
+- Edit genisis dot
+- Add mapping for other nations/regions
+- Make it run on a phone???
+- Hight Data 
 
 ## May's Immediate Roadmap
 - ~~Add ability to select year ranges, rather than just all years or single year~~
