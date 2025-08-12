@@ -4,12 +4,6 @@ This is designed to be run through XAMPP, and then launched in the browser as lo
 Any issues with this, hit me up. The instructions below may not be super accurate, but I have implemented/tested it through Linux, Windows, and MacOS so happy to help you get it running if needed.
 -May
 
-## Brady's work goals 
-- Edit genisis dot
-- Add mapping for other nations/regions
-- Make it run on a phone???
-- Hight Data 
-
 ## May's Immediate Roadmap
 - ~~Add ability to select year ranges, rather than just all years or single year~~
 - Add additional data to TC selection pop-up
@@ -19,6 +13,12 @@ Any issues with this, hit me up. The instructions below may not be super accurat
 - Genesis locations - Refine and include a much more accurate genesis location when cyclone speed reaching 34 knots (17m/s). Ignore path prior to genesis.
 - Dissipation data points.
 - Add a button to show land-fall locations. Display purely land-fall spots – no tracks. Be able to select the time. Have different coloured dots for land-fall location to show cyclone intensity upon landfall.
+
+## Brady's work goals 
+- Edit genisis dot
+- Add mapping for other nations/regions
+- Make it run on a phone???
+- Hight Data 
 
 ## Other Needs:
 - Validate data (I have only partially validated curled TC D4PDF data checking speeds and pressures - May)
