@@ -1,5 +1,19 @@
 class TCVisualization {
     constructor() {
+
+         //To be moved once I figure wtf is going on here 
+        const menuToggle = document.getElementById("menu-toggle");
+        const controlPanel = document.getElementById("control-panel");
+
+        // Create close button for mobile
+        const closeBtn = document.createElement("button");
+        closeBtn.textContent = "Close";
+        closeBtn.id = "close-menu";
+        closeBtn.style.display = "none"; // hidden by default
+        controlPanel.insertBefore(closeBtn, controlPanel.firstChild);
+
+
+
         this.map = null;
         this.currentScenario = 'current';
         this.currentEnsemble = 1;
@@ -136,6 +150,28 @@ class TCVisualization {
     }
     
     initEventListeners() {
+
+
+        // Mobile event listeners...
+        menuToggle.addEventListener("click", () => {
+        controlPanel.style.display = "block";
+        if (window.innerWidth <= 768) {
+            closeBtn.style.display = "block";
+        }
+        });
+
+        closeBtn.addEventListener("click", () => {
+        controlPanel.style.display = "none";
+        });
+
+        window.addEventListener("resize", () => {
+        if (window.innerWidth > 768) {
+            controlPanel.style.display = "block";
+            closeBtn.style.display = "none"; // hide close button on desktop
+        } else {
+            controlPanel.style.display = "none";
+        }
+        });
 
         document.querySelectorAll('.scenario-btn').forEach(btn => {
             btn.addEventListener('click', (e) => this.handleScenarioChange(e));
