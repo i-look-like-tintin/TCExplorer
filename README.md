@@ -13,7 +13,8 @@ Any issues with this, hit me up. The instructions below may not be super accurat
 - Genesis locations - Refine and include a much more accurate genesis location when cyclone speed reaching 34 knots (17m/s). Ignore path prior to genesis.
 - Dissipation data points.
 - Add a button to show land-fall locations. Display purely land-fall spots – no tracks. Be able to select the time. Have different coloured dots for land-fall location to show cyclone intensity upon landfall.
-- Clarify Client Notes with client
+- ~~Clarify Client Notes with client~~
+- Update Density Heatmap in line with client's IPYNB <-- in progress, currently implemented in main
 
 ## Brady's work goals 
 - Edit genisis dot
