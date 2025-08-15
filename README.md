@@ -70,8 +70,10 @@ Expected Deliverables:
 - Data export functionality (e.g., filtered CSV download).
 - A layer management panel (show/hide: genesis density, track density, intensity bins).
 
-
-
+                        #
+                       ###
+                      #####
+                     #######
                     #########
                     ##XXXX#XX####                    #########
                     ###############          #####################
@@ -86,24 +88,24 @@ Expected Deliverables:
                   #####XXX#XXXXXXXXXXXXXXXXXXXXXXXX##########
          ##########X##XXXXXXXXXXXXXXXXXXXXXXXXXXX###XXX#####
       #######XXXXXXXXX##XXXXXXXXXXXXXXXXXXXXXXXXXX###XXX#######
-      ####XXXXXXXXXXXXXX##XXXXXXXXXXXXXXXXXXXXXXXXX###XXXX##XXXXX#####
-      ##XX###############XXXXXXXXXXXXXXXXXXXXXXX###XXXXXX##XXXXXXXXXX#####
-      #######XXXXXXXXXXXXXXXXXXXXX###XXXXXXX##XXXXXXXXXXXXXXX###
+      ####XXXXXXXXXXXXXX##XXXXXXXXXXXXXXXXXXXXXXXXX###XXXX##XXXXX###
+      ##XX###############XXXXXXXXXXXXXXXXXXXXXXX###XXXXXX##XXXXXXXXXX##
+      #######XXXXXXXXXXXXXXXXXXXXX###XXXXXXX##XXXXXXXXXXXXXXX###########
                 ##XXXXXXXXXXXXXXXXXXXX###XXXXXXXX##XXXXXXXXXXXXXXXXXXX###
                ##XXXXXXXXXXXXXXXXXXX###XXXXXXXX#######XXXXXXXXXXXXXXXXXX###
-              ##XXXXXXXXXXXXXXXX#####XXXXXXXX###     ############XXXXXXXXX###
+              ##XXXXXXXXXXXXXXXX#####XXXXXXXX####################XXXXXXXXX###
              ##XXXXXXXXXXXXX#####XXXXXXXXX###                   ######XXXXXX#
              #XXXXXXXXXXX####XXXXXXXXXX####                          ######X#
-            ##XXXXXXXXX###XXXXXXXXXX####                                  ###
-           ##XXXXXXXXX##XXXXXXXX#####
-           #XXXX#XXXX##XXXXXX####                #####
+            ##XXXXXXXXX###XXXXXXXXXX####           #                   #####
+           ##XXXXXXXXX##XXXXXXXX#####             ###                   ###
+           #XXXX#XXXX##XXXXXX####                #####                   #
           ##XXXXXXXX##XXXXX#####              ####XXX#
           #XXXXXXXXX#XXXX###XX#             ###XXXX##
           #XXXXXXXX##XX###XXXX#          ####XXXXXX#
           #XXXXXXXX#X######XXX#        ###XXXXXXXX##
           #XXXXXXXX#X#    #####      ###XXXXXXXXXX#
           #XXXXXXX###        ##    ###XXXXXXXXXXX##
-          #XXXXXXX#X#            ###XXXXXXXXX#####
+          #XXXXXXX#X#         #  ###XXXXXXXXX#####
           #XXXXXXX###          ###XXXXXXX#####
           ##XXXXX#X##        ###XXXXXXX###
            #XXXXX####   #####XXXXXXXX##
@@ -113,7 +115,7 @@ Expected Deliverables:
           ##X####XXXXXXXXXXXXXX##
           ####  ###XXXXXXXXXXX##
           ##      ###XXXXXXXX##
-                    #XXXXXXXX#
+          #         #XXXXXXXX#
                      #XXXXXX##
                      #XXXXXX#
                      ##XXXXX#
