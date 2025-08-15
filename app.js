@@ -667,134 +667,137 @@ class TCVisualization {
         
         this.layers.heatmap.addTo(this.map);
     }
+    //TODO: This method is a WIP, requires expanding for full world and a slight check of track count displaying
+createDensityHeatmap(cyclones) {
+    // Clear existing layers like before
+    if (this.layers.heatmap) {
+        this.map.removeLayer(this.layers.heatmap);
+    }
+    this.layers.tracks.clearLayers();
+    this.layers.genesis.clearLayers();
+    this.layers.intensity.clearLayers();
+
+    // Create grid matching Python code - wider coverage
+    const lonBins = [];
+    for (let i = 80; i <= 180; i += 2) { // 2-degree bins for better performance in browser
+        lonBins.push(i);
+    }
+    const latBins = [];
+    for (let i = -60; i <= 0; i += 3) { // 3-degree bins for reasonable grid
+        latBins.push(i);
+    }
     
-    createDensityHeatmap(cyclones) {
-        //TODO i dont exactly like how this turns out. need to have a deeper tweak
-        if (this.layers.heatmap) {
-            this.map.removeLayer(this.layers.heatmap);
-        }
-
-        this.layers.tracks.clearLayers();
-        this.layers.genesis.clearLayers();
-        this.layers.intensity.clearLayers();
-
-        const heatData = [];
-        const gridSize = 1.0; 
-        const densityGrid = {};
+    // Initialize frequency grid
+    const tcFreq = {};
+    
+    // Count TC track points per grid cell (like Python, not normalized by year)
+    cyclones.forEach(cyclone => {
+        if (!cyclone.track || cyclone.track.length === 0) return;
         
-        let yearMin, yearMax;
-        if (this.currentScenario === 'current') {
-            yearMin = 1951;
-            yearMax = 2011;
-        } else if (this.currentScenario === '2k') {
-            yearMin = 2031;
-            yearMax = 2090;
-        } else if (this.currentScenario === '4k') {
-            yearMin = 2051;
-            yearMax = 2110;
-        }
-        const totalYears = yearMax - yearMin + 1;
+        const visitedCells = new Set(); // prevent double counting same cyclone in same cell
         
-        cyclones.forEach(cyclone => {
-            if (!cyclone.track || cyclone.track.length === 0) return;
-            
-            if (cyclone.maxCategory < 1) return;
-            
-            const visitedCells = new Set();
-            
-            cyclone.track.forEach(point => {
-                if (this.filterAustralia && !this.isInAustralianRegion(point.lat, point.lon)) {
-                    return;
+        cyclone.track.forEach(point => {
+            // Check if point is in bounds (using wider area like Python)
+            if (point.lon >= 80 && point.lon <= 180 && point.lat >= -60 && point.lat <= 0) {
+                // Find which grid cell this point belongs to
+                const lonIdx = Math.floor((point.lon - 80) / 2); // 2-degree bins
+                const latIdx = Math.floor((point.lat + 60) / 3); // 3-degree bins
+                
+                const cellKey = `${latIdx},${lonIdx}`;
+                
+                // Count each track point (not just unique cyclones per cell)
+                if (!tcFreq[cellKey]) {
+                    tcFreq[cellKey] = 0;
                 }
-                
-                if (point.category < 1) return;
-                
-                const gridLat = Math.floor(point.lat / gridSize) * gridSize;
-                const gridLon = Math.floor(point.lon / gridSize) * gridSize;
-                const cellKey = `${gridLat},${gridLon}`;
-                
-                const cycloneCellKey = `${cyclone.id}_${cellKey}`;
-                if (!visitedCells.has(cycloneCellKey)) {
-                    visitedCells.add(cycloneCellKey);
-                    
-                    if (!densityGrid[cellKey]) {
-                        densityGrid[cellKey] = {
-                            lat: gridLat + gridSize / 2,
-                            lon: gridLon + gridSize / 2,
-                            count: 0
-                        };
-                    }
-                    densityGrid[cellKey].count++;
-                }
-            });
+                tcFreq[cellKey]++;
+            }
         });
-        
-        let maxDensity = 0;
-        Object.values(densityGrid).forEach(cell => {
-            const annualDensity = cell.count / totalYears;
-            maxDensity = Math.max(maxDensity, annualDensity);
+    });
+    
+    // Define discrete levels matching Python
+    const levels = [0, 1, 2, 5, 10, 20, 40, 80, 120, 160];
+    
+    // Color scheme similar to Python's hot_r (reversed hot colormap)
+    const colors = [
+        'rgba(255, 255, 255, 0)',   // 0 - transparent/white
+        'rgba(255, 255, 200, 0.7)', // 1-2 - very light yellow
+        'rgba(255, 255, 100, 0.8)', // 2-5 - light yellow  
+        'rgba(255, 200, 0, 0.85)',  // 5-10 - yellow
+        'rgba(255, 150, 0, 0.9)',   // 10-20 - orange-yellow
+        'rgba(255, 100, 0, 0.9)',   // 20-40 - orange
+        'rgba(255, 50, 0, 0.95)',   // 40-80 - red-orange
+        'rgba(255, 0, 0, 0.95)',    // 80-120 - red
+        'rgba(200, 0, 0, 1)',       // 120-160 - dark red
+        'rgba(139, 0, 0, 1)'        // 160+ - darkest red
+    ];
+    
+    // Function to get color based on count
+    const getColor = (count) => {
+        for (let i = levels.length - 1; i >= 0; i--) {
+            if (count >= levels[i]) {
+                return colors[i];
+            }
+        }
+        return colors[0];
+    };
+    
+    // Create rectangle overlays for each grid cell
+    const rectangles = [];
+    
+    for (let latIdx = 0; latIdx < latBins.length - 1; latIdx++) {
+        for (let lonIdx = 0; lonIdx < lonBins.length - 1; lonIdx++) {
+            const cellKey = `${latIdx},${lonIdx}`;
+            const count = tcFreq[cellKey] || 0;
             
-            heatData.push([cell.lat, cell.lon, annualDensity]);
-            
-            const offset = gridSize / 3;
-            const surroundingOffsets = [
-                [offset, 0], [-offset, 0], [0, offset], [0, -offset],
-                [offset, offset], [-offset, offset], [offset, -offset], [-offset, -offset]
-            ];
-            
-            surroundingOffsets.forEach(([latOff, lonOff]) => {
-                heatData.push([cell.lat + latOff, cell.lon + lonOff, annualDensity * 0.7]);
-            });
-        });
-        
-        //TODO maybe tweak colours?
-        const gradient = {
-            0.0: 'rgba(111, 0, 255, 0.27)',
-            0.1: 'rgba(68, 0, 255, 0.4)',
-            0.2: 'rgba(0, 47, 255, 0.57)',
-            0.3: 'rgba(0, 152, 253, 0.72)',
-            0.4: 'rgba(0, 225, 255, 0.8)',
-            0.5: 'rgba(0, 255, 191, 0.82)',
-            0.6: 'rgba(0, 255, 42, 0.95)',
-            0.8: 'rgb(185, 206, 0)',
-            1.0: 'rgb(255, 102, 0)'
-        };
-        
-        const currentZoom = this.map.getZoom();
-        const baseRadius = 40;
-        const radius = baseRadius * Math.pow(2, (currentZoom - 4) * 0.5);
-        const blur = 20 + (currentZoom - 4) * 2;
-        
-        this.layers.heatmap = L.heatLayer(heatData, {
-            radius: Math.min(100, Math.max(20, radius)),
-            blur: Math.min(35, Math.max(15, blur)),
-            maxZoom: 17,
-            max: maxDensity > 0 ? maxDensity : 1,
-            gradient: gradient,
-            minOpacity: 0.4
-        });
-        
-        this.layers.heatmap.addTo(this.map);
-        
-        this.heatmapConfig = {
-            baseRadius: baseRadius,
-            data: heatData,
-            gradient: gradient,
-            maxValue: maxDensity
-        };
-        
-        this.updateDensityLegend(maxDensity, totalYears);
-        
-        const comparisonPanel = document.getElementById('scenario-comparison');
-        if (comparisonPanel) {
-            comparisonPanel.classList.add('active');
-            
-            const metrics = this.calculateDensityMetrics(cyclones, totalYears);
-            this.updateDensityComparisonPanel(metrics);
+            if (count > 0) { // Only draw cells with data
+                const bounds = [
+                    [latBins[latIdx], lonBins[lonIdx]],
+                    [latBins[latIdx + 1], lonBins[lonIdx + 1]]
+                ];
+                
+                const rect = L.rectangle(bounds, {
+                    fillColor: getColor(count),
+                    fillOpacity: 1,
+                    weight: 0, // no border for cleaner look
+                    interactive: false
+                });
+                
+                rectangles.push(rect);
+            }
         }
     }
     
-    calculateDensityMetrics(cyclones, totalYears) {
+    // Create a feature group for all rectangles (acts as our "heatmap")
+    this.layers.heatmap = L.featureGroup(rectangles);
+    this.layers.heatmap.addTo(this.map);
+    
+    // Update the legend for grid-based display
+    this.updateDensityLegend(levels);
+    
+    // Update comparison panel
+    const comparisonPanel = document.getElementById('scenario-comparison');
+    if (comparisonPanel) {
+        comparisonPanel.classList.add('active');
+        
+        // Calculate metrics - but now based on total counts not per year
+        const totalCells = Object.keys(tcFreq).length;
+        const maxDensity = Math.max(...Object.values(tcFreq), 0);
+        const totalPoints = Object.values(tcFreq).reduce((a, b) => a + b, 0);
+        
+        const metrics = {
+            totalTrackPoints: totalPoints,
+            activeCells: totalCells,
+            maxCellDensity: maxDensity,
+            avgDensity: (totalPoints / totalCells).toFixed(1)
+        };
+        
+        this.updateDensityComparisonPanel(metrics);
+    }
+}
+
+
+    
+calculateDensityMetrics(cyclones, totalYears) {
         const cat1Plus = cyclones.filter(c => c.maxCategory >= 1).length;
         const avgPerYear = (cat1Plus / totalYears).toFixed(2);
         
@@ -820,82 +823,92 @@ class TCVisualization {
         };
     }
     
-    updateDensityLegend(maxDensity) {
-        let densityLegend = document.getElementById('density-legend');
-        if (!densityLegend) {
-            densityLegend = document.createElement('div');
-            densityLegend.id = 'density-legend';
-            densityLegend.className = 'legend-box';
-            document.getElementById('legend').appendChild(densityLegend);
-        }
-        
-        const scenarioInfo = {
-            'current': 'Historical Baseline (1951-2011)',
-            '2k': '+2K Warming Scenario (2031-2090)',
-            '4k': '+4K Warming Scenario (2051-2110)'
-        };
-        
-        const legendValues = [0, 0.25, 0.5, 0.75, 1.0].map(v => (v * maxDensity).toFixed(2));
-        
-        densityLegend.innerHTML = `
-            <h4>TC Density (Cat 1+/year)</h4>
-            <p style="font-size: 12px; margin: 5px 0;">${scenarioInfo[this.currentScenario]}</p>
-            <div class="heatmap-gradient">
-                <div class="gradient-bar" style="background: linear-gradient(to right, 
-                    rgba(111, 0, 255, 0.27) 0%,
-                    rgba(68, 0, 255, 0.4) 10%,
-                    rgba(0, 47, 255, 0.57) 20%,
-                    rgba(0, 152, 253, 0.72) 35%,
-                    rgba(0, 225, 255, 0.8) 50%,
-                    rgba(0, 255, 191, 0.82) 65%,
-                    rgba(0, 255, 42, 0.95) 80%,
-                    rgba(185, 206, 0, 1) 90%,
-                    rgba(255, 102, 0, 1) 100%
-                );"></div>
-                <div class="gradient-labels">
-                    <span>0</span>
-                    <span>${legendValues[1]}</span>
-                    <span>${legendValues[2]}</span>
-                    <span>${legendValues[3]}</span>
-                    <span>${legendValues[4]}</span>
-                </div>
-            </div>
-            <p style="font-size: 11px; margin-top: 10px; font-style: italic;">
-                Annual density of Category 1+ cyclones.<br>
-                Compare scenarios to see spatial shifts.
-            </p>
-        `;
-        
-        densityLegend.style.display = this.showDensityHeatmap ? 'block' : 'none';
-        
-        const heatmapLegend = document.getElementById('heatmap-legend');
-        if (heatmapLegend) {
-            heatmapLegend.style.display = 'none';
-        }
+updateDensityLegend(levels) {
+    let densityLegend = document.getElementById('density-legend');
+    if (!densityLegend) {
+        densityLegend = document.createElement('div');
+        densityLegend.id = 'density-legend';
+        densityLegend.className = 'legend-box';
+        document.getElementById('legend').appendChild(densityLegend);
     }
     
-    updateDensityComparisonPanel(metrics) {
-        const panel = document.getElementById('scenario-comparison');
-        if (!panel) return;
-        
-        const content = document.getElementById('comparison-content');
-        
-        panel.classList.add('active');
-        
-        content.innerHTML = `
-            <div class="comparison-item">
-                <div class="scenario-label">${this.currentScenario === 'current' ? 'Historical' : '+' + this.currentScenario.toUpperCase() + ' Warming'}</div>
-                <div class="metric">Period: ${metrics.totalYears} years</div>
-                <div class="metric">Cat 1+ Cyclones: ${metrics.totalCat1Plus}</div>
-                <div class="metric">Average per Year: ${metrics.avgPerYear}</div>
-                <div class="metric">Peak Genesis Density: ${metrics.maxGenesisCount}</div>
-                <div class="metric">Avg Genesis per Cell: ${metrics.avgGenesisPerCell}</div>
+    const scenarioInfo = {
+        'current': 'Historical (1951-2011)',
+        '2k': '+2K Warming (2031-2090)',
+        '4k': '+4K Warming (2051-2110)'
+    };
+    
+    // Create discrete legend matching the levels
+    let legendHTML = `
+        <h4>TC Track Density</h4>
+        <p style="font-size: 12px; margin: 5px 0;">${scenarioInfo[this.currentScenario]}</p>
+        <div class="density-legend-items">
+    `;
+    
+    // Build discrete color boxes like the Python colorbar
+    const colors = [
+        'rgba(255, 255, 200, 1)', 
+        'rgba(255, 255, 100, 1)',  
+        'rgba(255, 200, 0, 1)',  
+        'rgba(255, 150, 0, 1)',   
+        'rgba(255, 100, 0, 1)',   
+        'rgba(255, 50, 0, 1)',   
+        'rgba(255, 0, 0, 1)',    
+        'rgba(200, 0, 0, 1)',       
+        'rgba(139, 0, 0, 1)'        
+    ];
+    
+    // Create legend items for key thresholds
+    const keyLevels = [160, 120, 80, 40, 20, 10, 5, 2, 1];
+    keyLevels.forEach((level, idx) => {
+        legendHTML += `
+            <div class="legend-item" style="margin: 2px 0;">
+                <span class="legend-color" style="background: ${colors[8-idx]}; width: 30px; height: 15px; display: inline-block; border: 1px solid #ccc;"></span>
+                <span style="font-size: 11px; margin-left: 5px;">${level}${idx === 0 ? '+' : ''}</span>
             </div>
-            <p style="font-size: 11px; color: #666; margin-top: 10px;">
-                ${this.getDensityScenarioInsight()}
-            </p>
         `;
+    });
+    
+    legendHTML += `
+        </div>
+        <p style="font-size: 11px; margin-top: 10px; font-style: italic;">
+            Grid cells show TC track point counts.<br>
+            Broader Indo-Pacific coverage.
+        </p>
+    `;
+    
+    densityLegend.innerHTML = legendHTML;
+    densityLegend.style.display = this.showDensityHeatmap ? 'block' : 'none';
+    
+    const heatmapLegend = document.getElementById('heatmap-legend');
+    if (heatmapLegend) {
+        heatmapLegend.style.display = 'none';
     }
+}
+
+    
+updateDensityComparisonPanel(metrics) {
+    const panel = document.getElementById('scenario-comparison');
+    if (!panel) return;
+    
+    const content = document.getElementById('comparison-content');
+    
+    panel.classList.add('active');
+    
+    content.innerHTML = `
+        <div class="comparison-item">
+            <div class="scenario-label">${this.currentScenario === 'current' ? 'Historical' : '+' + this.currentScenario.toUpperCase() + ' Warming'}</div>
+            <div class="metric">Total Track Points: ${metrics.totalTrackPoints}</div>
+            <div class="metric">Active Grid Cells: ${metrics.activeCells}</div>
+            <div class="metric">Max Cell Density: ${metrics.maxCellDensity}</div>
+            <div class="metric">Avg Points/Cell: ${metrics.avgDensity}</div>
+        </div>
+        <p style="font-size: 11px; color: #666; margin-top: 10px;">
+            Grid-based density map showing TC track frequency.<br>
+            Compare scenarios to identify hotspots.
+        </p>
+    `;
+}
     
     getDensityScenarioInsight() {
         const insights = {
