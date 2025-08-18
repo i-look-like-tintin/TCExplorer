@@ -29,6 +29,11 @@ class CycloneDataAPI {
     }
     
     public function handleRequest() {
+            // warm up cache dir on azure
+        if (!file_exists(CACHE_PATH . 'dp4df/')) {
+            mkdir(CACHE_PATH . 'dp4df/', 0777, true);
+        }
+        
         $action = $_GET['action'] ?? '';
         $scenario = $_GET['scenario'] ?? 'current';
         
