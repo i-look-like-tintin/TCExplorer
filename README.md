@@ -1,5 +1,5 @@
 # Tropical Cyclone Track Visualization Prototype
-# Version 0.9.0
+# Version 0.9.1
 This is designed to be run through XAMPP, and then launched in the browser as localhost/YOUR_PROJECT_DIRECTORY_INSIDE_HTDOCS/index.html
 Any issues with this, hit me up. The instructions below may not be super accurate, but I have implemented/tested it through Linux, Windows, and MacOS so happy to help you get it running if needed.
 -May
@@ -15,6 +15,7 @@ Any issues with this, hit me up. The instructions below may not be super accurat
 - Add a button to show land-fall locations. Display purely land-fall spots – no tracks. Be able to select the time. Have different coloured dots for land-fall location to show cyclone intensity upon landfall.
 - ~~Clarify Client Notes with client~~
 - Update Density Heatmap in line with client's IPYNB <-- in progress, currently implemented in main
+- ~~add azure support for prototype deployment~~
 
 ## Brady's work goals 
 - Edit genisis dot
