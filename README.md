@@ -1,5 +1,7 @@
 # Tropical Cyclone Track Visualization Prototype
 # Version 0.9.1
+The app can be found running live in a web-facing environment at: https://tropicalcycloneexplorer.azurewebsites.net/
+
 This is designed to be run through XAMPP, and then launched in the browser as localhost/YOUR_PROJECT_DIRECTORY_INSIDE_HTDOCS/index.html
 Any issues with this, hit me up. The instructions below may not be super accurate, but I have implemented/tested it through Linux, Windows, and MacOS so happy to help you get it running if needed.
 -May
