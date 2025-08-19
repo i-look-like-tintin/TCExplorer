@@ -26,7 +26,7 @@ class TCVisualization {
         this.showDensityHeatmap = false;
         this.heatmapData = null; 
         this.currentZoom = 4; 
-        
+        this.heatmapRequestId = 0;
         this.init();
     }
     
@@ -62,7 +62,7 @@ class TCVisualization {
         this.map.on('zoomend', () => {
             clearTimeout(zoomTimeout);
             zoomTimeout = setTimeout(() => {
-                if ((this.showHeatmap || this.showDensityHeatmap) && this.heatmapConfig) {
+                if ((this.showHeatmap || this.showDensityHeatmap) && this.heatmapConfig && this.layers.heatmap) {
                     const currentZoom = this.map.getZoom();
                     const radius = this.heatmapConfig.baseRadius * Math.pow(2, (currentZoom - 4) * 0.7);
                     const blur = 15 + (currentZoom - 4) * 3;
@@ -318,6 +318,8 @@ parseDensityCSV(csvText) {
                 await this.updateVisualization();
         this.showLoading(false);
             } else {
+                this.heatmapRequestId++; 
+                this.clearHeatmapLayer();
                 this.map.scrollWheelZoom.enable();
                 this.map.doubleClickZoom.enable();
                 this.map.touchZoom.enable();
@@ -1152,8 +1154,11 @@ updateDensityComparisonPanel(metrics) {
 }
 
 async createHeatmap(cyclones) {
+    const reqId = ++this.heatmapRequestId;
+
     if (this.layers.heatmap) {
         this.map.removeLayer(this.layers.heatmap);
+        this.layers.heatmap = null;
     }
     
     this.layers.tracks.clearLayers();
@@ -1258,10 +1263,10 @@ async createHeatmap(cyclones) {
     });
     
     console.log(`Created ${rectangles.length} rectangle overlays`);
-    
+    if (reqId !== this.heatmapRequestId || !this.showHeatmap) return;
     this.layers.heatmap = L.featureGroup(rectangles);
     this.layers.heatmap.addTo(this.map);
-    
+    if (reqId !== this.heatmapRequestId || !this.showHeatmap) return;
     this.heatmapConfig = {
         data: densityData,
         activeCells: activeCells.length,
@@ -1289,6 +1294,20 @@ async createHeatmap(cyclones) {
         - Active cells: ${activeCells.length}
         - Max density: ${maxCount}
     `);
+}
+
+clearHeatmapLayer() {
+    if (this.layers.heatmap) {
+        this.map.removeLayer(this.layers.heatmap);
+        this.layers.heatmap = null;
+    }
+    this.heatmapConfig = null;
+    const mapEl = document.getElementById('map');
+    mapEl && mapEl.classList.remove('heatmap-active');
+    const heatLegend = document.getElementById('heatmap-legend');
+    const densLegend = document.getElementById('density-legend');
+    if (heatLegend) heatLegend.style.display = 'none';
+    if (densLegend) densLegend.style.display = 'none';
 }
 
 calculateDensityMetrics(densityData) {
@@ -1502,7 +1521,7 @@ calculateDensityMetrics(densityData) {
         this.layers.tracks.clearLayers();
         this.layers.genesis.clearLayers();
         this.layers.intensity.clearLayers();
-        
+        this.clearHeatmapLayer();
         if (this.layers.heatmap) {
             this.map.removeLayer(this.layers.heatmap);
             this.layers.heatmap = null;
