@@ -88,6 +88,7 @@ class TCVisualization {
                 this.map.getContainer().classList.remove('zooming');
             }, 100);
         });
+        this.updateVisualization();
     }
 
 async fetchPrecomputedDensity(scenario, ensemble, sstModel) {
