@@ -6,8 +6,10 @@ This is designed to be run through XAMPP, and then launched in the browser as lo
 Any issues with this, hit me up. The instructions below may not be super accurate, but I have implemented/tested it through Linux, Windows, and MacOS so happy to help you get it running if needed.
 -May
 
+## Known Issues: 
+- Experimental heatmap mode is forcibly cleared on zooming, requires retoggling checkbox to reappear. Will investigate - may
+
 ## May's Immediate Roadmap
-- KNOWN ISSUE: Experimental heatmap mode is forcibly cleared on zooming, requires retoggling checkbox to reappear. Will investigate.
 - ~~Add ability to select year ranges, rather than just all years or single year~~
 - ~~Remove sample data functionality - no longer needed with data curl working~~
 - ~~Fix heatmap display~~
