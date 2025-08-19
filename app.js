@@ -94,7 +94,6 @@ async fetchPrecomputedDensity(scenario, ensemble, sstModel) {
     try {
         let filename = 'density_data/';
         
-        // Build filename based on the actual naming convention from Python script
         switch(scenario) {
             case 'current':
                 // Historical: density_HPB_m001_1951-2011.txt
@@ -141,11 +140,9 @@ async fetchPrecomputedDensity(scenario, ensemble, sstModel) {
     } catch (error) {
         console.error('Failed to fetch pre-computed density data:', error);
         
-        // Show user-friendly error message
         const errorMsg = `Could not load pre-computed density data for ${scenario} scenario, ensemble ${ensemble}${sstModel ? ', SST model ' + sstModel : ''}. Falling back to computed heatmap.`;
         console.warn(errorMsg);
         
-        // Optionally show a brief notification to the user
         this.showNotification(errorMsg, 'warning');
         
         return null;
@@ -153,7 +150,6 @@ async fetchPrecomputedDensity(scenario, ensemble, sstModel) {
 }
 
 showNotification(message, type = 'info') {
-    // Create or update a notification element
     let notification = document.getElementById('density-notification');
     if (!notification) {
         notification = document.createElement('div');
@@ -179,7 +175,6 @@ showNotification(message, type = 'info') {
     notification.style.opacity = '1';
     notification.style.display = 'block';
     
-    // Auto-hide after 5 seconds
     setTimeout(() => {
         notification.style.opacity = '0';
         setTimeout(() => {
@@ -796,6 +791,7 @@ parseDensityCSV(csvText) {
         this.layers.heatmap.addTo(this.map);
     }
     //TODO: This method is a WIP, requires expanding for full world and a slight check of track count displaying
+    //NOTE: As of version 0.10.0 this has been superseded by the experimental heatmap tool.
 createDensityHeatmap(cyclones) {
     // Clear existing layers
     if (this.layers.heatmap) {
@@ -941,23 +937,20 @@ createDensityHeatmap(cyclones) {
         for (let i = 0; i < cyclone.track.length; i++) {
             const point = cyclone.track[i];
             
-            // Add the cell containing this point
             const pointCell = getCellKey(point.lat, point.lon);
             if (!processedCells.has(pointCell)) {
                 processedCells.add(pointCell);
                 tcFreq[pointCell] = (tcFreq[pointCell] || 0) + 1;
             }
             
-            // If there's a next point, add all cells the line passes through
             if (i < cyclone.track.length - 1) {
                 const nextPoint = cyclone.track[i + 1];
                 
-                // Skip if points are too far apart (likely a data gap)
                 const latDiff = Math.abs(nextPoint.lat - point.lat);
                 let lonDiff = Math.abs(nextPoint.lon - point.lon);
-                if (lonDiff > 180) lonDiff = 360 - lonDiff; // Handle dateline crossing
+                if (lonDiff > 180) lonDiff = 360 - lonDiff; 
                 
-                if (latDiff < 20 && lonDiff < 20) { // Reasonable threshold for connected segments
+                if (latDiff < 20 && lonDiff < 20) { 
                     const lineCells = getLineCells(point.lat, point.lon, nextPoint.lat, nextPoint.lon);
                     
                     lineCells.forEach(cellKey => {
@@ -971,10 +964,8 @@ createDensityHeatmap(cyclones) {
         }
     });
     
-    // Define discrete levels with more granularity at lower values
     const levels = [0, 1, 2, 3, 4, 5, 7, 10, 15, 20, 30, 50, 75, 100];
     
-    // Color scheme optimized for 1-100 range with emphasis on lower values
     const colors = [
         'rgba(255, 255, 255, 0)',     // 0 - transparent
         'rgba(254, 254, 217, 0.7)',   // 1 - very pale yellow
@@ -992,7 +983,6 @@ createDensityHeatmap(cyclones) {
         'rgba(103, 0, 13, 1)'         // 100+ - darkest red
     ];
     
-    // Function to get color based on count
     const getColor = (count) => {
         for (let i = levels.length - 1; i >= 0; i--) {
             if (count >= levels[i]) {
@@ -1002,10 +992,8 @@ createDensityHeatmap(cyclones) {
         return colors[0];
     };
     
-    // Create rectangle overlays for each grid cell with data
     const rectangles = [];
     
-    // Only draw cells that have data to improve performance
     Object.keys(tcFreq).forEach(cellKey => {
         const count = tcFreq[cellKey];
         if (count > 0) {
@@ -1023,11 +1011,10 @@ createDensityHeatmap(cyclones) {
                 fillColor: getColor(count),
                 fillOpacity: 0.8,
                 weight: 0.5,
-                color: 'rgba(100, 100, 100, 0.3)', // Subtle border
+                color: 'rgba(100, 100, 100, 0.3)',
                 interactive: true
             });
             
-            // Add popup with cell information
             rect.bindPopup(`
                 <strong>TC Track Density</strong><br>
                 Cell: ${lat.toFixed(1)}°, ${lon.toFixed(1)}°<br>
@@ -1038,14 +1025,10 @@ createDensityHeatmap(cyclones) {
         }
     });
     
-    // Create a feature group for all rectangles
     this.layers.heatmap = L.featureGroup(rectangles);
     this.layers.heatmap.addTo(this.map);
     
-    // Update the legend
     this.updateDensityLegend(levels);
-    
-    // Update comparison panel with metrics
     const totalCells = Object.keys(tcFreq).length;
     const maxDensity = Math.max(...Object.values(tcFreq), 0);
     const totalPoints = Object.values(tcFreq).reduce((a, b) => a + b, 0);
@@ -1079,14 +1062,12 @@ updateDensityLegend(levels) {
         '4k': '+4K Warming (2051-2110)'
     };
     
-    // Create discrete legend matching the new levels
     let legendHTML = `
         <h4>TC Track Density</h4>
         <p style="font-size: 12px; margin: 5px 0;">${scenarioInfo[this.currentScenario]}</p>
         <div class="density-legend-items">
     `;
     
-    // Updated colors to match the new scale
     const colors = [
         'rgba(254, 254, 217, 1)',   // 1
         'rgba(254, 248, 195, 1)',   // 2
@@ -1103,7 +1084,6 @@ updateDensityLegend(levels) {
         'rgba(103, 0, 13, 1)'       // 100+
     ];
     
-    // Display levels with better grouping for readability
     const displayLevels = [
         { value: 100, color: colors[12], label: '100+' },
         { value: 75, color: colors[11], label: '75-99' },
@@ -1172,7 +1152,6 @@ updateDensityComparisonPanel(metrics) {
 }
 
 async createHeatmap(cyclones) {
-    // Clear existing layers
     if (this.layers.heatmap) {
         this.map.removeLayer(this.layers.heatmap);
     }
@@ -1181,7 +1160,6 @@ async createHeatmap(cyclones) {
     this.layers.genesis.clearLayers();
     this.layers.intensity.clearLayers();
     
-    // Show loading indicator
     const loadingEl = document.getElementById('loading-overlay');
     if (loadingEl) {
         const loadingText = loadingEl.querySelector('p');
@@ -1190,7 +1168,6 @@ async createHeatmap(cyclones) {
         }
     }
     
-    // Fetch pre-computed density data
     const densityData = await this.fetchPrecomputedDensity(
         this.currentScenario, 
         this.currentEnsemble, 
@@ -1199,25 +1176,20 @@ async createHeatmap(cyclones) {
     
     if (!densityData || densityData.length === 0) {
         console.warn('No density data available, falling back to computed heatmap');
-        // Fallback to original heatmap calculation
         this.createComputedHeatmap(cyclones);
         return;
     }
     
     console.log(`Creating heatmap with ${densityData.length} cells`);
     
-    // Filter out cells with zero count for efficiency
     const activeCells = densityData.filter(cell => cell.count > 0);
     console.log(`Active cells (count > 0): ${activeCells.length}`);
     
-    // Find max count for reference
     const maxCount = Math.max(...densityData.map(d => d.count));
     console.log(`Max density count: ${maxCount}`);
     
-    // Define color scale matching the Python script
     const levels = [0, 1, 2, 5, 10, 20, 40, 80, 120, 160];
     
-    // Hot colormap similar to Python's 'hot_r'
     const colors = [
         'rgba(255, 255, 255, 0)',     // 0 - transparent
         'rgba(255, 255, 220, 0.6)',   // 1 - very light yellow
@@ -1231,7 +1203,6 @@ async createHeatmap(cyclones) {
         'rgba(139, 0, 0, 1)'          // 160+ - dark red
     ];
     
-    // Function to get color based on count
     const getColor = (count) => {
         for (let i = levels.length - 1; i >= 0; i--) {
             if (count >= levels[i]) {
@@ -1241,7 +1212,6 @@ async createHeatmap(cyclones) {
         return colors[0];
     };
     
-    // Create rectangles for each active cell
     const rectangles = [];
     
     activeCells.forEach(cell => {
@@ -1258,7 +1228,6 @@ async createHeatmap(cyclones) {
             interactive: true
         });
         
-        // Add popup with cell information
         rect.bindPopup(`
             <strong>TC Track Density</strong><br>
             <hr style="margin: 5px 0;">
@@ -1271,7 +1240,6 @@ async createHeatmap(cyclones) {
             <b>Ensemble:</b> ${this.currentEnsemble}${this.currentSSTModel ? ' (' + this.currentSSTModel + ')' : ''}
         `);
         
-        // Add hover effect
         rect.on('mouseover', function(e) {
             this.setStyle({
                 weight: 1,
@@ -1291,11 +1259,9 @@ async createHeatmap(cyclones) {
     
     console.log(`Created ${rectangles.length} rectangle overlays`);
     
-    // Create a feature group for all rectangles
     this.layers.heatmap = L.featureGroup(rectangles);
     this.layers.heatmap.addTo(this.map);
     
-    // Store configuration for potential zoom handling
     this.heatmapConfig = {
         data: densityData,
         activeCells: activeCells.length,
@@ -1307,10 +1273,8 @@ async createHeatmap(cyclones) {
         sstModel: this.currentSSTModel
     };
     
-    // Update the legend
     this.updateHeatmapLegend(levels, colors);
     
-    // Update comparison panel with metrics
     const comparisonPanel = document.getElementById('scenario-comparison');
     if (comparisonPanel) {
         comparisonPanel.classList.add('active');
@@ -1318,7 +1282,6 @@ async createHeatmap(cyclones) {
         this.updateDensityComparisonPanel(metrics);
     }
     
-    // Log summary
     console.log(`Heatmap created successfully:
         - Scenario: ${this.currentScenario}
         - Ensemble: ${this.currentEnsemble}
@@ -1333,7 +1296,6 @@ calculateDensityMetrics(densityData) {
     const totalCount = densityData.reduce((sum, d) => sum + d.count, 0);
     const maxCount = Math.max(...densityData.map(d => d.count), 0);
     
-    // Count cells by severity
     const severeCells = nonZeroCells.filter(d => d.count >= 80).length;
     const highCells = nonZeroCells.filter(d => d.count >= 40 && d.count < 80).length;
     const moderateCells = nonZeroCells.filter(d => d.count >= 10 && d.count < 40).length;
@@ -1350,7 +1312,7 @@ calculateDensityMetrics(densityData) {
         lowCells: lowCells
     };
 }
-    
+    //LEGACY FAKLBACK
     createComputedHeatmap(cyclones) {
         if (this.layers.heatmap) {
             this.map.removeLayer(this.layers.heatmap);
@@ -1388,7 +1350,7 @@ calculateDensityMetrics(densityData) {
                     const distance = Math.sqrt(latDiff * latDiff + lonDiff * lonDiff);
                     
                     if (distance < 5) { // Only interpolate if points are reasonably close
-                        // Number of interpolation points based on distance and zoom
+
                         const interpPoints = Math.min(5, Math.ceil(distance * zoomFactor));
                         
                         for (let j = 1; j < interpPoints; j++) {
