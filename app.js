@@ -669,7 +669,7 @@ class TCVisualization {
     }
     //TODO: This method is a WIP, requires expanding for full world and a slight check of track count displaying
 createDensityHeatmap(cyclones) {
-    // Clear existing layers like before
+    // Clear existing layers
     if (this.layers.heatmap) {
         this.map.removeLayer(this.layers.heatmap);
     }
@@ -677,58 +677,191 @@ createDensityHeatmap(cyclones) {
     this.layers.genesis.clearLayers();
     this.layers.intensity.clearLayers();
 
-    // Create grid matching Python code - wider coverage
+    // Create GLOBAL grid with configurable resolution
+    const gridResolution = 2; // degrees per cell (can be adjusted)
+    this.gridResolution = gridResolution; // Store for use in legend
     const lonBins = [];
-    for (let i = 80; i <= 180; i += 2) { // 2-degree bins for better performance in browser
-        lonBins.push(i);
-    }
     const latBins = [];
-    for (let i = -60; i <= 0; i += 3) { // 3-degree bins for reasonable grid
-        latBins.push(i);
+    
+    // Global coverage: -180 to 180 longitude, -90 to 90 latitude
+    for (let lon = -180; lon <= 180; lon += gridResolution) {
+        lonBins.push(lon);
+    }
+    for (let lat = -90; lat <= 90; lat += gridResolution) {
+        latBins.push(lat);
     }
     
     // Initialize frequency grid
     const tcFreq = {};
     
-    // Count TC track points per grid cell (like Python, not normalized by year)
+    // Helper function to get grid cell key from coordinates
+    const getCellKey = (lat, lon) => {
+        // Handle longitude wrapping
+        while (lon < -180) lon += 360;
+        while (lon > 180) lon -= 360;
+        
+        const lonIdx = Math.floor((lon + 180) / gridResolution);
+        const latIdx = Math.floor((lat + 90) / gridResolution);
+        return `${latIdx},${lonIdx}`;
+    };
+    
+    // Bresenham-like line algorithm to find all cells a line passes through
+    const getLineCells = (lat1, lon1, lat2, lon2) => {
+        const cells = new Set();
+        
+        // Handle longitude wrapping for shortest path
+        let dLon = lon2 - lon1;
+        if (Math.abs(dLon) > 180) {
+            if (dLon > 0) {
+                dLon = dLon - 360;
+            } else {
+                dLon = dLon + 360;
+            }
+        }
+        lon2 = lon1 + dLon;
+        
+        // Convert to grid coordinates
+        const x1 = (lon1 + 180) / gridResolution;
+        const y1 = (lat1 + 90) / gridResolution;
+        const x2 = (lon2 + 180) / gridResolution;
+        const y2 = (lat2 + 90) / gridResolution;
+        
+        // Use a high-resolution sampling to ensure we don't miss any cells
+        const distance = Math.sqrt(Math.pow(x2 - x1, 2) + Math.pow(y2 - y1, 2));
+        const steps = Math.max(Math.ceil(distance * 2), 2); // Sample at least twice per cell
+        
+        for (let i = 0; i <= steps; i++) {
+            const t = i / steps;
+            const x = x1 + (x2 - x1) * t;
+            const y = y1 + (y2 - y1) * t;
+            
+            // Get the cell for this point
+            const cellX = Math.floor(x);
+            const cellY = Math.floor(y);
+            
+            // Also check adjacent cells to ensure we catch edge cases
+            for (let dx = -1; dx <= 1; dx++) {
+                for (let dy = -1; dy <= 1; dy++) {
+                    const checkX = cellX + dx;
+                    const checkY = cellY + dy;
+                    
+                    // Check if this cell is actually crossed by the line segment
+                    if (this.lineIntersectsCell(x1, y1, x2, y2, checkX, checkY, checkX + 1, checkY + 1)) {
+                        // Convert back to lat/lon for the cell key
+                        const cellLat = (checkY * gridResolution) - 90;
+                        const cellLon = (checkX * gridResolution) - 180;
+                        
+                        // Ensure we're within valid bounds
+                        if (cellLat >= -90 && cellLat < 90 && cellLon >= -180 && cellLon < 180) {
+                            cells.add(getCellKey(cellLat, cellLon));
+                        }
+                    }
+                }
+            }
+        }
+        
+        return cells;
+    };
+    
+    // Helper function to check if a line segment intersects with a cell
+    this.lineIntersectsCell = (x1, y1, x2, y2, cellMinX, cellMinY, cellMaxX, cellMaxY) => {
+        // Check if either endpoint is inside the cell
+        if ((x1 >= cellMinX && x1 < cellMaxX && y1 >= cellMinY && y1 < cellMaxY) ||
+            (x2 >= cellMinX && x2 < cellMaxX && y2 >= cellMinY && y2 < cellMaxY)) {
+            return true;
+        }
+        
+        // Check if line segment intersects cell boundaries
+        // Using line-box intersection algorithm
+        const dx = x2 - x1;
+        const dy = y2 - y1;
+        
+        let tMin = 0;
+        let tMax = 1;
+        
+        // Check intersection with vertical cell boundaries
+        if (dx !== 0) {
+            const tx1 = (cellMinX - x1) / dx;
+            const tx2 = (cellMaxX - x1) / dx;
+            
+            tMin = Math.max(tMin, Math.min(tx1, tx2));
+            tMax = Math.min(tMax, Math.max(tx1, tx2));
+        } else if (x1 < cellMinX || x1 >= cellMaxX) {
+            return false;
+        }
+        
+        // Check intersection with horizontal cell boundaries
+        if (dy !== 0) {
+            const ty1 = (cellMinY - y1) / dy;
+            const ty2 = (cellMaxY - y1) / dy;
+            
+            tMin = Math.max(tMin, Math.min(ty1, ty2));
+            tMax = Math.min(tMax, Math.max(ty1, ty2));
+        } else if (y1 < cellMinY || y1 >= cellMaxY) {
+            return false;
+        }
+        
+        return tMin <= tMax;
+    };
+    
+    // Process each cyclone
     cyclones.forEach(cyclone => {
         if (!cyclone.track || cyclone.track.length === 0) return;
         
-        const visitedCells = new Set(); // prevent double counting same cyclone in same cell
+        const processedCells = new Set(); // Track which cells we've already counted for this cyclone
         
-        cyclone.track.forEach(point => {
-            // Check if point is in bounds (using wider area like Python)
-            if (point.lon >= 80 && point.lon <= 180 && point.lat >= -60 && point.lat <= 0) {
-                // Find which grid cell this point belongs to
-                const lonIdx = Math.floor((point.lon - 80) / 2); // 2-degree bins
-                const latIdx = Math.floor((point.lat + 60) / 3); // 3-degree bins
-                
-                const cellKey = `${latIdx},${lonIdx}`;
-                
-                // Count each track point (not just unique cyclones per cell)
-                if (!tcFreq[cellKey]) {
-                    tcFreq[cellKey] = 0;
-                }
-                tcFreq[cellKey]++;
+        for (let i = 0; i < cyclone.track.length; i++) {
+            const point = cyclone.track[i];
+            
+            // Add the cell containing this point
+            const pointCell = getCellKey(point.lat, point.lon);
+            if (!processedCells.has(pointCell)) {
+                processedCells.add(pointCell);
+                tcFreq[pointCell] = (tcFreq[pointCell] || 0) + 1;
             }
-        });
+            
+            // If there's a next point, add all cells the line passes through
+            if (i < cyclone.track.length - 1) {
+                const nextPoint = cyclone.track[i + 1];
+                
+                // Skip if points are too far apart (likely a data gap)
+                const latDiff = Math.abs(nextPoint.lat - point.lat);
+                let lonDiff = Math.abs(nextPoint.lon - point.lon);
+                if (lonDiff > 180) lonDiff = 360 - lonDiff; // Handle dateline crossing
+                
+                if (latDiff < 20 && lonDiff < 20) { // Reasonable threshold for connected segments
+                    const lineCells = getLineCells(point.lat, point.lon, nextPoint.lat, nextPoint.lon);
+                    
+                    lineCells.forEach(cellKey => {
+                        if (!processedCells.has(cellKey)) {
+                            processedCells.add(cellKey);
+                            tcFreq[cellKey] = (tcFreq[cellKey] || 0) + 1;
+                        }
+                    });
+                }
+            }
+        }
     });
     
-    // Define discrete levels matching Python
-    const levels = [0, 1, 2, 5, 10, 20, 40, 80, 120, 160];
+    // Define discrete levels with more granularity at lower values
+    const levels = [0, 1, 2, 3, 4, 5, 7, 10, 15, 20, 30, 50, 75, 100];
     
-    // Color scheme similar to Python's hot_r (reversed hot colormap)
+    // Color scheme optimized for 1-100 range with emphasis on lower values
     const colors = [
-        'rgba(255, 255, 255, 0)',   // 0 - transparent/white
-        'rgba(255, 255, 200, 0.7)', // 1-2 - very light yellow
-        'rgba(255, 255, 100, 0.8)', // 2-5 - light yellow  
-        'rgba(255, 200, 0, 0.85)',  // 5-10 - yellow
-        'rgba(255, 150, 0, 0.9)',   // 10-20 - orange-yellow
-        'rgba(255, 100, 0, 0.9)',   // 20-40 - orange
-        'rgba(255, 50, 0, 0.95)',   // 40-80 - red-orange
-        'rgba(255, 0, 0, 0.95)',    // 80-120 - red
-        'rgba(200, 0, 0, 1)',       // 120-160 - dark red
-        'rgba(139, 0, 0, 1)'        // 160+ - darkest red
+        'rgba(255, 255, 255, 0)',     // 0 - transparent
+        'rgba(254, 254, 217, 0.7)',   // 1 - very pale yellow
+        'rgba(254, 248, 195, 0.75)',  // 2 - pale yellow
+        'rgba(254, 235, 162, 0.8)',   // 3 - light yellow
+        'rgba(254, 217, 118, 0.85)',  // 4 - yellow
+        'rgba(254, 196, 79, 0.85)',   // 5 - golden yellow
+        'rgba(254, 173, 67, 0.9)',    // 7 - orange-yellow
+        'rgba(252, 141, 60, 0.9)',    // 10 - light orange
+        'rgba(248, 105, 51, 0.9)',    // 15 - orange
+        'rgba(238, 75, 43, 0.95)',    // 20 - dark orange
+        'rgba(220, 50, 32, 0.95)',    // 30 - orange-red
+        'rgba(187, 21, 26, 0.95)',    // 50 - red
+        'rgba(145, 0, 13, 1)',        // 75 - dark red
+        'rgba(103, 0, 13, 1)'         // 100+ - darkest red
     ];
     
     // Function to get color based on count
@@ -741,87 +874,67 @@ createDensityHeatmap(cyclones) {
         return colors[0];
     };
     
-    // Create rectangle overlays for each grid cell
+    // Create rectangle overlays for each grid cell with data
     const rectangles = [];
     
-    for (let latIdx = 0; latIdx < latBins.length - 1; latIdx++) {
-        for (let lonIdx = 0; lonIdx < lonBins.length - 1; lonIdx++) {
-            const cellKey = `${latIdx},${lonIdx}`;
-            const count = tcFreq[cellKey] || 0;
+    // Only draw cells that have data to improve performance
+    Object.keys(tcFreq).forEach(cellKey => {
+        const count = tcFreq[cellKey];
+        if (count > 0) {
+            const [latIdx, lonIdx] = cellKey.split(',').map(Number);
             
-            if (count > 0) { // Only draw cells with data
-                const bounds = [
-                    [latBins[latIdx], lonBins[lonIdx]],
-                    [latBins[latIdx + 1], lonBins[lonIdx + 1]]
-                ];
-                
-                const rect = L.rectangle(bounds, {
-                    fillColor: getColor(count),
-                    fillOpacity: 1,
-                    weight: 0, // no border for cleaner look
-                    interactive: false
-                });
-                
-                rectangles.push(rect);
-            }
+            const lat = (latIdx * gridResolution) - 90;
+            const lon = (lonIdx * gridResolution) - 180;
+            
+            const bounds = [
+                [lat, lon],
+                [lat + gridResolution, lon + gridResolution]
+            ];
+            
+            const rect = L.rectangle(bounds, {
+                fillColor: getColor(count),
+                fillOpacity: 0.8,
+                weight: 0.5,
+                color: 'rgba(100, 100, 100, 0.3)', // Subtle border
+                interactive: true
+            });
+            
+            // Add popup with cell information
+            rect.bindPopup(`
+                <strong>TC Track Density</strong><br>
+                Cell: ${lat.toFixed(1)}°, ${lon.toFixed(1)}°<br>
+                Track Count: ${count}
+            `);
+            
+            rectangles.push(rect);
         }
-    }
+    });
     
-    // Create a feature group for all rectangles (acts as our "heatmap")
+    // Create a feature group for all rectangles
     this.layers.heatmap = L.featureGroup(rectangles);
     this.layers.heatmap.addTo(this.map);
     
-    // Update the legend for grid-based display
+    // Update the legend
     this.updateDensityLegend(levels);
     
-    // Update comparison panel
-    const comparisonPanel = document.getElementById('scenario-comparison');
-    if (comparisonPanel) {
-        comparisonPanel.classList.add('active');
-        
-        // Calculate metrics - but now based on total counts not per year
-        const totalCells = Object.keys(tcFreq).length;
-        const maxDensity = Math.max(...Object.values(tcFreq), 0);
-        const totalPoints = Object.values(tcFreq).reduce((a, b) => a + b, 0);
-        
-        const metrics = {
-            totalTrackPoints: totalPoints,
-            activeCells: totalCells,
-            maxCellDensity: maxDensity,
-            avgDensity: (totalPoints / totalCells).toFixed(1)
-        };
-        
-        this.updateDensityComparisonPanel(metrics);
-    }
+    // Update comparison panel with metrics
+    const totalCells = Object.keys(tcFreq).length;
+    const maxDensity = Math.max(...Object.values(tcFreq), 0);
+    const totalPoints = Object.values(tcFreq).reduce((a, b) => a + b, 0);
+    
+    const metrics = {
+        totalTrackPoints: totalPoints,
+        activeCells: totalCells,
+        maxCellDensity: maxDensity,
+        avgDensity: totalCells > 0 ? (totalPoints / totalCells).toFixed(1) : 0,
+        gridResolution: gridResolution
+    };
+    
+    this.updateDensityComparisonPanel(metrics);
+    
+    console.log(`Density heatmap created: ${totalCells} active cells, max density: ${maxDensity}`);
 }
 
-
-    
-calculateDensityMetrics(cyclones, totalYears) {
-        const cat1Plus = cyclones.filter(c => c.maxCategory >= 1).length;
-        const avgPerYear = (cat1Plus / totalYears).toFixed(2);
-        
-        const genesisCounts = {};
-        cyclones.forEach(cyclone => {
-            if (cyclone.maxCategory >= 1) {
-                const lat = Math.floor(cyclone.genesis_lat / 5) * 5;
-                const lon = Math.floor(cyclone.genesis_lon / 5) * 5;
-                const key = `${lat},${lon}`;
-                genesisCounts[key] = (genesisCounts[key] || 0) + 1;
-            }
-        });
-        
-        const maxGenesisCount = Math.max(...Object.values(genesisCounts), 0);
-        const avgGenesisPerCell = Object.values(genesisCounts).reduce((a, b) => a + b, 0) / Object.keys(genesisCounts).length || 0;
-        
-        return {
-            totalCat1Plus: cat1Plus,
-            avgPerYear: avgPerYear,
-            maxGenesisCount: maxGenesisCount,
-            avgGenesisPerCell: avgGenesisPerCell.toFixed(2),
-            totalYears: totalYears
-        };
-    }
     
 updateDensityLegend(levels) {
     let densityLegend = document.getElementById('density-legend');
@@ -838,42 +951,61 @@ updateDensityLegend(levels) {
         '4k': '+4K Warming (2051-2110)'
     };
     
-    // Create discrete legend matching the levels
+    // Create discrete legend matching the new levels
     let legendHTML = `
         <h4>TC Track Density</h4>
         <p style="font-size: 12px; margin: 5px 0;">${scenarioInfo[this.currentScenario]}</p>
         <div class="density-legend-items">
     `;
     
-    // Build discrete color boxes like the Python colorbar
+    // Updated colors to match the new scale
     const colors = [
-        'rgba(255, 255, 200, 1)', 
-        'rgba(255, 255, 100, 1)',  
-        'rgba(255, 200, 0, 1)',  
-        'rgba(255, 150, 0, 1)',   
-        'rgba(255, 100, 0, 1)',   
-        'rgba(255, 50, 0, 1)',   
-        'rgba(255, 0, 0, 1)',    
-        'rgba(200, 0, 0, 1)',       
-        'rgba(139, 0, 0, 1)'        
+        'rgba(254, 254, 217, 1)',   // 1
+        'rgba(254, 248, 195, 1)',   // 2
+        'rgba(254, 235, 162, 1)',   // 3
+        'rgba(254, 217, 118, 1)',   // 4
+        'rgba(254, 196, 79, 1)',    // 5
+        'rgba(254, 173, 67, 1)',    // 7
+        'rgba(252, 141, 60, 1)',    // 10
+        'rgba(248, 105, 51, 1)',    // 15
+        'rgba(238, 75, 43, 1)',     // 20
+        'rgba(220, 50, 32, 1)',     // 30
+        'rgba(187, 21, 26, 1)',     // 50
+        'rgba(145, 0, 13, 1)',      // 75
+        'rgba(103, 0, 13, 1)'       // 100+
     ];
     
-    // Create legend items for key thresholds
-    const keyLevels = [160, 120, 80, 40, 20, 10, 5, 2, 1];
-    keyLevels.forEach((level, idx) => {
+    // Display levels with better grouping for readability
+    const displayLevels = [
+        { value: 100, color: colors[12], label: '100+' },
+        { value: 75, color: colors[11], label: '75-99' },
+        { value: 50, color: colors[10], label: '50-74' },
+        { value: 30, color: colors[9], label: '30-49' },
+        { value: 20, color: colors[8], label: '20-29' },
+        { value: 15, color: colors[7], label: '15-19' },
+        { value: 10, color: colors[6], label: '10-14' },
+        { value: 7, color: colors[5], label: '7-9' },
+        { value: 5, color: colors[4], label: '5-6' },
+        { value: 4, color: colors[3], label: '4' },
+        { value: 3, color: colors[2], label: '3' },
+        { value: 2, color: colors[1], label: '2' },
+        { value: 1, color: colors[0], label: '1' }
+    ];
+    
+    displayLevels.forEach((level) => {
         legendHTML += `
-            <div class="legend-item" style="margin: 2px 0;">
-                <span class="legend-color" style="background: ${colors[8-idx]}; width: 30px; height: 15px; display: inline-block; border: 1px solid #ccc;"></span>
-                <span style="font-size: 11px; margin-left: 5px;">${level}${idx === 0 ? '+' : ''}</span>
+            <div class="legend-item" style="margin: 2px 0; display: flex; align-items: center;">
+                <span class="legend-color" style="background: ${level.color}; width: 25px; height: 14px; display: inline-block; border: 1px solid #999;"></span>
+                <span style="font-size: 11px; margin-left: 6px; min-width: 40px;">${level.label}</span>
             </div>
         `;
     });
     
     legendHTML += `
         </div>
-        <p style="font-size: 11px; margin-top: 10px; font-style: italic;">
-            Grid cells show TC track point counts.<br>
-            Broader Indo-Pacific coverage.
+        <p style="font-size: 11px; margin-top: 10px; font-style: italic; color: #666;">
+            Number of TC tracks per grid cell<br>
+            (${this.gridResolution || 2}° × ${this.gridResolution || 2}° resolution)
         </p>
     `;
     
@@ -898,26 +1030,18 @@ updateDensityComparisonPanel(metrics) {
     content.innerHTML = `
         <div class="comparison-item">
             <div class="scenario-label">${this.currentScenario === 'current' ? 'Historical' : '+' + this.currentScenario.toUpperCase() + ' Warming'}</div>
-            <div class="metric">Total Track Points: ${metrics.totalTrackPoints}</div>
+            <div class="metric">Total Track Counts: ${metrics.totalTrackPoints}</div>
             <div class="metric">Active Grid Cells: ${metrics.activeCells}</div>
             <div class="metric">Max Cell Density: ${metrics.maxCellDensity}</div>
-            <div class="metric">Avg Points/Cell: ${metrics.avgDensity}</div>
+            <div class="metric">Avg Tracks/Cell: ${metrics.avgDensity}</div>
+            <div class="metric">Grid Resolution: ${metrics.gridResolution}°×${metrics.gridResolution}°</div>
         </div>
         <p style="font-size: 11px; color: #666; margin-top: 10px;">
-            Grid-based density map showing TC track frequency.<br>
-            Compare scenarios to identify hotspots.
+            Global grid-based density map showing TC track frequency.<br>
+            All cells touched by tracks are shaded.
         </p>
     `;
 }
-    
-    getDensityScenarioInsight() {
-        const insights = {
-            'current': 'Historical cyclone density patterns showing natural distribution.',
-            '2k': 'Moderate warming shows shifts in cyclone density and genesis regions.',
-            '4k': 'Severe warming reveals significant changes in spatial cyclone distribution.'
-        };
-        return insights[this.currentScenario] || '';
-    }
     
     createHeatmap(cyclones) {
         if (this.layers.heatmap) {

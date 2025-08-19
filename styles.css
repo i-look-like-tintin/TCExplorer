@@ -447,14 +447,14 @@ header p {
     transition: filter 0.3s ease;
 }
 
-#heatmap-legend, #density-legend {
+#heatmap-legend{
     margin-top: 15px;
     padding-top: 15px;
     border-top: 1px solid #ddd;
     transition: all 0.3s ease;
 }
 
-#heatmap-legend h4, #density-legend h4 {
+#heatmap-legend h4{
     margin: 0 0 10px 0;
     color: #2c3e50;
     font-size: clamp(0.85rem, 1.2vw, 1rem);
@@ -789,3 +789,80 @@ header p {
         height: 100vh;
     }
 }
+
+
+#density-legend {
+    background: rgba(255, 255, 255, 0.95);
+    padding: 12px;
+    border-radius: 6px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+    max-height: 400px;
+    overflow-y: auto;
+}
+
+#density-legend h4 {
+    margin: 0 0 8px 0;
+    font-size: 14px;
+    color: #2c3e50;
+    border-bottom: 1px solid #e0e0e0;
+    padding-bottom: 5px;
+}
+
+#density-legend .density-legend-items {
+    display: flex;
+    flex-direction: column-reverse; /* Show low values at bottom, high at top */
+    gap: 1px;
+}
+
+#density-legend .legend-item {
+    display: flex;
+    align-items: center;
+    padding: 1px 0;
+    transition: background-color 0.2s;
+}
+
+#density-legend .legend-item:hover {
+    background-color: rgba(0, 0, 0, 0.05);
+}
+
+#density-legend .legend-color {
+    flex-shrink: 0;
+    border-radius: 2px;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.1);
+}
+
+/* Compact view for smaller screens */
+@media (max-height: 800px) {
+    #density-legend {
+        max-height: 300px;
+    }
+    
+    #density-legend .legend-item {
+        margin: 1px 0;
+    }
+    
+    #density-legend .legend-color {
+        width: 20px !important;
+        height: 12px !important;
+    }
+}
+
+/* Scrollbar styling for legend */
+#density-legend::-webkit-scrollbar {
+    width: 6px;
+}
+
+#density-legend::-webkit-scrollbar-track {
+    background: rgba(0,0,0,0.05);
+    border-radius: 3px;
+}
+
+#density-legend::-webkit-scrollbar-thumb {
+    background: rgba(0,0,0,0.2);
+    border-radius: 3px;
+}
+
+#density-legend::-webkit-scrollbar-thumb:hover {
+    background: rgba(0,0,0,0.3);
+}
+#source-file { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace; }
