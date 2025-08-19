@@ -140,7 +140,7 @@ async fetchPrecomputedDensity(scenario, ensemble, sstModel) {
     } catch (error) {
         console.error('Failed to fetch pre-computed density data:', error);
         
-        const errorMsg = `Could not load pre-computed density data for ${scenario} scenario, ensemble ${ensemble}${sstModel ? ', SST model ' + sstModel : ''}. Falling back to computed heatmap.`;
+        const errorMsg = `Could not load pre-computed density data for ${scenario} scenario, ensemble ${ensemble}${sstModel ? ', SST model ' + sstModel : ''}. Falling back to computed heatmap aborted: DEPRECATED.`;
         console.warn(errorMsg);
         
         this.showNotification(errorMsg, 'warning');
@@ -286,18 +286,6 @@ parseDensityCSV(csvText) {
                 this.toggleLayer('genesis', false);
                 this.toggleLayer('intensity', false);
                 
-                this.map.setView([-25.2744, 133.7751], this.heatmapZoomLevel, {
-                    animate: true,
-                    duration: 0.5
-                });
-                
-                this.map.scrollWheelZoom.disable();
-                this.map.doubleClickZoom.disable();
-                this.map.touchZoom.disable();
-                this.map.boxZoom.disable();
-                this.map.keyboard.disable();
-                
-                this.map.zoomControl.remove();
                 
                 const yearMinSlider = document.getElementById('year-slider-min');
                 const yearMaxSlider = document.getElementById('year-slider-max');
@@ -313,29 +301,12 @@ parseDensityCSV(csvText) {
                 this.yearRange = null;
                 this.updateSliderRange();
 
-                this.showZoomLockNotice();
                         this.showLoading(true);
                 await this.updateVisualization();
         this.showLoading(false);
             } else {
                 this.heatmapRequestId++; 
                 this.clearHeatmapLayer();
-                this.map.scrollWheelZoom.enable();
-                this.map.doubleClickZoom.enable();
-                this.map.touchZoom.enable();
-                this.map.boxZoom.enable();
-                this.map.keyboard.enable();
-                
-                this.map.zoomControl.addTo(this.map);
-                
-                if (this.previousZoom && this.previousCenter) {
-                    this.map.setView(this.previousCenter, this.previousZoom, {
-                        animate: true,
-                        duration: 0.5
-                    });
-                }
-                
-                this.removeZoomLockNotice();
 
                 const yearMinSlider = document.getElementById('year-slider-min');
                 const yearMaxSlider = document.getElementById('year-slider-max');
@@ -364,20 +335,6 @@ parseDensityCSV(csvText) {
                 this.toggleLayer('genesis', false);
                 this.toggleLayer('intensity', false);
                 
-                this.map.setView([-25.2744, 133.7751], this.heatmapZoomLevel, {
-                    animate: true,
-                    duration: 0.5
-                });
-                
-                this.map.scrollWheelZoom.disable();
-                this.map.doubleClickZoom.disable();
-                this.map.touchZoom.disable();
-                this.map.boxZoom.disable();
-                this.map.keyboard.disable();
-                
-                this.map.zoomControl.remove();
-                
-                this.showZoomLockNotice();
                 
                 const yearMinSlider = document.getElementById('year-slider-min');
                 const yearMaxSlider = document.getElementById('year-slider-max');
@@ -393,22 +350,6 @@ parseDensityCSV(csvText) {
                 this.yearRange = null;
                 this.updateSliderRange();
             } else {
-                this.map.scrollWheelZoom.enable();
-                this.map.doubleClickZoom.enable();
-                this.map.touchZoom.enable();
-                this.map.boxZoom.enable();
-                this.map.keyboard.enable();
-                
-                this.map.zoomControl.addTo(this.map);
-                
-                if (this.previousZoom && this.previousCenter) {
-                    this.map.setView(this.previousCenter, this.previousZoom, {
-                        animate: true,
-                        duration: 0.5
-                    });
-                }
-                
-                this.removeZoomLockNotice();
                 
                 const yearMinSlider = document.getElementById('year-slider-min');
                 const yearMaxSlider = document.getElementById('year-slider-max');
@@ -435,22 +376,6 @@ parseDensityCSV(csvText) {
                 yearDisplay.classList.remove('disabled');
                 this.updateYearDisplay();
 
-                this.map.scrollWheelZoom.enable();
-                this.map.doubleClickZoom.enable();
-                this.map.touchZoom.enable();
-                this.map.boxZoom.enable();
-                this.map.keyboard.enable();
-                
-                this.map.zoomControl.addTo(this.map);
-                
-                if (this.previousZoom && this.previousCenter) {
-                    this.map.setView(this.previousCenter, this.previousZoom, {
-                        animate: true,
-                        duration: 0.5
-                    });
-                }
-                
-                this.removeZoomLockNotice();
                 
                 yearMinSlider.disabled = false;
                 yearMaxSlider.disabled = false;
@@ -474,23 +399,6 @@ parseDensityCSV(csvText) {
                 yearMaxSlider.disabled = false;
                 yearDisplay.classList.remove('disabled');
                 this.updateYearDisplay();
-
-                this.map.scrollWheelZoom.enable();
-                this.map.doubleClickZoom.enable();
-                this.map.touchZoom.enable();
-                this.map.boxZoom.enable();
-                this.map.keyboard.enable();
-                
-                this.map.zoomControl.addTo(this.map);
-                
-                if (this.previousZoom && this.previousCenter) {
-                    this.map.setView(this.previousCenter, this.previousZoom, {
-                        animate: true,
-                        duration: 0.5
-                    });
-                }
-                
-                this.removeZoomLockNotice();
                 
                 yearMinSlider.disabled = false;
                 yearMaxSlider.disabled = false;
@@ -514,23 +422,6 @@ parseDensityCSV(csvText) {
                 yearMaxSlider.disabled = false;
                 yearDisplay.classList.remove('disabled');
                 this.updateYearDisplay();
-
-                this.map.scrollWheelZoom.enable();
-                this.map.doubleClickZoom.enable();
-                this.map.touchZoom.enable();
-                this.map.boxZoom.enable();
-                this.map.keyboard.enable();
-                
-                this.map.zoomControl.addTo(this.map);
-                
-                if (this.previousZoom && this.previousCenter) {
-                    this.map.setView(this.previousCenter, this.previousZoom, {
-                        animate: true,
-                        duration: 0.5
-                    });
-                }
-                
-                this.removeZoomLockNotice();
 
                 yearMinSlider.disabled = false;
                 yearMaxSlider.disabled = false;
@@ -747,51 +638,7 @@ parseDensityCSV(csvText) {
         return lat >= -45 && lat <= -5 && lon >= 105 && lon <= 160;
     }
 
-    calculateHeatmapRadius(zoom) {
-        const baseRadius = 30;
-        const baseZoom = 4;
-        
-        const zoomDiff = zoom - baseZoom;
-        const scaleFactor = Math.pow(2, zoomDiff);
-        
-        const radius = baseRadius * scaleFactor;
-        return Math.max(15, Math.min(200, radius));
-    }
 
-    calculateHeatmapBlur(zoom) {
-        const baseBlur = 20;
-        const baseZoom = 4;
-        
-        const zoomDiff = zoom - baseZoom;
-        const scaleFactor = Math.pow(1.5, zoomDiff);
-        
-        const blur = baseBlur * scaleFactor;
-        
-        return Math.max(10, Math.min(50, blur));
-    }
-
-    redrawHeatmap() {
-        if (!this.heatmapData || this.heatmapData.length === 0) return;
-        
-        if (this.layers.heatmap) {
-            this.map.removeLayer(this.layers.heatmap);
-        }
-        
-        const currentZoom = this.map.getZoom();
-        const radius = this.calculateHeatmapRadius(currentZoom);
-        const blur = this.calculateHeatmapBlur(currentZoom);
-        
-        this.layers.heatmap = L.heatLayer(this.heatmapData, {
-            radius: radius,
-            blur: blur,
-            maxZoom: 17,
-            max: 1.0,
-            gradient: this.heatmapGradient,
-            minOpacity: 0.2
-        });
-        
-        this.layers.heatmap.addTo(this.map);
-    }
     //TODO: This method is a WIP, requires expanding for full world and a slight check of track count displaying
     //NOTE: As of version 0.10.0 this has been superseded by the experimental heatmap tool.
 createDensityHeatmap(cyclones) {
@@ -1180,8 +1027,7 @@ async createHeatmap(cyclones) {
     );
     
     if (!densityData || densityData.length === 0) {
-        console.warn('No density data available, falling back to computed heatmap');
-        this.createComputedHeatmap(cyclones);
+        console.warn('No density data available, falling back to computed heatmap aborted: DEPRECATED');
         return;
     }
     
@@ -1331,115 +1177,6 @@ calculateDensityMetrics(densityData) {
         lowCells: lowCells
     };
 }
-    //LEGACY FAKLBACK
-    createComputedHeatmap(cyclones) {
-        if (this.layers.heatmap) {
-            this.map.removeLayer(this.layers.heatmap);
-        }
-
-        this.layers.tracks.clearLayers();
-        this.layers.genesis.clearLayers();
-        this.layers.intensity.clearLayers();
-
-        const heatData = [];
-        
-        const currentZoom = this.map.getZoom();
-        const zoomFactor = Math.pow(1.5, currentZoom - 4);
-        
-        cyclones.forEach(cyclone => {
-            if (!cyclone.track || cyclone.track.length === 0) return;
-
-            for (let i = 0; i < cyclone.track.length; i++) {
-                const point = cyclone.track[i];
-
-                if (this.filterAustralia && !this.isInAustralianRegion(point.lat, point.lon)) {
-                    continue;
-                }
-
-                const category = point.category || cyclone.maxCategory || 1;
-                const weight = Math.pow(category / 5, 1.5);
-                
-                heatData.push([point.lat, point.lon, weight]);
-                
-                if (i < cyclone.track.length - 1) {
-                    const nextPoint = cyclone.track[i + 1];
-                    
-                    const latDiff = Math.abs(nextPoint.lat - point.lat);
-                    const lonDiff = Math.abs(nextPoint.lon - point.lon);
-                    const distance = Math.sqrt(latDiff * latDiff + lonDiff * lonDiff);
-                    
-                    if (distance < 5) { // Only interpolate if points are reasonably close
-
-                        const interpPoints = Math.min(5, Math.ceil(distance * zoomFactor));
-                        
-                        for (let j = 1; j < interpPoints; j++) {
-                            const t = j / interpPoints;
-                            const interpLat = point.lat + (nextPoint.lat - point.lat) * t;
-                            const interpLon = point.lon + (nextPoint.lon - point.lon) * t;
-                            
-                            heatData.push([interpLat, interpLon, weight * 0.8]);
-                        }
-                    }
-                }
-                
-                const spread = 0.2 / zoomFactor; 
-                const angles = [0, 90, 180, 270]; 
-                
-                angles.forEach(angle => {
-                    const rad = angle * Math.PI / 180;
-                    const offsetLat = point.lat + spread * Math.cos(rad);
-                    const offsetLon = point.lon + spread * Math.sin(rad);
-                    heatData.push([offsetLat, offsetLon, weight * 0.5]);
-                });
-            }
-        });
-        
-        // these need fixing, i dont like the scale
-        const gradient = {
-            0.0: 'rgba(255, 255, 200, 0.0)',
-            0.1: 'rgba(255, 255, 100, 0.3)',
-            0.2: 'rgba(255, 255, 0, 0.5)',
-            0.5: 'rgba(255, 220, 0, 0.6)',
-            0.62: 'rgba(255, 165, 0, 0.7)',
-            0.7: 'rgba(255, 69, 0, 0.8)',
-            0.85: 'rgba(255, 0, 0, 0.9)',
-            0.95: 'rgba(139, 0, 0, 0.95)',
-            1.0: 'rgba(0, 0, 0, 1.0)'
-        };
-        
-        //i tried to fix breaking of points with zoom, hasnt quite worked but hey its better
-        const baseRadius = 25;
-        const radius = baseRadius * Math.pow(2, (currentZoom - 4) * 0.7);
-        const blur = 15 + (currentZoom - 4) * 3;
-
-        this.layers.heatmap = L.heatLayer(heatData, {
-            radius: Math.min(80, Math.max(15, radius)), 
-            blur: Math.min(40, Math.max(10, blur)),     
-            maxZoom: 17,
-            max: 1.0,
-            gradient: gradient,
-            minOpacity: 0.3
-        });
-        
-        this.layers.heatmap.addTo(this.map);
-
-        this.heatmapConfig = {
-            baseRadius: baseRadius,
-            data: heatData,
-            gradient: gradient
-        };
-
-        this.updateHeatmapLegend();
-
-        //honestly this should just display all the time
-        const comparisonPanel = document.getElementById('scenario-comparison');
-        if (comparisonPanel) {
-            comparisonPanel.classList.add('active');
-            
-            const metrics = this.calculateIntensityMetrics(cyclones);
-            this.updateComparisonPanel(metrics);
-        }
-    }
     
     async loadData(forceRefresh = false) {
         this.showLoading(true);
@@ -1589,28 +1326,6 @@ calculateDensityMetrics(densityData) {
         
         const displayMode = isDensityMode ? 'density heatmap' : (isHeatmapMode ? 'severity heatmap' : 'tracks');
         console.log(`Showing ${cyclones.length} cyclones in ${displayMode} mode`);
-    }
-    
-    showZoomLockNotice() {
-        if (!document.getElementById('zoom-lock-notice')) {
-            const notice = document.createElement('div');
-            notice.id = 'zoom-lock-notice';
-            notice.className = 'zoom-lock-notice';
-            notice.innerHTML = `
-                <div class="notice-content">
-                    <span class="notice-icon">🔒</span>
-                    <span>Zoom is locked in heatmap view for optimal visualization</span>
-                </div>
-            `;
-            document.getElementById('map').appendChild(notice);
-        }
-    }
-
-    removeZoomLockNotice() {
-        const notice = document.getElementById('zoom-lock-notice');
-        if (notice) {
-            notice.remove();
-        }
     }
 
     drawCycloneTrack(cyclone) {
