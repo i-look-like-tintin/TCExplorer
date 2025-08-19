@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>TC Explorer</title>
+    <title>Tropical Cyclone Track Visualization - Australia</title>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <link rel="stylesheet" href="styles.css">
 </head>
@@ -18,6 +18,7 @@
                 <label>Climate Scenario:</label>
                 <div class="scenario-buttons">
                     <button class="scenario-btn active" data-scenario="current">Historical (1951-2011)</button>
+                    <button class="scenario-btn" data-scenario="nat">Historical NAT (1951-2010)</button>
                     <button class="scenario-btn" data-scenario="2k">+2K Warming (2031-2090)</button>
                     <button class="scenario-btn" data-scenario="4k">+4K Warming (2051-2110)</button>
                 </div>
@@ -57,10 +58,10 @@
                 <label>Display Options:</label>
                 <div class="toggle-options">
                     <label class="checkbox-label">
-                        <input type="checkbox" id="show-heatmap"> Show Severity Heatmap
+                        <input type="checkbox" id="show-heatmap"> Show Heatmap (EXPERIMENTAL)
                     </label>
                     <label class="checkbox-label">
-                        <input type="checkbox" id="show-density-heatmap"> Show TC Density per Year
+                        <input type="checkbox" id="show-density-heatmap"> Show Heatmap (stable)
                     </label>
                     <label class="checkbox-label">
                         <input type="checkbox" id="show-tracks" checked> Show Tracks
@@ -82,6 +83,8 @@
                 <button id="export-data" class="export-btn">Export Data (CSV)</button>
                 <button id="refresh-data" class="export-btn" style="background-color: #3498db;">Refresh Data</button>
             </div>
+
+            
 <div class="control-group">
     <label>Year Range:</label>
     <div class="year-range-container">
@@ -95,6 +98,13 @@
         </div>
     </div>
     <div id="year-display" class="year-display">All Years</div>
+</div>
+<div class="control-group">
+  <div id="data-status" style="font-size:.9rem; color:#7f8c8d; margin-bottom:4px;"></div>
+  <div style="font-size:.9rem; color:#2c3e50;">
+    <strong>Source file:</strong>
+    <span id="source-file">—</span>
+  </div>
 </div>
         </div>
         <div id="map-container">

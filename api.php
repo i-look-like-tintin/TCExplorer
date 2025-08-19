@@ -29,11 +29,6 @@ class CycloneDataAPI {
     }
     
     public function handleRequest() {
-            // warm up cache dir on azure
-        if (!file_exists(CACHE_PATH . 'dp4df/')) {
-            mkdir(CACHE_PATH . 'dp4df/', 0777, true);
-        }
-        
         $action = $_GET['action'] ?? '';
         $scenario = $_GET['scenario'] ?? 'current';
         
@@ -117,6 +112,17 @@ class CycloneDataAPI {
                     }
                     
                     $metadata = $this->getMetadata($scenario);
+                    $metadata['source_file'] = $this->parser->getLastFilename();   // <— add
+
+                    $data = [
+                        'scenario'        => $scenario,
+                        'metadata'        => $metadata,
+                        'ensemble_id'     => $ensembleId,
+                        'data_source'     => 'd4pdf',
+                        'total_cyclones'  => count($cyclones),
+                        'cyclones'        => $cyclones
+                    ];
+
                     if ($sstModel && ($scenario === '2k' || $scenario === '4k')) {
                         $metadata['sst_model'] = $sstModel;
                     }

@@ -5,7 +5,7 @@ class Dp4dfParser {
     private $baseUrl;
     private $cacheDir;
     private $cacheLifetime;
-    
+    private $lastFilename = null;
     public function __construct() {
         $this->baseUrl = DP4DF_BASE_URL;
         $this->cacheDir = CACHE_PATH . 'dp4df/';
@@ -17,27 +17,10 @@ class Dp4dfParser {
     }
     
 
-    //for azure load times - may
-    public function warmupCache() {
-    $files = [
-        'xytrackk319b_HPB_m001_1951-2011.txt',
-        'xytrackk319b_HFB_2K_CC_m101_2031-2090.txt',
-        'xytrackk319b_HFB_4K_CC_m101_2051-2110.txt'
-    ];
-    
-    foreach ($files as $file) {
-        $cacheFile = $this->cacheDir . $file;
-        if (!file_exists($cacheFile)) {
-            error_log("Pre-caching $file...");
-            $data = file_get_contents($this->baseUrl . $file);
-            file_put_contents($cacheFile, $data);
-        }
-    }
-    }
-    
     public function getCycloneData($scenario, $ensembleId = 1, $sstModel = null) {
         $config = DP4DF_FILE_PATTERNS[$scenario];
         $filename = $this->buildFilename($scenario, $ensembleId, $sstModel);
+        $this->lastFilename = $filename; 
         $url = $this->baseUrl . $filename;
         
         error_log("=== Dp4dfParser::getCycloneData ===");
@@ -387,6 +370,8 @@ class Dp4dfParser {
 
     private function isOverAustralia($lat, $lon) {
         // Simplified bounding box check
+
+        //TODO this should use the geojson, or mebbe even the land mask and elevation stuff
         return ($lat > -39 && $lat < -10 && $lon > 113 && $lon < 154);
     }
     
@@ -429,5 +414,11 @@ class Dp4dfParser {
         
         return $available;
     }
+
+    public function getLastFilename() {
+        return $this->lastFilename;
+    }
 }
+
+
 ?>

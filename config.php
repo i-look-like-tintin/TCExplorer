@@ -1,42 +1,5 @@
 <?php
 
-///AZURE things - this is quick and dirty as deployment prototyping - may
-// detect if running on Azure
-$is_azure = isset($_SERVER['WEBSITE_INSTANCE_ID']);
-
-if ($is_azure) {
-    // Azure persistent paths
-    define('DATA_PATH', '/home/site/wwwroot/data/');
-    define('CACHE_PATH', '/home/data/cache/'); // survives deployments
-    define('LOG_PATH', '/home/LogFiles/');
-    
-    // increase limits for those chunky d4pdf files
-    ini_set('memory_limit', '512M');
-    ini_set('max_execution_time', 300);
-} else {
-    // local XAMPP paths
-    define('DATA_PATH', __DIR__ . '/data/');
-    define('CACHE_PATH', __DIR__ . '/cache/');
-    define('LOG_PATH', __DIR__ . '/logs/');
-}
-
-// rest stays the same...
-define('DP4DF_BASE_URL', 'https://climate.mri-jma.go.jp/pub/d4pdf/tropical_cyclone_tracks/');
-
-// add your azure URL to CORS
-define('ALLOWED_ORIGINS', [
-    'https://tcexplorer.azurewebsites.net',
-    'http://localhost',
-    'https://www.unsw.edu.au',
-    'https://ssci.unsw.edu.au'
-]);
-
-// create cache dir if it doesn't exist on azure
-if ($is_azure && !file_exists(CACHE_PATH)) {
-    mkdir(CACHE_PATH, 0777, true);
-}
-
-
 
 //honestly, none of this really needs to be its own file, could look to migrate this
 //but its here for the potential need to scale out in the future
