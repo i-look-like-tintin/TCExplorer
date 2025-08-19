@@ -1,5 +1,5 @@
 # Tropical Cyclone Track Visualization Prototype
-# Version 0.10.1
+# Version 0.10.2
 The app can be found running live in a web-facing environment at: https://tropicalcycloneexplorer.azurewebsites.net/
 
 This is designed to be run through XAMPP, and then launched in the browser as localhost/YOUR_PROJECT_DIRECTORY_INSIDE_HTDOCS/index.html
@@ -7,8 +7,8 @@ Any issues with this, hit me up. The instructions below may not be super accurat
 -May
 
 ## May's Immediate Roadmap
+- KNOWN ISSUE: Experimental heatmap mode is forcibly cleared on zooming, requires retoggling checkbox to reappear. Will investigate.
 - ~~Add ability to select year ranges, rather than just all years or single year~~
-- Add additional data to TC selection pop-up
 - ~~Remove sample data functionality - no longer needed with data curl working~~
 - ~~Fix heatmap display~~
 - ~~Density and frequency maps. Include a unit converted to something / per year. Allows for experiment comparison – defined unit for everything~~
@@ -16,7 +16,7 @@ Any issues with this, hit me up. The instructions below may not be super accurat
 - Dissipation data points.
 - Add a button to show land-fall locations. Display purely land-fall spots – no tracks. Be able to select the time. Have different coloured dots for land-fall location to show cyclone intensity upon landfall.
 - ~~Clarify Client Notes with client~~
-- Update Density Heatmap in line with client's IPYNB <-- in progress, currently implemented in main
+- ~~Update Density Heatmap in line with client's IPYNB~~
 - ~~add azure support for prototype deployment~~
 
 ## Brady's work goals 
