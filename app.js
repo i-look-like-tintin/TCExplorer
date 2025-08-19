@@ -90,6 +90,131 @@ class TCVisualization {
         });
     }
 
+async fetchPrecomputedDensity(scenario, ensemble, sstModel) {
+    try {
+        let filename = 'density_data/';
+        
+        // Build filename based on the actual naming convention from Python script
+        switch(scenario) {
+            case 'current':
+                // Historical: density_HPB_m001_1951-2011.txt
+                const ensembleNumCurrent = String(ensemble).padStart(3, '0');
+                filename += `density_HPB_m${ensembleNumCurrent}_1951-2011.txt`;
+                break;
+                
+            case '2k':
+                // 2K warming: density_HFB_2K_CC_m101_2031-2090.txt
+                // Ensemble IDs for 2K start at 101
+                const ensembleNum2K = 100 + ensemble;
+                const ensembleStr2K = String(ensembleNum2K).padStart(3, '0');
+                const sst2K = sstModel || 'CC';
+                filename += `density_HFB_2K_${sst2K}_m${ensembleStr2K}_2031-2090.txt`;
+                break;
+                
+            case '4k':
+                // 4K warming: density_HFB_4K_CC_m101_2051-2110.txt
+                // Ensemble IDs for 4K start at 101
+                const ensembleNum4K = 100 + ensemble;
+                const ensembleStr4K = String(ensembleNum4K).padStart(3, '0');
+                const sst4K = sstModel || 'CC';
+                filename += `density_HFB_4K_${sst4K}_m${ensembleStr4K}_2051-2110.txt`;
+                break;
+                
+            default:
+                throw new Error(`Unknown scenario: ${scenario}`);
+        }
+        
+        console.log(`Fetching pre-computed density data from: ${filename}`);
+        
+        const response = await fetch(filename);
+        
+        if (!response.ok) {
+            throw new Error(`Failed to fetch density data: ${response.status} - ${filename}`);
+        }
+        
+        const text = await response.text();
+        const data = this.parseDensityCSV(text);
+        
+        console.log(`Successfully loaded ${data.length} density cells from ${filename}`);
+        return data;
+        
+    } catch (error) {
+        console.error('Failed to fetch pre-computed density data:', error);
+        
+        // Show user-friendly error message
+        const errorMsg = `Could not load pre-computed density data for ${scenario} scenario, ensemble ${ensemble}${sstModel ? ', SST model ' + sstModel : ''}. Falling back to computed heatmap.`;
+        console.warn(errorMsg);
+        
+        // Optionally show a brief notification to the user
+        this.showNotification(errorMsg, 'warning');
+        
+        return null;
+    }
+}
+
+showNotification(message, type = 'info') {
+    // Create or update a notification element
+    let notification = document.getElementById('density-notification');
+    if (!notification) {
+        notification = document.createElement('div');
+        notification.id = 'density-notification';
+        notification.style.cssText = `
+            position: fixed;
+            top: 80px;
+            right: 20px;
+            background: ${type === 'warning' ? '#ff9800' : '#2196F3'};
+            color: white;
+            padding: 12px 20px;
+            border-radius: 4px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+            z-index: 10000;
+            max-width: 300px;
+            font-size: 14px;
+            transition: opacity 0.3s;
+        `;
+        document.body.appendChild(notification);
+    }
+    
+    notification.textContent = message;
+    notification.style.opacity = '1';
+    notification.style.display = 'block';
+    
+    // Auto-hide after 5 seconds
+    setTimeout(() => {
+        notification.style.opacity = '0';
+        setTimeout(() => {
+            notification.style.display = 'none';
+        }, 300);
+    }, 5000);
+}
+
+parseDensityCSV(csvText) {
+    const lines = csvText.trim().split('\n');
+    const headers = lines[0].split(',');
+    const data = [];
+    
+    for (let i = 1; i < lines.length; i++) {
+        const values = lines[i].split(',');
+        if (values.length !== headers.length) continue; // Skip malformed lines
+        
+        const row = {};
+        headers.forEach((header, index) => {
+            const value = values[index];
+            // Parse numbers
+            if (['ix', 'iy', 'count'].includes(header.trim())) {
+                row[header.trim()] = parseInt(value);
+            } else if (['lon_west', 'lon_east', 'lat_south', 'lat_north', 'lon_center', 'lat_center'].includes(header.trim())) {
+                row[header.trim()] = parseFloat(value);
+            } else {
+                row[header.trim()] = value;
+            }
+        });
+        data.push(row);
+    }
+    
+    console.log(`Parsed ${data.length} density cells from CSV`);
+    return data;
+}
     
     addAustraliaBoundaries() {
         fetch('https://raw.githubusercontent.com/nvkelso/natural-earth-vector/master/geojson/ne_50m_admin_0_countries.geojson')
@@ -151,7 +276,7 @@ class TCVisualization {
             this.loadData();
         });
         
-        document.getElementById('show-heatmap').addEventListener('change', (e) => {
+        document.getElementById('show-heatmap').addEventListener('change', async (e) => {
             this.showHeatmap = e.target.checked;
             if (this.showHeatmap) {
                 this.previousZoom = this.map.getZoom();
@@ -194,6 +319,9 @@ class TCVisualization {
                 this.updateSliderRange();
 
                 this.showZoomLockNotice();
+                        this.showLoading(true);
+                await this.updateVisualization();
+        this.showLoading(false);
             } else {
                 this.map.scrollWheelZoom.enable();
                 this.map.doubleClickZoom.enable();
@@ -1020,30 +1148,210 @@ updateDensityLegend(levels) {
 
     
 updateDensityComparisonPanel(metrics) {
-    const panel = document.getElementById('scenario-comparison');
-    if (!panel) return;
-    
     const content = document.getElementById('comparison-content');
-    
-    panel.classList.add('active');
+    if (!content) return;
     
     content.innerHTML = `
         <div class="comparison-item">
             <div class="scenario-label">${this.currentScenario === 'current' ? 'Historical' : '+' + this.currentScenario.toUpperCase() + ' Warming'}</div>
-            <div class="metric">Total Track Counts: ${metrics.totalTrackPoints}</div>
-            <div class="metric">Active Grid Cells: ${metrics.activeCells}</div>
-            <div class="metric">Max Cell Density: ${metrics.maxCellDensity}</div>
-            <div class="metric">Avg Tracks/Cell: ${metrics.avgDensity}</div>
-            <div class="metric">Grid Resolution: ${metrics.gridResolution}°×${metrics.gridResolution}°</div>
+            <div class="metric"><b>Active Cells:</b> ${metrics.totalCells}</div>
+            <div class="metric"><b>Total Track Points:</b> ${metrics.totalTrackPoints}</div>
+            <div class="metric"><b>Max Density:</b> ${metrics.maxDensity}</div>
+            <div class="metric"><b>Avg Density:</b> ${metrics.avgDensity}</div>
+            <hr style="margin: 8px 0;">
+            <div class="metric" style="color: #8B0000;"><b>Severe (≥80):</b> ${metrics.severeCells} cells</div>
+            <div class="metric" style="color: #FF4500;"><b>High (40-79):</b> ${metrics.highCells} cells</div>
+            <div class="metric" style="color: #FFA500;"><b>Moderate (10-39):</b> ${metrics.moderateCells} cells</div>
+            <div class="metric" style="color: #FFD700;"><b>Low (1-9):</b> ${metrics.lowCells} cells</div>
         </div>
         <p style="font-size: 11px; color: #666; margin-top: 10px;">
-            Global grid-based density map showing TC track frequency.<br>
-            All cells touched by tracks are shaded.
+            Density computed from d4PDF track data<br>
+            Grid: 2° lon × 3° lat resolution
         </p>
     `;
 }
+
+async createHeatmap(cyclones) {
+    // Clear existing layers
+    if (this.layers.heatmap) {
+        this.map.removeLayer(this.layers.heatmap);
+    }
     
-    createHeatmap(cyclones) {
+    this.layers.tracks.clearLayers();
+    this.layers.genesis.clearLayers();
+    this.layers.intensity.clearLayers();
+    
+    // Show loading indicator
+    const loadingEl = document.getElementById('loading-overlay');
+    if (loadingEl) {
+        const loadingText = loadingEl.querySelector('p');
+        if (loadingText) {
+            loadingText.textContent = 'Loading pre-computed density heatmap...';
+        }
+    }
+    
+    // Fetch pre-computed density data
+    const densityData = await this.fetchPrecomputedDensity(
+        this.currentScenario, 
+        this.currentEnsemble, 
+        this.currentSSTModel
+    );
+    
+    if (!densityData || densityData.length === 0) {
+        console.warn('No density data available, falling back to computed heatmap');
+        // Fallback to original heatmap calculation
+        this.createComputedHeatmap(cyclones);
+        return;
+    }
+    
+    console.log(`Creating heatmap with ${densityData.length} cells`);
+    
+    // Filter out cells with zero count for efficiency
+    const activeCells = densityData.filter(cell => cell.count > 0);
+    console.log(`Active cells (count > 0): ${activeCells.length}`);
+    
+    // Find max count for reference
+    const maxCount = Math.max(...densityData.map(d => d.count));
+    console.log(`Max density count: ${maxCount}`);
+    
+    // Define color scale matching the Python script
+    const levels = [0, 1, 2, 5, 10, 20, 40, 80, 120, 160];
+    
+    // Hot colormap similar to Python's 'hot_r'
+    const colors = [
+        'rgba(255, 255, 255, 0)',     // 0 - transparent
+        'rgba(255, 255, 220, 0.6)',   // 1 - very light yellow
+        'rgba(255, 255, 178, 0.7)',   // 2 - light yellow
+        'rgba(255, 237, 160, 0.75)',  // 5 - yellow
+        'rgba(255, 200, 100, 0.8)',   // 10 - orange-yellow
+        'rgba(255, 150, 50, 0.85)',   // 20 - orange
+        'rgba(255, 100, 0, 0.9)',     // 40 - dark orange
+        'rgba(255, 50, 0, 0.95)',     // 80 - red-orange
+        'rgba(200, 0, 0, 0.95)',      // 120 - red
+        'rgba(139, 0, 0, 1)'          // 160+ - dark red
+    ];
+    
+    // Function to get color based on count
+    const getColor = (count) => {
+        for (let i = levels.length - 1; i >= 0; i--) {
+            if (count >= levels[i]) {
+                return colors[i];
+            }
+        }
+        return colors[0];
+    };
+    
+    // Create rectangles for each active cell
+    const rectangles = [];
+    
+    activeCells.forEach(cell => {
+        const bounds = [
+            [cell.lat_south, cell.lon_west],
+            [cell.lat_north, cell.lon_east]
+        ];
+        
+        const rect = L.rectangle(bounds, {
+            fillColor: getColor(cell.count),
+            fillOpacity: 0.7,
+            weight: 0.3,
+            color: 'rgba(50, 50, 50, 0.2)',
+            interactive: true
+        });
+        
+        // Add popup with cell information
+        rect.bindPopup(`
+            <strong>TC Track Density</strong><br>
+            <hr style="margin: 5px 0;">
+            <b>Center:</b> ${cell.lat_center.toFixed(1)}°, ${cell.lon_center.toFixed(1)}°<br>
+            <b>Track Points:</b> ${cell.count}<br>
+            <b>Cell Bounds:</b><br>
+            &nbsp;&nbsp;Lat: ${cell.lat_south.toFixed(1)}° to ${cell.lat_north.toFixed(1)}°<br>
+            &nbsp;&nbsp;Lon: ${cell.lon_west.toFixed(1)}° to ${cell.lon_east.toFixed(1)}°<br>
+            <b>Scenario:</b> ${this.currentScenario === 'current' ? 'Historical' : '+' + this.currentScenario.toUpperCase()}<br>
+            <b>Ensemble:</b> ${this.currentEnsemble}${this.currentSSTModel ? ' (' + this.currentSSTModel + ')' : ''}
+        `);
+        
+        // Add hover effect
+        rect.on('mouseover', function(e) {
+            this.setStyle({
+                weight: 1,
+                color: 'rgba(0, 0, 0, 0.5)'
+            });
+        });
+        
+        rect.on('mouseout', function(e) {
+            this.setStyle({
+                weight: 0.3,
+                color: 'rgba(50, 50, 50, 0.2)'
+            });
+        });
+        
+        rectangles.push(rect);
+    });
+    
+    console.log(`Created ${rectangles.length} rectangle overlays`);
+    
+    // Create a feature group for all rectangles
+    this.layers.heatmap = L.featureGroup(rectangles);
+    this.layers.heatmap.addTo(this.map);
+    
+    // Store configuration for potential zoom handling
+    this.heatmapConfig = {
+        data: densityData,
+        activeCells: activeCells.length,
+        maxCount: maxCount,
+        levels: levels,
+        colors: colors,
+        scenario: this.currentScenario,
+        ensemble: this.currentEnsemble,
+        sstModel: this.currentSSTModel
+    };
+    
+    // Update the legend
+    this.updateHeatmapLegend(levels, colors);
+    
+    // Update comparison panel with metrics
+    const comparisonPanel = document.getElementById('scenario-comparison');
+    if (comparisonPanel) {
+        comparisonPanel.classList.add('active');
+        const metrics = this.calculateDensityMetrics(densityData);
+        this.updateDensityComparisonPanel(metrics);
+    }
+    
+    // Log summary
+    console.log(`Heatmap created successfully:
+        - Scenario: ${this.currentScenario}
+        - Ensemble: ${this.currentEnsemble}
+        - SST Model: ${this.currentSSTModel || 'N/A'}
+        - Active cells: ${activeCells.length}
+        - Max density: ${maxCount}
+    `);
+}
+
+calculateDensityMetrics(densityData) {
+    const nonZeroCells = densityData.filter(d => d.count > 0);
+    const totalCount = densityData.reduce((sum, d) => sum + d.count, 0);
+    const maxCount = Math.max(...densityData.map(d => d.count), 0);
+    
+    // Count cells by severity
+    const severeCells = nonZeroCells.filter(d => d.count >= 80).length;
+    const highCells = nonZeroCells.filter(d => d.count >= 40 && d.count < 80).length;
+    const moderateCells = nonZeroCells.filter(d => d.count >= 10 && d.count < 40).length;
+    const lowCells = nonZeroCells.filter(d => d.count >= 1 && d.count < 10).length;
+    
+    return {
+        totalCells: nonZeroCells.length,
+        totalTrackPoints: totalCount,
+        maxDensity: maxCount,
+        avgDensity: nonZeroCells.length > 0 ? (totalCount / nonZeroCells.length).toFixed(1) : 0,
+        severeCells: severeCells,
+        highCells: highCells,
+        moderateCells: moderateCells,
+        lowCells: lowCells
+    };
+}
+    
+    createComputedHeatmap(cyclones) {
         if (this.layers.heatmap) {
             this.map.removeLayer(this.layers.heatmap);
         }
@@ -1479,41 +1787,61 @@ updateDensityComparisonPanel(metrics) {
         }
     }
     
-    updateHeatmapLegend() {
-        let heatmapLegend = document.getElementById('heatmap-legend');
-        if (!heatmapLegend) {
-            heatmapLegend = document.createElement('div');
-            heatmapLegend.id = 'heatmap-legend';
-            heatmapLegend.className = 'legend-box';
-            document.getElementById('legend').appendChild(heatmapLegend);
-        }
-        
-        const scenarioInfo = {
-            'current': 'Historical Baseline (1951-2011)',
-            '2k': '+2K Warming Scenario',
-            '4k': '+4K Warming Scenario'
-        };
-        
-        heatmapLegend.innerHTML = `
-            <h4>TC Severity Heatmap</h4>
-            <p style="font-size: 12px; margin: 5px 0;">${scenarioInfo[this.currentScenario]}</p>
-            <div class="heatmap-gradient">
-                <div class="gradient-bar"></div>
-                <div class="gradient-labels">
-                    <span>Low</span>
-                    <span>Moderate</span>
-                    <span>High</span>
-                    <span>Extreme</span>
-                </div>
-            </div>
-            <p style="font-size: 11px; margin-top: 10px; font-style: italic;">
-                Colors show average cyclone severity.<br>
-                Compare scenarios to see warming impact.
-            </p>
-        `;
-        
-        heatmapLegend.style.display = this.showHeatmap ? 'block' : 'none';
+updateHeatmapLegend(levels, colors) {
+    let heatmapLegend = document.getElementById('heatmap-legend');
+    if (!heatmapLegend) {
+        heatmapLegend = document.createElement('div');
+        heatmapLegend.id = 'heatmap-legend';
+        heatmapLegend.className = 'legend-box';
+        document.getElementById('legend').appendChild(heatmapLegend);
     }
+    
+    const scenarioInfo = {
+        'current': 'Historical (1951-2011)',
+        '2k': '+2K Warming (2031-2090)',
+        '4k': '+4K Warming (2051-2110)'
+    };
+    
+    let legendHTML = `
+        <h4>TC Track Density</h4>
+        <p style="font-size: 12px; margin: 5px 0;">${scenarioInfo[this.currentScenario]}</p>
+        <div class="density-legend-items">
+    `;
+    
+    // Create legend items
+    const levelRanges = [
+        { min: 160, max: null, label: '160+' },
+        { min: 120, max: 159, label: '120-159' },
+        { min: 80, max: 119, label: '80-119' },
+        { min: 40, max: 79, label: '40-79' },
+        { min: 20, max: 39, label: '20-39' },
+        { min: 10, max: 19, label: '10-19' },
+        { min: 5, max: 9, label: '5-9' },
+        { min: 2, max: 4, label: '2-4' },
+        { min: 1, max: 1, label: '1' }
+    ];
+    
+    levelRanges.forEach((range, i) => {
+        const colorIndex = levels.length - 1 - i;
+        legendHTML += `
+            <div class="legend-item" style="margin: 2px 0;">
+                <span class="legend-color" style="background: ${colors[colorIndex]}; width: 30px; height: 12px; display: inline-block; border: 1px solid #666;"></span>
+                <span style="font-size: 11px; margin-left: 6px;">${range.label}</span>
+            </div>
+        `;
+    });
+    
+    legendHTML += `
+        </div>
+        <p style="font-size: 10px; margin-top: 8px; font-style: italic; color: #666;">
+            Track points per 2°×3° grid cell<br>
+            Data: d4PDF (pre-computed)
+        </p>
+    `;
+    
+    heatmapLegend.innerHTML = legendHTML;
+    heatmapLegend.style.display = this.showHeatmap ? 'block' : 'none';
+}
     
     calculateIntensityMetrics(cyclones) {
         const metrics = {
