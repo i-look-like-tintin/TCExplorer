@@ -1,5 +1,5 @@
 # Tropical Cyclone Track Visualization Prototype
-# Version 0.10.3
+# Version 0.10.4
 The app can be found running live in a web-facing environment at: https://tropicalcycloneexplorer.azurewebsites.net/
 
 This is designed to be run through XAMPP, and then launched in the browser as localhost/YOUR_PROJECT_DIRECTORY_INSIDE_HTDOCS/index.html
@@ -9,8 +9,8 @@ Any issues with this, hit me up. The instructions below may not be super accurat
 Added experimental heatmap view, which utilises pre-processed cell data to draw the heatmap. This was created from Client's IPYNB code modified to pre-process data, and then uploaded into application through density_data/
 See known issues with this experimental implementation. 
 ## Known Issues: 
-- Experimental heatmap mode is forcibly cleared on zooming, requires retoggling checkbox to reappear. Will investigate - may
-- ~~Lat/long of precomputed data in experimental heatmap incorrectly formatted. Solved - may~~
+- ~~Experimental heatmap mode is forcibly cleared on zooming, requires retoggling checkbox to reappear. Will investigate - may~~ Fixed.
+- ~~Lat/long of precomputed data in experimental heatmap incorrectly formatted.~~ Fixed.
 
 ## May's Immediate Roadmap
 - Fix known experimental heatmap issues
