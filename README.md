@@ -11,6 +11,7 @@ See known issues with this experimental implementation.
 ## Known Issues: 
 - ~~Experimental heatmap mode is forcibly cleared on zooming, requires retoggling checkbox to reappear. Will investigate - may~~ Fixed.
 - ~~Lat/long of precomputed data in experimental heatmap incorrectly formatted.~~ Fixed.
+- QUERY: Determine whether experimental heatmap impacts loading of Tc Track data for unseen ensembles, as these use seperate data sources. Initial testing suggests no impact, but query further.
 
 ## May's Immediate Roadmap
 - Fix known experimental heatmap issues
