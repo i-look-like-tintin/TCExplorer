@@ -40,10 +40,14 @@ class TCVisualization {
     }
     
     initMap() {
-        this.map = L.map('map').setView([-25.2744, 133.7751], 4);
+        this.map = L.map('map', {
+            worldCopyJump: false, 
+            maxBoundsViscosity: 0 
+        }).setView([-25.2744, 133.7751], 4);
         
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-            attribution: '© OpenStreetMap contributors | Data: d4PDF'
+            attribution: 'TC Explorer created by Team 7 Sharks',
+            noWrap: false //should allow tile wraparound hopefully
         }).addTo(this.map);
         
         this.layers.tracks.addTo(this.map);
@@ -60,33 +64,7 @@ class TCVisualization {
         });
         
         this.map.on('zoomend', () => {
-            clearTimeout(zoomTimeout);
-            zoomTimeout = setTimeout(() => {
-                if ((this.showHeatmap || this.showDensityHeatmap) && this.heatmapConfig && this.layers.heatmap) {
-                    const currentZoom = this.map.getZoom();
-                    const radius = this.heatmapConfig.baseRadius * Math.pow(2, (currentZoom - 4) * 0.7);
-                    const blur = 15 + (currentZoom - 4) * 3;
-                    
-                    if (this.layers.heatmap) {
-                        this.map.removeLayer(this.layers.heatmap);
-                    }
-                    
-                    const heatmapOptions = {
-                        radius: Math.min(80, Math.max(15, radius)),
-                        blur: Math.min(40, Math.max(10, blur)),
-                        maxZoom: 17,
-                        max: this.heatmapConfig.maxValue || 1.0,
-                        gradient: this.heatmapConfig.gradient,
-                        minOpacity: this.showDensityHeatmap ? 0.4 : 0.3
-                    };
-                    
-                    this.layers.heatmap = L.heatLayer(this.heatmapConfig.data, heatmapOptions);
-                    
-                    this.layers.heatmap.addTo(this.map);
-                }
-                
-                this.map.getContainer().classList.remove('zooming');
-            }, 100);
+            //removed content for new heatmap compatability lol
         });
     }
 
@@ -842,37 +820,47 @@ createDensityHeatmap(cyclones) {
     };
     
     const rectangles = [];
-    
-    Object.keys(tcFreq).forEach(cellKey => {
-        const count = tcFreq[cellKey];
-        if (count > 0) {
-            const [latIdx, lonIdx] = cellKey.split(',').map(Number);
-            
-            const lat = (latIdx * gridResolution) - 90;
-            const lon = (lonIdx * gridResolution) - 180;
-            
+const worldCopies = this.getVisibleWorldCopies(); // Create copies for wraparound
+
+Object.keys(tcFreq).forEach(cellKey => {
+    const count = tcFreq[cellKey];
+    if (count > 0) {
+        const [latIdx, lonIdx] = cellKey.split(',').map(Number);
+        
+        const lat = (latIdx * gridResolution) - 90;
+        const lon = (lonIdx * gridResolution) - 180;
+        
+        const fillColor = getColor(count);
+        const rectStyle = {
+            fillColor: fillColor,
+            fillOpacity: 0.8,
+            weight: 0.5,
+            color: 'rgba(100, 100, 100, 0.3)',
+            interactive: true
+        };
+        
+        // Create rectangles for world copies
+        worldCopies.forEach(offset => {
             const bounds = [
-                [lat, lon],
-                [lat + gridResolution, lon + gridResolution]
+                [lat, lon + offset],
+                [lat + gridResolution, lon + gridResolution + offset]
             ];
             
-            const rect = L.rectangle(bounds, {
-                fillColor: getColor(count),
-                fillOpacity: 0.8,
-                weight: 0.5,
-                color: 'rgba(100, 100, 100, 0.3)',
-                interactive: true
-            });
-            
-            rect.bindPopup(`
-                <strong>TC Track Density</strong><br>
-                Cell: ${lat.toFixed(1)}°, ${lon.toFixed(1)}°<br>
-                Track Count: ${count}
-            `);
-            
-            rectangles.push(rect);
-        }
-    });
+            // Only create if potentially visible
+            if (lon + offset > -540 && lon + gridResolution + offset < 540) {
+                const rect = L.rectangle(bounds, rectStyle);
+                
+                rect.bindPopup(`
+                    <strong>TC Track Density</strong><br>
+                    Cell: ${lat.toFixed(1)}°, ${lon.toFixed(1)}°<br>
+                    Track Count: ${count}
+                `);
+                
+                rectangles.push(rect);
+            }
+        });
+    }
+});
     
     this.layers.heatmap = L.featureGroup(rectangles);
     this.layers.heatmap.addTo(this.map);
@@ -999,6 +987,22 @@ updateDensityComparisonPanel(metrics) {
         </p>
     `;
 }
+//helper method to /hopefully/ dynamically render heatmap based on map location
+getVisibleWorldCopies() {
+    const bounds = this.map.getBounds();
+    const west = bounds.getWest();
+    const east = bounds.getEast();
+    
+    const copies = [0]; // Always include the primary world
+    
+    // Add copies as needed based on visible bounds
+    if (west < -180) copies.push(-360);
+    if (east > 180) copies.push(360);
+    if (west < -540) copies.push(-720);
+    if (east > 540) copies.push(720);
+    
+    return copies;
+}
 
 async createHeatmap(cyclones) {
     const reqId = ++this.heatmapRequestId;
@@ -1027,7 +1031,7 @@ async createHeatmap(cyclones) {
     );
     
     if (!densityData || densityData.length === 0) {
-        console.warn('No density data available, falling back to computed heatmap aborted: DEPRECATED');
+        console.warn('No density data available');
         return;
     }
     
@@ -1065,55 +1069,77 @@ async createHeatmap(cyclones) {
     
     const rectangles = [];
     
+    // Create rectangles for multiple world copies to handle wraparound
+    const worldCopies = this.getVisibleWorldCopies(); // Create copies at -360, 0, and +360 degrees
+    
     activeCells.forEach(cell => {
-        const bounds = [
-            [cell.lat_south, cell.lon_west],
-            [cell.lat_north, cell.lon_east]
-        ];
-        
-        const rect = L.rectangle(bounds, {
-            fillColor: getColor(cell.count),
+        const fillColor = getColor(cell.count);
+        const rectStyle = {
+            fillColor: fillColor,
             fillOpacity: 0.7,
             weight: 0.3,
             color: 'rgba(50, 50, 50, 0.2)',
             interactive: true
+        };
+        
+        // Create rectangle for each world copy
+        worldCopies.forEach(offset => {
+            const bounds = [
+                [cell.lat_south, cell.lon_west + offset],
+                [cell.lat_north, cell.lon_east + offset]
+            ];
+            
+            // Only create rectangles that might be visible (optimization)
+            // You can adjust these bounds based on your needs
+            if (cell.lon_west + offset > -540 && cell.lon_east + offset < 540) {
+                const rect = L.rectangle(bounds, rectStyle);
+                
+                // Create popup content
+                const popupContent = `
+                    <strong>TC Track Density</strong><br>
+                    <hr style="margin: 5px 0;">
+                    <b>Center:</b> ${cell.lat_center.toFixed(1)}°, ${cell.lon_center.toFixed(1)}°<br>
+                    <b>Track Points:</b> ${cell.count}<br>
+                    <b>Cell Bounds:</b><br>
+                    &nbsp;&nbsp;Lat: ${cell.lat_south.toFixed(1)}° to ${cell.lat_north.toFixed(1)}°<br>
+                    &nbsp;&nbsp;Lon: ${cell.lon_west.toFixed(1)}° to ${cell.lon_east.toFixed(1)}°<br>
+                    <b>Scenario:</b> ${this.currentScenario === 'current' ? 'Historical' : '+' + this.currentScenario.toUpperCase()}<br>
+                    <b>Ensemble:</b> ${this.currentEnsemble}${this.currentSSTModel ? ' (' + this.currentSSTModel + ')' : ''}
+                `;
+                
+                rect.bindPopup(popupContent);
+                
+                // Add hover effect
+                rect.on('mouseover', function(e) {
+                    this.setStyle({
+                        weight: 1,
+                        color: 'rgba(0, 0, 0, 0.5)'
+                    });
+                });
+                
+                rect.on('mouseout', function(e) {
+                    this.setStyle({
+                        weight: 0.3,
+                        color: 'rgba(50, 50, 50, 0.2)'
+                    });
+                });
+                
+                rectangles.push(rect);
+            }
         });
-        
-        rect.bindPopup(`
-            <strong>TC Track Density</strong><br>
-            <hr style="margin: 5px 0;">
-            <b>Center:</b> ${cell.lat_center.toFixed(1)}°, ${cell.lon_center.toFixed(1)}°<br>
-            <b>Track Points:</b> ${cell.count}<br>
-            <b>Cell Bounds:</b><br>
-            &nbsp;&nbsp;Lat: ${cell.lat_south.toFixed(1)}° to ${cell.lat_north.toFixed(1)}°<br>
-            &nbsp;&nbsp;Lon: ${cell.lon_west.toFixed(1)}° to ${cell.lon_east.toFixed(1)}°<br>
-            <b>Scenario:</b> ${this.currentScenario === 'current' ? 'Historical' : '+' + this.currentScenario.toUpperCase()}<br>
-            <b>Ensemble:</b> ${this.currentEnsemble}${this.currentSSTModel ? ' (' + this.currentSSTModel + ')' : ''}
-        `);
-        
-        rect.on('mouseover', function(e) {
-            this.setStyle({
-                weight: 1,
-                color: 'rgba(0, 0, 0, 0.5)'
-            });
-        });
-        
-        rect.on('mouseout', function(e) {
-            this.setStyle({
-                weight: 0.3,
-                color: 'rgba(50, 50, 50, 0.2)'
-            });
-        });
-        
-        rectangles.push(rect);
     });
     
-    console.log(`Created ${rectangles.length} rectangle overlays`);
+    console.log(`Created ${rectangles.length} rectangle overlays (including world copies)`);
+    
     if (reqId !== this.heatmapRequestId || !this.showHeatmap) return;
+    
+    // Create feature group with all rectangles
     this.layers.heatmap = L.featureGroup(rectangles);
     this.layers.heatmap.addTo(this.map);
-    if (reqId !== this.heatmapRequestId || !this.showHeatmap) return;
+    
+    // Store configuration
     this.heatmapConfig = {
+        type: 'rectangles',  // Mark this as rectangle-based
         data: densityData,
         activeCells: activeCells.length,
         maxCount: maxCount,
