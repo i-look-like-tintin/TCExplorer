@@ -17,8 +17,8 @@ See known issues with this experimental implementation.
 - QUERY: Determine whether experimental heatmap impacts loading of Tc Track data for unseen ensembles, as these use seperate data sources. Initial testing suggests no impact, but query further.
 
 ## May's Immediate Roadmap
-- Fix known experimental heatmap issues
-- Clean the project tree, seperate out app.js
+- ~~Fix known experimental heatmap issues~~
+- ~~Clean the project tree, seperate out app.js~~
 - Genesis locations - Refine and include a much more accurate genesis location when cyclone speed reaching 34 knots (17m/s). Ignore path prior to genesis.
 - Dissipation data points.
 - Add a button to show land-fall locations. Display purely land-fall spots – no tracks. Be able to select the time. Have different coloured dots for land-fall location to show cyclone intensity upon landfall.
