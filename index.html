@@ -4,31 +4,51 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Tropical Cyclone Track Visualization - Australia</title>
+    
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <link rel="stylesheet" href="styles.css">
+    
+    <meta name="description" content="Interactive visualization of tropical cyclone tracks using d4PDF climate model projections">
+    <meta name="keywords" content="tropical cyclone, climate change, d4PDF, Australia, visualization">
+    <meta name="author" content="Team 7 Sharks">
+    
+    <meta name="theme-color" content="#2c3e50">
+    <link rel="manifest" href="manifest.json">
+    
+    <link rel="preload" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" as="script">
+    <link rel="preload" href="https://unpkg.com/leaflet.heat@0.2.0/dist/leaflet-heat.js" as="script">
 </head>
 <body>
     <div id="app-container">
         <header>
             <h1>Tropical Cyclone Track Visualization</h1>
             <p>d4PDF Climate Model Projections for Australia</p>
+            <div id="data-status" class="data-status" aria-live="polite"></div>
+                <div class="source-info">
+                    <strong>Source file:</strong>
+                    <span id="source-file" class="source-file">—</span>
+                </div>
         </header>
+        
         <div id="control-panel">
             <div class="control-group">
                 <label>Climate Scenario:</label>
                 <div class="scenario-buttons">
-                    <button class="scenario-btn active" data-scenario="current">Historical (1951-2011)</button>
-                    <button class="scenario-btn" data-scenario="nat">Historical NAT (INCOMPLETE)</button>
-                    <button class="scenario-btn" data-scenario="2k">+2K Warming (2031-2090)</button>
-                    <button class="scenario-btn" data-scenario="4k">+4K Warming (2051-2110)</button>
+                    <button class="scenario-btn active" data-scenario="current" aria-label="Historical Climate Scenario">
+                        Historical (1951-2011)
+                    </button>
+                    <button class="scenario-btn" data-scenario="2k" aria-label="2K Warming Scenario">
+                        +2K Warming (2031-2090)
+                    </button>
+                    <button class="scenario-btn" data-scenario="4k" aria-label="4K Warming Scenario">
+                        +4K Warming (2051-2110)
+                    </button>
                 </div>
             </div>
             
-
-            
             <div class="control-group" id="sst-selector" style="display: none;">
-                <label>SST Model:</label>
-                <select id="sst-select">
+                <label for="sst-select">SST Model:</label>
+                <select id="sst-select" aria-label="Sea Surface Temperature Model">
                     <option value="CC">CCSM4 (CC)</option>
                     <option value="GF">GFDL-CM3 (GF)</option>
                     <option value="HA">HadGEM-AO2 (HA)</option>
@@ -39,8 +59,8 @@
             </div>
             
             <div class="control-group">
-                <label>Ensemble Member:</label>
-                <select id="ensemble-select">
+                <label for="ensemble-select">Ensemble Member:</label>
+                <select id="ensemble-select" aria-label="Ensemble Member">
                     <option value="1">Ensemble 1</option>
                     <option value="2">Ensemble 2</option>
                     <option value="3">Ensemble 3</option>
@@ -51,99 +71,177 @@
                     <option value="8">Ensemble 8</option>
                     <option value="9">Ensemble 9</option>
                 </select>
-                <span id="ensemble-info" style="font-size: 0.8rem; color: #7f8c8d; margin-left: 0.5rem;"></span>
+                <span id="ensemble-info" class="info-text" aria-live="polite"></span>
             </div>
 
             <div class="control-group">
                 <label>Display Options:</label>
                 <div class="toggle-options">
                     <label class="checkbox-label">
-                        <input type="checkbox" id="show-heatmap"> Show Heatmap (EXPERIMENTAL)
+                        <input type="checkbox" id="show-heatmap" aria-describedby="heatmap-desc"> 
+                        Show Heatmap (EXPERIMENTAL)
                     </label>
                     <label class="checkbox-label">
-                        <input type="checkbox" id="show-density-heatmap"> Show Heatmap (stable)
+                        <input type="checkbox" id="show-density-heatmap" aria-describedby="density-desc"> 
+                        Show Heatmap (stable)
                     </label>
                     <label class="checkbox-label">
-                        <input type="checkbox" id="show-tracks" checked> Show Tracks
+                        <input type="checkbox" id="show-tracks" checked aria-describedby="tracks-desc"> 
+                        Show Tracks
                     </label>
                     <label class="checkbox-label">
-                        <input type="checkbox" id="show-genesis" checked> Show Genesis Points
+                        <input type="checkbox" id="show-genesis" checked aria-describedby="genesis-desc"> 
+                        Show Genesis Points
                     </label>
                     <label class="checkbox-label">
-                        <input type="checkbox" id="show-intensity"> Show Intensity Colors
+                        <input type="checkbox" id="show-intensity" aria-describedby="intensity-desc"> 
+                        Show Intensity Colors
                     </label>
                     <label class="checkbox-label">
-                        <input type="checkbox" id="filter-australia" checked> Filter to Australian Region
+                        <input type="checkbox" id="filter-australia" checked aria-describedby="filter-desc"> 
+                        Filter to Australian Region
                     </label>
                 </div>
             </div>
             
+            <div class="control-group">
+                <label>Year Range:</label>
+                <div class="year-range-container">
+                    <div class="range-slider-container">
+                        <div class="range-slider">
+                            <input type="range" id="year-slider-min" class="year-slider" 
+                                   min="1951" max="2111" value="1951" step="1"
+                                   aria-label="Minimum year" aria-describedby="year-display">
+                            <input type="range" id="year-slider-max" class="year-slider" 
+                                   min="1951" max="2111" value="2111" step="1"
+                                   aria-label="Maximum year" aria-describedby="year-display">
+                            <div class="slider-track"></div>
+                            <div class="slider-range"></div>
+                        </div>
+                    </div>
+                </div>
+                <div id="year-display" class="year-display" aria-live="polite">All Years</div>
+            </div>
             
             <div class="control-group">
-                <button id="export-data" class="export-btn">Export Data (CSV)</button>
-                <button id="refresh-data" class="export-btn" style="background-color: #3498db;">Refresh Data</button>
-            </div>
-
-            
-<div class="control-group">
-    <label>Year Range:</label>
-    <div class="year-range-container">
-        <div class="range-slider-container">
-            <div class="range-slider">
-                <input type="range" id="year-slider-min" class="year-slider" min="1951" max="2111" value="1951" step="1">
-                <input type="range" id="year-slider-max" class="year-slider" min="1951" max="2111" value="2111" step="1">
-                <div class="slider-track"></div>
-                <div class="slider-range"></div>
+                <button id="export-data" class="export-btn" aria-describedby="export-desc">
+                    Export Data (CSV)
+                </button>
+                <button id="refresh-data" class="export-btn secondary" aria-describedby="refresh-desc">
+                    Refresh Data
+                </button>
             </div>
         </div>
-    </div>
-    <div id="year-display" class="year-display">All Years</div>
-</div>
-<div class="control-group">
-  <div id="data-status" style="font-size:.9rem; color:#7f8c8d; margin-bottom:4px;"></div>
-  <div style="font-size:.9rem; color:#2c3e50;">
-    <strong>Source file:</strong>
-    <span id="source-file">—</span>
-  </div>
-</div>
-        </div>
+        
         <div id="map-container">
-            <div id="map"></div>
-            <div id="legend">
+            <div id="map" role="application" aria-label="Interactive cyclone track map"></div>
+            
+            <div id="legend" class="map-overlay" role="region" aria-label="Map legend">
                 <h4>Intensity Categories</h4>
                 <div class="legend-item">
-                    <span class="legend-color" style="background: #1f78b4;"></span>
+                    <span class="legend-color" style="background: #1f78b4;" aria-hidden="true"></span>
                     <span>Category 1</span>
                 </div>
                 <div class="legend-item">
-                    <span class="legend-color" style="background: #33a02c;"></span>
+                    <span class="legend-color" style="background: #33a02c;" aria-hidden="true"></span>
                     <span>Category 2</span>
                 </div>
                 <div class="legend-item">
-                    <span class="legend-color" style="background: #ff7f00;"></span>
+                    <span class="legend-color" style="background: #ff7f00;" aria-hidden="true"></span>
                     <span>Category 3</span>
                 </div>
                 <div class="legend-item">
-                    <span class="legend-color" style="background: #e31a1c;"></span>
+                    <span class="legend-color" style="background: #e31a1c;" aria-hidden="true"></span>
                     <span>Category 4</span>
                 </div>
                 <div class="legend-item">
-                    <span class="legend-color" style="background: #6a3d9a;"></span>
+                    <span class="legend-color" style="background: #6a3d9a;" aria-hidden="true"></span>
                     <span>Category 5</span>
                 </div>
             </div>
-        </div>
-        <div id="info-panel" class="hidden">
-            <h3>Cyclone Information</h3>
-            <div id="cyclone-details"></div>
+            
+            <div id="info-panel" class="map-overlay hidden" role="dialog" aria-labelledby="cyclone-info-title">
+                <h3 id="cyclone-info-title">Cyclone Information</h3>
+                <div id="cyclone-details" aria-live="polite"></div>
+                <button id="close-info" class="close-btn" aria-label="Close information panel">×</button>
+            </div>
         </div>
     </div>
-    <div id="loading-overlay">
-        <div class="loader"></div>
+    
+    <div id="loading-overlay" role="status" aria-live="polite">
+        <div class="loader" aria-hidden="true"></div>
         <p>Loading cyclone data...</p>
     </div>
+    
+    <div id="notification-container" aria-live="assertive" aria-atomic="true"></div>
+    
+    <div id="validation-error" class="validation-error hidden" role="alert" aria-live="assertive"></div>
+    
+    <div class="sr-only">
+        <h2>Application Instructions</h2>
+        <p>This application displays tropical cyclone tracks for different climate scenarios. 
+           Use the controls above the map to select scenarios, ensemble members, and display options. 
+           The map shows cyclone tracks, and you can click on tracks for more information.</p>
+    </div>
+
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script src="https://unpkg.com/leaflet.heat@0.2.0/dist/leaflet-heat.js"></script>
-    <script src="app.js"></script>
+    
+    <!-- load order below here is fucking important don't fuck with it lol <33-->
+    <script src="./js/config-constants.js"></script>
+    <script src="./js/utils.js"></script>
+    <script src="./js/map-manager.js"></script>
+    <script src="./js/data-manager.js"></script>
+    <script src="./js/visualization-renderer.js"></script>
+    <script src="./js/ui-controller.js"></script>
+    <script src="./js/device-manager.js"></script>
+    <script src="./js/app.js"></script>
+    
+    <!-- this a placeholder for api shit later on. fuck with it as you will.  -->
+    <script>
+        // Register service worker when available
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('/sw.js')
+                    .then(registration => console.log('SW registered'))
+                    .catch(registrationError => console.log('SW registration failed'));
+            });
+        }
+        
+        window.addEventListener('load', () => {
+            if (performance.mark) {
+                performance.mark('app-loaded');
+                
+                setTimeout(() => {
+                    const navigation = performance.getEntriesByType('navigation')[0];
+                    console.log('Page load time:', navigation.loadEventEnd - navigation.fetchStart, 'ms');
+                }, 0);
+            }
+        });
+        
+        window.addEventListener('error', (event) => {
+            console.error('Global error:', event.error);
+            if (window.tcApp && window.tcApp.utils) {
+                window.tcApp.utils.handleError(event.error, 'Global');
+            }
+        });
+        
+        window.addEventListener('unhandledrejection', (event) => {
+            console.error('Unhandled promise rejection:', event.reason);
+            if (window.tcApp && window.tcApp.utils) {
+                window.tcApp.utils.handleError(event.reason, 'Promise');
+            }
+        });
+        
+        document.addEventListener('keydown', (event) => {
+            // Ctrl/Cmd + M to toggle mobile controls
+            if ((event.ctrlKey || event.metaKey) && event.key === 'm') {
+                event.preventDefault();
+                if (window.tcApp && window.tcApp.deviceManager && window.tcApp.deviceManager.isMobile()) {
+                    window.tcApp.toggleMobileControls();
+                }
+            }
+        });
+    </script>
 </body>
 </html>
