@@ -13,7 +13,7 @@ See known issues with this experimental implementation.
 ## Known Issues: 
 - ~~Experimental heatmap mode is forcibly cleared on zooming, requires retoggling checkbox to reappear. Will investigate - may~~ Fixed.
 - ~~Lat/long of precomputed data in experimental heatmap incorrectly formatted.~~ Fixed.
-- Map glitches (jumps around) on panning. Investigating - May (Godzilla app.js was beautiful, and we killed him :c ) ((Hmm, it's server side, not a file issue. Doesn't exist in XAMPP))
+- Map glitches (jumps around) on panning. Investigating - May (Godzilla app.js was beautiful, and we killed him :c ) ((Hmm, it's server side, not a file issue. Doesn't exist in XAMPP)) - partially fixed - may
 - QUERY: Determine whether experimental heatmap impacts loading of Tc Track data for unseen ensembles, as these use seperate data sources. Initial testing suggests no impact, but query further.
 
 ## May's Immediate Roadmap
