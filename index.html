@@ -29,9 +29,10 @@
         <header>
             <h1>Tropical Cyclone Track Visualization</h1>
             <p>d4PDF Climate Model Projections for Australia</p>
-            <div id="app-status" class="status-indicator" title="Application Status">
-                <span class="status-dot"></span>
-                <span class="status-text">Loading...</span>
+            <div id="data-status" class="data-status" aria-live="polite"></div>
+                <div class="source-info">
+                    <strong>Source file:</strong>
+                    <span id="source-file" class="source-file">—</span>
             </div>
         </header>
         
@@ -90,32 +91,26 @@
                     <label class="checkbox-label">
                         <input type="checkbox" id="show-heatmap" aria-describedby="heatmap-desc"> 
                         Show Heatmap (EXPERIMENTAL)
-                        <span id="heatmap-desc" class="sr-only">Pre-computed density heatmap</span>
                     </label>
                     <label class="checkbox-label">
                         <input type="checkbox" id="show-density-heatmap" aria-describedby="density-desc"> 
                         Show Heatmap (stable)
-                        <span id="density-desc" class="sr-only">Computed density heatmap</span>
                     </label>
                     <label class="checkbox-label">
                         <input type="checkbox" id="show-tracks" checked aria-describedby="tracks-desc"> 
                         Show Tracks
-                        <span id="tracks-desc" class="sr-only">Cyclone track lines</span>
                     </label>
                     <label class="checkbox-label">
                         <input type="checkbox" id="show-genesis" checked aria-describedby="genesis-desc"> 
                         Show Genesis Points
-                        <span id="genesis-desc" class="sr-only">Cyclone formation locations</span>
                     </label>
                     <label class="checkbox-label">
                         <input type="checkbox" id="show-intensity" aria-describedby="intensity-desc"> 
                         Show Intensity Colors
-                        <span id="intensity-desc" class="sr-only">Color-coded intensity segments</span>
                     </label>
                     <label class="checkbox-label">
                         <input type="checkbox" id="filter-australia" checked aria-describedby="filter-desc"> 
                         Filter to Australian Region
-                        <span id="filter-desc" class="sr-only">Show only cyclones affecting Australia</span>
                     </label>
                 </div>
             </div>
@@ -140,15 +135,6 @@
                 <div id="year-display" class="year-display" aria-live="polite">All Years</div>
             </div>
             
-            <!-- Data Status and Source -->
-            <div class="control-group">
-                <div id="data-status" class="data-status" aria-live="polite"></div>
-                <div class="source-info">
-                    <strong>Source file:</strong>
-                    <span id="source-file" class="source-file">—</span>
-                </div>
-            </div>
-            
             <!-- Action Buttons -->
             <div class="control-group">
                 <button id="export-data" class="export-btn" aria-describedby="export-desc">
@@ -157,8 +143,6 @@
                 <button id="refresh-data" class="export-btn secondary" aria-describedby="refresh-desc">
                     Refresh Data
                 </button>
-                <div id="export-desc" class="sr-only">Export current cyclone data as CSV file</div>
-                <div id="refresh-desc" class="sr-only">Reload cyclone data from server</div>
             </div>
         </div>
         
