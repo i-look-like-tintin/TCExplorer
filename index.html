@@ -5,32 +5,39 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Tropical Cyclone Track Visualization - Australia</title>
     
+    <!-- External CSS Dependencies -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <link rel="stylesheet" href="styles.css">
     
+    <!-- Application Metadata -->
     <meta name="description" content="Interactive visualization of tropical cyclone tracks using d4PDF climate model projections">
     <meta name="keywords" content="tropical cyclone, climate change, d4PDF, Australia, visualization">
     <meta name="author" content="Team 7 Sharks">
     
+    <!-- Progressive Web App Configuration -->
     <meta name="theme-color" content="#2c3e50">
     <link rel="manifest" href="manifest.json">
     
+    <!-- Preload Critical Resources -->
     <link rel="preload" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" as="script">
     <link rel="preload" href="https://unpkg.com/leaflet.heat@0.2.0/dist/leaflet-heat.js" as="script">
 </head>
 <body>
+    <!-- Application Container -->
     <div id="app-container">
+        <!-- Header Section -->
         <header>
             <h1>Tropical Cyclone Track Visualization</h1>
             <p>d4PDF Climate Model Projections for Australia</p>
-            <div id="data-status" class="data-status" aria-live="polite"></div>
-                <div class="source-info">
-                    <strong>Source file:</strong>
-                    <span id="source-file" class="source-file">—</span>
-                </div>
+            <div id="app-status" class="status-indicator" title="Application Status">
+                <span class="status-dot"></span>
+                <span class="status-text">Loading...</span>
+            </div>
         </header>
         
+        <!-- Control Panel -->
         <div id="control-panel">
+            <!-- Scenario Selection -->
             <div class="control-group">
                 <label>Climate Scenario:</label>
                 <div class="scenario-buttons">
@@ -46,6 +53,7 @@
                 </div>
             </div>
             
+            <!-- SST Model Selection (shown for future scenarios) -->
             <div class="control-group" id="sst-selector" style="display: none;">
                 <label for="sst-select">SST Model:</label>
                 <select id="sst-select" aria-label="Sea Surface Temperature Model">
@@ -58,6 +66,7 @@
                 </select>
             </div>
             
+            <!-- Ensemble Member Selection -->
             <div class="control-group">
                 <label for="ensemble-select">Ensemble Member:</label>
                 <select id="ensemble-select" aria-label="Ensemble Member">
@@ -74,36 +83,44 @@
                 <span id="ensemble-info" class="info-text" aria-live="polite"></span>
             </div>
 
+            <!-- Display Options -->
             <div class="control-group">
                 <label>Display Options:</label>
                 <div class="toggle-options">
                     <label class="checkbox-label">
                         <input type="checkbox" id="show-heatmap" aria-describedby="heatmap-desc"> 
                         Show Heatmap (EXPERIMENTAL)
+                        <span id="heatmap-desc" class="sr-only">Pre-computed density heatmap</span>
                     </label>
                     <label class="checkbox-label">
                         <input type="checkbox" id="show-density-heatmap" aria-describedby="density-desc"> 
                         Show Heatmap (stable)
+                        <span id="density-desc" class="sr-only">Computed density heatmap</span>
                     </label>
                     <label class="checkbox-label">
                         <input type="checkbox" id="show-tracks" checked aria-describedby="tracks-desc"> 
                         Show Tracks
+                        <span id="tracks-desc" class="sr-only">Cyclone track lines</span>
                     </label>
                     <label class="checkbox-label">
                         <input type="checkbox" id="show-genesis" checked aria-describedby="genesis-desc"> 
                         Show Genesis Points
+                        <span id="genesis-desc" class="sr-only">Cyclone formation locations</span>
                     </label>
                     <label class="checkbox-label">
                         <input type="checkbox" id="show-intensity" aria-describedby="intensity-desc"> 
                         Show Intensity Colors
+                        <span id="intensity-desc" class="sr-only">Color-coded intensity segments</span>
                     </label>
                     <label class="checkbox-label">
                         <input type="checkbox" id="filter-australia" checked aria-describedby="filter-desc"> 
                         Filter to Australian Region
+                        <span id="filter-desc" class="sr-only">Show only cyclones affecting Australia</span>
                     </label>
                 </div>
             </div>
             
+            <!-- Year Range Control -->
             <div class="control-group">
                 <label>Year Range:</label>
                 <div class="year-range-container">
@@ -123,6 +140,16 @@
                 <div id="year-display" class="year-display" aria-live="polite">All Years</div>
             </div>
             
+            <!-- Data Status and Source -->
+            <div class="control-group">
+                <div id="data-status" class="data-status" aria-live="polite"></div>
+                <div class="source-info">
+                    <strong>Source file:</strong>
+                    <span id="source-file" class="source-file">—</span>
+                </div>
+            </div>
+            
+            <!-- Action Buttons -->
             <div class="control-group">
                 <button id="export-data" class="export-btn" aria-describedby="export-desc">
                     Export Data (CSV)
@@ -130,12 +157,16 @@
                 <button id="refresh-data" class="export-btn secondary" aria-describedby="refresh-desc">
                     Refresh Data
                 </button>
+                <div id="export-desc" class="sr-only">Export current cyclone data as CSV file</div>
+                <div id="refresh-desc" class="sr-only">Reload cyclone data from server</div>
             </div>
         </div>
         
+        <!-- Map Container -->
         <div id="map-container">
             <div id="map" role="application" aria-label="Interactive cyclone track map"></div>
             
+            <!-- Legend -->
             <div id="legend" class="map-overlay" role="region" aria-label="Map legend">
                 <h4>Intensity Categories</h4>
                 <div class="legend-item">
@@ -160,6 +191,7 @@
                 </div>
             </div>
             
+            <!-- Cyclone Information Panel -->
             <div id="info-panel" class="map-overlay hidden" role="dialog" aria-labelledby="cyclone-info-title">
                 <h3 id="cyclone-info-title">Cyclone Information</h3>
                 <div id="cyclone-details" aria-live="polite"></div>
@@ -168,15 +200,19 @@
         </div>
     </div>
     
+    <!-- Loading Overlay -->
     <div id="loading-overlay" role="status" aria-live="polite">
         <div class="loader" aria-hidden="true"></div>
         <p>Loading cyclone data...</p>
     </div>
     
+    <!-- Error Notification Container -->
     <div id="notification-container" aria-live="assertive" aria-atomic="true"></div>
     
+    <!-- Validation Error Display -->
     <div id="validation-error" class="validation-error hidden" role="alert" aria-live="assertive"></div>
     
+    <!-- Screen Reader Only Content -->
     <div class="sr-only">
         <h2>Application Instructions</h2>
         <p>This application displays tropical cyclone tracks for different climate scenarios. 
@@ -184,20 +220,29 @@
            The map shows cyclone tracks, and you can click on tracks for more information.</p>
     </div>
 
+    <!-- External JavaScript Dependencies -->
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script src="https://unpkg.com/leaflet.heat@0.2.0/dist/leaflet-heat.js"></script>
     
-    <!-- load order below here is fucking important don't fuck with it lol <33-->
+    <!-- Application JavaScript Modules (Load Order is Important) -->
+    
+    <!-- 1. Configuration and Constants -->
     <script src="./js/config-constants.js"></script>
+    
+    <!-- 2. Utility Functions -->
     <script src="./js/utils.js"></script>
+    
+    <!-- 3. Core Modules -->
     <script src="./js/map-manager.js"></script>
     <script src="./js/data-manager.js"></script>
     <script src="./js/visualization-renderer.js"></script>
     <script src="./js/ui-controller.js"></script>
     <script src="./js/device-manager.js"></script>
+    
+    <!-- 4. Main Application -->
     <script src="./js/app.js"></script>
     
-    <!-- this a placeholder for api shit later on. fuck with it as you will.  -->
+    <!-- Service Worker Registration (for future PWA features) -->
     <script>
         // Register service worker when available
         if ('serviceWorker' in navigator) {
@@ -208,10 +253,12 @@
             });
         }
         
+        // Performance monitoring
         window.addEventListener('load', () => {
             if (performance.mark) {
                 performance.mark('app-loaded');
                 
+                // Log performance metrics
                 setTimeout(() => {
                     const navigation = performance.getEntriesByType('navigation')[0];
                     console.log('Page load time:', navigation.loadEventEnd - navigation.fetchStart, 'ms');
@@ -219,6 +266,7 @@
             }
         });
         
+        // Error handling
         window.addEventListener('error', (event) => {
             console.error('Global error:', event.error);
             if (window.tcApp && window.tcApp.utils) {
@@ -226,6 +274,7 @@
             }
         });
         
+        // Unhandled promise rejection handling
         window.addEventListener('unhandledrejection', (event) => {
             console.error('Unhandled promise rejection:', event.reason);
             if (window.tcApp && window.tcApp.utils) {
@@ -233,6 +282,7 @@
             }
         });
         
+        // Keyboard shortcuts for mobile panel
         document.addEventListener('keydown', (event) => {
             // Ctrl/Cmd + M to toggle mobile controls
             if ((event.ctrlKey || event.metaKey) && event.key === 'm') {
