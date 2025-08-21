@@ -4,6 +4,7 @@
  */
 class TCVisualization {
     constructor() {
+        // Core application state
         this.currentScenario = 'current';
         this.currentEnsemble = 1;
         this.currentSSTModel = 'CC';
@@ -17,10 +18,12 @@ class TCVisualization {
             '4k': { min: 2051, max: 2110 }
         };
         
+        // Visualization state
         this.showHeatmap = false;
         this.showDensityHeatmap = false;
         this.heatmapRequestId = 0;
         
+        // Initialize modules
         this.mapManager = new MapManager(this);
         this.dataManager = new DataManager(this);
         this.visualizationRenderer = new VisualizationRenderer(this);
@@ -37,6 +40,7 @@ class TCVisualization {
             this.uiController.initializeEventListeners();
             this.uiController.updateEnsembleSelector();
             this.uiController.updateYearSlider();
+            // Device manager initializes automatically in constructor
             await this.dataManager.loadData();
             this.visualizationRenderer.createComparisonPanel();
         } catch (error) {
@@ -45,6 +49,7 @@ class TCVisualization {
         }
     }
     
+    // Scenario management
     async changeScenario(newScenario) {
         if (this.currentScenario === newScenario) return;
         
@@ -54,6 +59,7 @@ class TCVisualization {
         await this.dataManager.loadData();
     }
     
+    // Ensemble management
     async changeEnsemble(newEnsemble) {
         if (this.currentEnsemble === newEnsemble) return;
         
@@ -61,6 +67,7 @@ class TCVisualization {
         await this.dataManager.loadData();
     }
     
+    // SST Model management
     async changeSST(newSST) {
         if (this.currentSSTModel === newSST) return;
         
@@ -68,6 +75,7 @@ class TCVisualization {
         await this.dataManager.loadData();
     }
     
+    // Visualization mode management
     async toggleVisualizationMode(mode, enabled) {
         switch (mode) {
             case 'heatmap':
@@ -94,14 +102,17 @@ class TCVisualization {
         await this.updateVisualization();
     }
     
+    // Main visualization update
     async updateVisualization() {
         const cacheKey = this.dataManager.getCacheKey();
         const data = this.cycloneData[cacheKey];
         
         if (!data || !data.cyclones) return;
         
+        // Clear existing visualizations
         this.visualizationRenderer.clearAllLayers();
         
+        // Filter cyclones by year range if applicable
         let cyclones = data.cyclones;
         if (!this.showDensityHeatmap && this.yearRange) {
             cyclones = cyclones.filter(c => 
@@ -109,6 +120,7 @@ class TCVisualization {
             );
         }
         
+        // Render based on current mode
         if (this.showDensityHeatmap) {
             await this.visualizationRenderer.createDensityHeatmap(cyclones);
         } else if (this.showHeatmap) {
@@ -122,6 +134,7 @@ class TCVisualization {
         console.log(`Showing ${cyclones.length} cyclones in ${displayMode} mode`);
     }
     
+    // Year range management
     updateYearRange(min, max) {
         const bounds = this.scenarioYearRanges[this.currentScenario];
         
@@ -134,11 +147,13 @@ class TCVisualization {
         this.updateVisualization();
     }
     
+    // Cyclone selection
     selectCyclone(cyclone) {
         this.selectedCyclone = cyclone;
         this.uiController.showCycloneInfo(cyclone);
     }
     
+    // Data export
     exportData() {
         const cacheKey = this.dataManager.getCacheKey();
         const data = this.cycloneData[cacheKey];
@@ -151,6 +166,7 @@ class TCVisualization {
         this.utils.exportToCSV(data, this.currentScenario, this.currentEnsemble, this.currentSSTModel, this.yearRange);
     }
     
+    // Loading state management
     showLoading(show, message = 'Loading cyclone data...') {
         const overlay = document.getElementById('loading-overlay');
         const loadingText = overlay.querySelector('p');
@@ -163,6 +179,7 @@ class TCVisualization {
         }
     }
     
+    // Get current state for debugging/monitoring
     getState() {
         return {
             scenario: this.currentScenario,
@@ -179,6 +196,7 @@ class TCVisualization {
         };
     }
     
+    // Mobile control panel methods
     showMobileControls() {
         if (this.deviceManager) {
             this.deviceManager.showMobileControls();
@@ -200,8 +218,16 @@ class TCVisualization {
             }
         }
     }
+    
+    // Debug method to force layout refresh
+    forceLayoutRefresh() {
+        if (this.deviceManager) {
+            this.deviceManager.forceLayoutRefresh();
+        }
+    }
 }
-// ho hum, waiting for me dom
+
+// Initialize application when DOM is ready
 document.addEventListener('DOMContentLoaded', () => {
     window.tcApp = new TCVisualization();
 });

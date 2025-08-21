@@ -216,8 +216,9 @@ class DeviceManager {
     applyMobileLayout(controlPanel, legend, infoPanel) {
         // Mobile-specific layout adjustments
         if (controlPanel) {
+            // Remove any conflicting styles that might interfere with flexbox
             controlPanel.style.flexDirection = 'column';
-            controlPanel.style.maxHeight = '200px';
+            controlPanel.style.maxHeight = ''; // Let CSS handle this
             controlPanel.style.overflowY = 'auto';
             
             // Add mobile control panel functionality
@@ -229,6 +230,7 @@ class DeviceManager {
             legend.style.right = '10px';
             legend.style.maxWidth = '150px';
             legend.style.fontSize = '11px';
+            legend.style.zIndex = '1001'; // Ensure it's above map
         }
         
         if (infoPanel) {
@@ -238,6 +240,7 @@ class DeviceManager {
             infoPanel.style.right = '10px';
             infoPanel.style.top = 'auto';
             infoPanel.style.maxHeight = '30vh';
+            infoPanel.style.zIndex = '1002'; // Ensure it's above legend
         }
         
         // Reduce map controls for mobile
@@ -312,19 +315,30 @@ class DeviceManager {
             controlPanel.classList.add('collapsed');
         }
         
+        // Handle map resize after layout change
+        const resizeMap = () => {
+            if (this.app.mapManager && this.app.mapManager.map) {
+                // Force map to recalculate its size
+                setTimeout(() => {
+                    this.app.mapManager.map.invalidateSize(true);
+                }, 50);
+                
+                // Additional resize after transition completes
+                setTimeout(() => {
+                    this.app.mapManager.map.invalidateSize(true);
+                }, animate ? 350 : 100);
+            }
+        };
+        
         // Remove transition class after animation
         if (animate) {
             setTimeout(() => {
                 controlPanel.classList.remove('transitioning');
+                resizeMap();
             }, 300);
+        } else {
+            resizeMap();
         }
-        
-        // Notify app about layout change
-        setTimeout(() => {
-            if (this.app.mapManager && this.app.mapManager.map) {
-                this.app.mapManager.map.invalidateSize();
-            }
-        }, animate ? 300 : 0);
     }
     
     addMobileControlPanelStyles() {
@@ -339,6 +353,7 @@ class DeviceManager {
                 z-index: 1000;
                 background: white;
                 box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+                flex-shrink: 0;
             }
             
             .mobile-panel-toggle {
@@ -400,12 +415,32 @@ class DeviceManager {
                 transition: max-height 0.3s ease-out, opacity 0.3s ease-out, padding 0.3s ease-out;
             }
             
-            /* Ensure map takes full space when panel is collapsed */
-            .mobile-panel-wrapper:has(.mobile-collapsible.collapsed) + #map-container {
-                height: calc(100vh - 48px) !important;
+            /* Ensure proper layout on mobile */
+            @media (max-width: 768px) {
+                #app-container {
+                    height: 100vh;
+                    display: flex;
+                    flex-direction: column;
+                    overflow: hidden;
+                }
+                
+                #map-container {
+                    flex: 1;
+                    min-height: 0;
+                    overflow: hidden;
+                }
+                
+                #map {
+                    width: 100%;
+                    height: 100%;
+                }
+                
+                .mobile-panel-wrapper {
+                    flex-shrink: 0;
+                }
             }
             
-            /* Desktop and tablet - hide toggle button */
+            /* Desktop and tablet - hide toggle button and ensure normal layout */
             @media (min-width: 769px) {
                 .mobile-panel-toggle {
                     display: none !important;
@@ -421,6 +456,23 @@ class DeviceManager {
                     max-height: none !important;
                     opacity: 1 !important;
                     padding: 1rem !important;
+                }
+                
+                .mobile-panel-wrapper {
+                    flex-shrink: 0;
+                }
+                
+                #app-container {
+                    height: 100vh;
+                    display: flex;
+                    flex-direction: column;
+                    overflow: hidden;
+                }
+                
+                #map-container {
+                    flex: 1;
+                    min-height: 0;
+                    overflow: hidden;
                 }
             }
             
@@ -802,6 +854,41 @@ class DeviceManager {
     // Method to force layout recalculation
     recalculateLayout() {
         this.handleResize();
+        
+        // Force map resize if available
+        if (this.app.mapManager && this.app.mapManager.map) {
+            setTimeout(() => {
+                this.app.mapManager.map.invalidateSize(true);
+            }, 100);
+        }
+    }
+    
+    // Force complete layout refresh - useful for debugging layout issues
+    forceLayoutRefresh() {
+        console.log('Forcing complete layout refresh...');
+        
+        // Re-detect device type
+        const oldDeviceType = this.deviceType;
+        this.deviceType = this.detectDeviceType();
+        
+        // Re-apply device-specific settings
+        this.applyDeviceSpecificSettings();
+        this.adjustLayoutForDevice();
+        
+        // Force map resize multiple times to ensure it takes
+        if (this.app.mapManager && this.app.mapManager.map) {
+            const map = this.app.mapManager.map;
+            setTimeout(() => map.invalidateSize(true), 50);
+            setTimeout(() => map.invalidateSize(true), 150);
+            setTimeout(() => map.invalidateSize(true), 300);
+        }
+        
+        console.log('Layout refresh complete:', {
+            oldDeviceType,
+            newDeviceType: this.deviceType,
+            mapContainer: document.getElementById('map-container'),
+            controlPanel: document.getElementById('control-panel')
+        });
     }
     
     // Mobile control panel management
