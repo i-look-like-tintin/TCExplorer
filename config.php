@@ -4,6 +4,7 @@
 //honestly, none of this really needs to be its own file, could look to migrate this
 //but its here for the potential need to scale out in the future
 //lemme cook
+//nah dw its more useful now
 define('DB_HOST', 'localhost');
 define('DB_NAME', 'cyclone_viz');
 define('DB_USER', 'root');
