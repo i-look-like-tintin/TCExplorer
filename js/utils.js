@@ -72,27 +72,23 @@ class TCUtils {
         
         let cyclones = data.cyclones;
         
-        // Apply year range filter if specified
         if (yearRange) {
             cyclones = cyclones.filter(c => 
                 c.year >= yearRange.min && c.year <= yearRange.max
             );
         }
         
-        // Build CSV content
         let csv = 'ID,Name,Year,Genesis Month,Max Category,Max Wind (km/h),Min Pressure (hPa),Duration (days),Genesis Lat,Genesis Lon,Landfall\n';
         
         cyclones.forEach(cyclone => {
             csv += `${cyclone.id},${cyclone.name},${cyclone.year},${cyclone.genesis_month || 'N/A'},${cyclone.maxCategory},${cyclone.maxWind},${cyclone.minPressure},${cyclone.duration_days || cyclone.duration},${cyclone.genesis_lat},${cyclone.genesis_lon},${cyclone.landfall ? 'Yes' : 'No'}\n`;
         });
         
-        // Create and download file
         const blob = new Blob([csv], { type: 'text/csv' });
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.href = url;
         
-        // Generate filename
         let filename = `cyclone_data_${scenario}_ensemble${ensemble}`;
         if (scenario === '2k' || scenario === '4k') {
             filename += `_${sstModel}`;
@@ -109,7 +105,6 @@ class TCUtils {
         this.showNotification(`Exported ${cyclones.length} cyclones to CSV`, 'success');
     }
     
-    // Export track data in detailed format
     exportTrackData(cyclones, scenario, ensemble, sstModel) {
         if (!cyclones || cyclones.length === 0) {
             this.showNotification('No track data to export', 'error');
@@ -145,7 +140,6 @@ class TCUtils {
         this.showNotification(`Exported ${totalPoints} track points from ${cyclones.length} cyclones`, 'success');
     }
     
-    // Export to GeoJSON format
     exportToGeoJSON(cyclones, scenario, ensemble, sstModel) {
         if (!cyclones || cyclones.length === 0) {
             this.showNotification('No data to export', 'error');
@@ -211,7 +205,6 @@ class TCUtils {
         this.showNotification(`Exported ${cyclones.length} cyclones to GeoJSON`, 'success');
     }
     
-    // Date and time utilities
     formatDate(date, format = 'YYYY-MM-DD') {
         const year = date.getFullYear();
         const month = String(date.getMonth() + 1).padStart(2, '0');
@@ -237,9 +230,8 @@ class TCUtils {
         return new Date(dateString);
     }
     
-    // Geographic utilities
     calculateDistance(lat1, lon1, lat2, lon2) {
-        const R = 6371; // Earth's radius in km
+        const R = 6371; // earth radius in km
         const dLat = this.toRadians(lat2 - lat1);
         const dLon = this.toRadians(lon2 - lon1);
         const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
@@ -257,7 +249,7 @@ class TCUtils {
         return radians * (180 / Math.PI);
     }
     
-    // Calculate bearing between two points
+    //calc bearing between two points
     calculateBearing(lat1, lon1, lat2, lon2) {
         const dLon = this.toRadians(lon2 - lon1);
         const lat1Rad = this.toRadians(lat1);
@@ -270,7 +262,6 @@ class TCUtils {
         return (this.toDegrees(Math.atan2(y, x)) + 360) % 360;
     }
     
-    // Data validation utilities
     validateLatitude(lat) {
         return typeof lat === 'number' && lat >= -90 && lat <= 90;
     }
@@ -287,7 +278,6 @@ class TCUtils {
         return Number.isInteger(year) && year >= 1900 && year <= 2200;
     }
     
-    // Data processing utilities
     filterCyclonesByBounds(cyclones, bounds) {
         return cyclones.filter(cyclone => {
             if (!cyclone.track || cyclone.track.length === 0) return false;
@@ -346,7 +336,6 @@ class TCUtils {
         };
     }
     
-    // String utilities
     capitalize(str) {
         return str.charAt(0).toUpperCase() + str.slice(1);
     }
@@ -363,7 +352,6 @@ class TCUtils {
         return str.substring(0, length) + suffix;
     }
     
-    // Performance utilities
     debounce(func, wait) {
         let timeout;
         return function executedFunction(...args) {
@@ -389,7 +377,6 @@ class TCUtils {
         };
     }
     
-    // Color utilities
     hexToRgba(hex, alpha = 1) {
         const r = parseInt(hex.slice(1, 3), 16);
         const g = parseInt(hex.slice(3, 5), 16);
@@ -417,7 +404,6 @@ class TCUtils {
         } : null;
     }
     
-    // URL utilities
     getQueryParams() {
         const params = new URLSearchParams(window.location.search);
         const result = {};
@@ -439,7 +425,6 @@ class TCUtils {
         window.history.replaceState({}, '', url);
     }
     
-    // Device detection
     isMobile() {
         return window.innerWidth <= 768;
     }
@@ -456,7 +441,6 @@ class TCUtils {
         return 'ontouchstart' in window || navigator.maxTouchPoints > 0;
     }
     
-    // Storage utilities (for future use when needed)
     setSessionData(key, data) {
         try {
             sessionStorage.setItem(key, JSON.stringify(data));
@@ -487,19 +471,13 @@ class TCUtils {
         }
     }
     
-    // Error handling utilities
     handleError(error, context = 'Unknown') {
         console.error(`Error in ${context}:`, error);
         this.showNotification(`An error occurred in ${context}. Please try again.`, 'error');
-        
-        // You could add error reporting here in the future
-        // this.reportError(error, context);
     }
     
-    // Future method for error reporting
+    //TODO: stub for future erropr reporting
     reportError(error, context) {
-        // Implementation for error reporting service
-        // Could be sent to analytics or logging service
         console.log('Error reported:', { error, context, timestamp: new Date().toISOString() });
     }
 }

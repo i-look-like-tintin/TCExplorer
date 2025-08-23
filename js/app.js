@@ -4,7 +4,7 @@
  */
 class TCVisualization {
     constructor() {
-        // Core application state
+        //TODO: re-enforce this shit on refresh
         this.currentScenario = 'current';
         this.currentEnsemble = 1;
         this.currentSSTModel = 'CC';
@@ -18,12 +18,10 @@ class TCVisualization {
             '4k': { min: 2051, max: 2110 }
         };
         
-        // Visualization state
         this.showHeatmap = false;
         this.showDensityHeatmap = false;
         this.heatmapRequestId = 0;
         
-        // Initialize modules
         this.mapManager = new MapManager(this);
         this.dataManager = new DataManager(this);
         this.visualizationRenderer = new VisualizationRenderer(this);
@@ -179,7 +177,7 @@ class TCVisualization {
         }
     }
     
-    // Get current state for debugging/monitoring
+    //TODO: not really needed, im happy with not logging this shit
     getState() {
         return {
             scenario: this.currentScenario,
@@ -196,7 +194,6 @@ class TCVisualization {
         };
     }
     
-    // Mobile control panel methods
     showMobileControls() {
         if (this.deviceManager) {
             this.deviceManager.showMobileControls();
@@ -227,7 +224,6 @@ class TCVisualization {
     }
 }
 
-// Initialize application when DOM is ready
 document.addEventListener('DOMContentLoaded', () => {
     window.tcApp = new TCVisualization();
 });

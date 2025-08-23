@@ -34,7 +34,8 @@ class MapManager {
             this.layers.genesis.addTo(this.map);
             this.layers.intensity.addTo(this.map);
             
-            // Add geographical boundaries
+            //TODO: look to either add all global bounds (eww performance), or just remove for aus - it kinda ugly just having one country done atm
+            //o also, should scale out for additional worlds
             await this.addAustraliaBoundaries();
             
             // Set up map event handlers
@@ -56,13 +57,10 @@ class MapManager {
         });
         
         this.map.on('zoomend', () => {
-            // Additional zoom handling can be added here if needed
             this.map.getContainer().classList.remove('zooming');
         });
         
-        // Handle map bounds for world copy optimization
         this.map.on('moveend', () => {
-            // This can be used for dynamic layer optimization
         });
     }
     
@@ -90,30 +88,9 @@ class MapManager {
             }
         } catch (error) {
             console.error('Failed to load Australia boundaries:', error);
-            this.addSimplifiedAustraliaBoundaries();
         }
     }
     
-    addSimplifiedAustraliaBoundaries() {
-        console.log('Using simplified Australia boundaries');
-        
-        const australiaBounds = [
-            [-10.6, 113.3], [-13.7, 130.8], [-12.5, 136.7], [-14.5, 145.4],
-            [-18.3, 146.3], [-24.5, 153.6], [-32.5, 152.5], [-37.5, 149.9],
-            [-39.2, 146.3], [-38.5, 140.9], [-35.1, 136.7], [-34.3, 135.2],
-            [-32.5, 133.6], [-31.3, 128.9], [-25.9, 122.2], [-19.7, 121.5],
-            [-17.3, 122.2], [-14.6, 125.8], [-11.3, 130.2], [-10.6, 113.3]
-        ];
-        
-        L.polygon(australiaBounds, {
-            color: '#2c3e50',
-            weight: 2,
-            fillOpacity: 0.1,
-            interactive: false
-        }).addTo(this.map);
-    }
-    
-    // Layer management methods
     getLayer(layerName) {
         return this.layers[layerName];
     }
@@ -191,7 +168,7 @@ class MapManager {
         return copies;
     }
     
-    // Geographic utility methods
+    //TODO: this will be useful for future lat/lon specific querying 
     isInAustralianRegion(lat, lon) {
         return lat >= -45 && lat <= -5 && lon >= 105 && lon <= 160;
     }
@@ -201,7 +178,6 @@ class MapManager {
         return (lat > -39 && lat < -10 && lon > 113 && lon < 154);
     }
     
-    // Map state management
     saveMapState() {
         this.previousZoom = this.map.getZoom();
         this.previousCenter = this.map.getCenter();

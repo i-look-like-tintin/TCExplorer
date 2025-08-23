@@ -357,13 +357,11 @@ const TCConfigUtils = {
         return configs[deviceType] || configs.desktop;
     },
     
-    // Get color for intensity category
     getCategoryColor(category) {
         const cat = this.getIntensityCategory(category);
         return cat ? cat.color : '#999999';
     },
     
-    // Get heatmap color for density value
     getHeatmapColor(value, type = 'density') {
         const config = TCConfig.heatmap[type];
         if (!config) return 'rgba(255, 255, 255, 0)';
@@ -405,7 +403,7 @@ const TCConfigUtils = {
         return `${filename}.${format}`;
     },
     
-    // Merge user configuration
+    //TODO: yea, probs another boy thats causing some troubles
     mergeConfig(userConfig) {
         return this.deepMerge(TCConfig, userConfig);
     },

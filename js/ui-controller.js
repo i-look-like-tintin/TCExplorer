@@ -8,7 +8,6 @@ class UIController {
         this.lastChangedSlider = null;
     }
     
-    // Initialize all event listeners
     initializeEventListeners() {
         this.setupScenarioButtons();
         this.setupEnsembleControls();
@@ -20,7 +19,6 @@ class UIController {
         console.log('Event listeners initialized');
     }
     
-    // Scenario button handlers
     setupScenarioButtons() {
         document.querySelectorAll('.scenario-btn').forEach(btn => {
             btn.addEventListener('click', async (e) => {
@@ -39,7 +37,6 @@ class UIController {
         await this.app.changeScenario(newScenario);
     }
     
-    // Ensemble and SST controls
     setupEnsembleControls() {
         document.getElementById('ensemble-select').addEventListener('change', async (e) => {
             const newEnsemble = parseInt(e.target.value);
@@ -52,14 +49,13 @@ class UIController {
         });
     }
     
-    // Visualization toggle controls
     setupVisualizationToggles() {
         document.getElementById('show-heatmap').addEventListener('change', async (e) => {
             const enabled = e.target.checked;
             if (enabled) {
-                // Disable other modes
                 document.getElementById('show-density-heatmap').checked = false;
                 this.setTrackDisplays(false);
+                //TODO: yea, and again, i dont really love this map save
                 this.app.mapManager.saveMapState();
             }
             await this.app.toggleVisualizationMode('heatmap', enabled);
@@ -68,7 +64,6 @@ class UIController {
         document.getElementById('show-density-heatmap').addEventListener('change', async (e) => {
             const enabled = e.target.checked;
             if (enabled) {
-                // Disable other modes
                 document.getElementById('show-heatmap').checked = false;
                 this.setTrackDisplays(false);
                 this.app.mapManager.saveMapState();
@@ -76,7 +71,6 @@ class UIController {
             await this.app.toggleVisualizationMode('density', enabled);
         });
         
-        // Track display toggles
         ['show-tracks', 'show-genesis', 'show-intensity'].forEach(id => {
             document.getElementById(id).addEventListener('change', async (e) => {
                 if (e.target.checked && (this.app.showHeatmap || this.app.showDensityHeatmap)) {
@@ -95,7 +89,6 @@ class UIController {
         });
     }
     
-    // Year range controls
     setupYearRangeControls() {
         const yearMinSlider = document.getElementById('year-slider-min');
         const yearMaxSlider = document.getElementById('year-slider-max');
@@ -125,11 +118,9 @@ class UIController {
         
         const bounds = this.app.scenarioYearRanges[this.app.currentScenario];
         
-        // Ensure values are within bounds
         min = Math.max(bounds.min, Math.min(bounds.max, min));
         max = Math.max(bounds.min, Math.min(bounds.max, max));
         
-        // Handle slider collision
         if (min > max) {
             if (this.lastChangedSlider === 'min') {
                 max = min;
@@ -146,7 +137,6 @@ class UIController {
         this.updateSliderRange();
         this.updateYearDisplay();
         
-        // Update app state
         this.app.updateYearRange(min, max);
     }
     
@@ -169,7 +159,6 @@ class UIController {
         sliderRange.style.width = `${maxPercent - minPercent}%`;
     }
     
-    // Action buttons
     setupActionButtons() {
         document.getElementById('export-data').addEventListener('click', () => {
             this.app.exportData();
@@ -180,7 +169,6 @@ class UIController {
         });
     }
     
-    // Filter controls
     setupFilterControls() {
         document.getElementById('filter-australia').addEventListener('change', async (e) => {
             this.app.filterAustralia = e.target.checked;
@@ -188,7 +176,6 @@ class UIController {
         });
     }
     
-    // UI update methods
     updateEnsembleSelector() {
         const ensembleInfo = document.getElementById('ensemble-info');
         const ensembleSelect = document.getElementById('ensemble-select');
@@ -204,14 +191,12 @@ class UIController {
         
         ensembleInfo.textContent = limit.note;
         
-        // Show/hide SST selector
         if (this.app.currentScenario === '2k' || this.app.currentScenario === '4k') {
             sstSelector.style.display = 'flex';
         } else {
             sstSelector.style.display = 'none';
         }
         
-        // Update ensemble options
         const currentValue = parseInt(ensembleSelect.value);
         ensembleSelect.innerHTML = '';
         
@@ -273,7 +258,6 @@ class UIController {
         }
     }
     
-    // Year control state management
     disableYearControls(mode) {
         const yearMinSlider = document.getElementById('year-slider-min');
         const yearMaxSlider = document.getElementById('year-slider-max');
@@ -301,7 +285,6 @@ class UIController {
         this.updateYearDisplay();
     }
     
-    // Helper methods
     setTrackDisplays(enabled) {
         document.getElementById('show-tracks').checked = enabled;
         document.getElementById('show-genesis').checked = enabled;
@@ -314,7 +297,6 @@ class UIController {
         }
     }
     
-    // Cyclone information display
     showCycloneInfo(cyclone) {
         const infoPanel = document.getElementById('info-panel');
         const details = document.getElementById('cyclone-details');
@@ -341,7 +323,7 @@ class UIController {
         }, 10000);
     }
     
-    // Form validation and user feedback
+    //TODO: stub for later work
     validateInput(value, min, max, fieldName) {
         if (isNaN(value) || value < min || value > max) {
             this.showValidationError(`${fieldName} must be between ${min} and ${max}`);
@@ -359,12 +341,10 @@ class UIController {
                 errorEl.style.display = 'none';
             }, 3000);
         } else {
-            // Fallback to notification system
             this.app.utils.showNotification(message, 'error');
         }
     }
     
-    // Control state management
     enableControls() {
         const controls = document.querySelectorAll('button, select, input');
         controls.forEach(control => {
@@ -384,7 +364,6 @@ class UIController {
         const isMobile = window.innerWidth <= 768;
         const isTablet = window.innerWidth <= 1024 && window.innerWidth > 768;
         
-        // Adjust control panel layout
         const controlPanel = document.getElementById('control-panel');
         if (isMobile) {
             controlPanel.classList.add('mobile-layout');
@@ -394,7 +373,6 @@ class UIController {
             controlPanel.classList.remove('mobile-layout', 'tablet-layout');
         }
         
-        // Adjust legend and info panel positions
         this.adjustPanelPositions(isMobile, isTablet);
     }
     
@@ -404,28 +382,23 @@ class UIController {
         const comparisonPanel = document.getElementById('scenario-comparison');
         
         if (isMobile) {
-            // Mobile adjustments
             if (legend) legend.classList.add('mobile-position');
             if (infoPanel) infoPanel.classList.add('mobile-position');
             if (comparisonPanel) comparisonPanel.classList.add('mobile-position');
         } else {
-            // Desktop/tablet adjustments
             if (legend) legend.classList.remove('mobile-position');
             if (infoPanel) infoPanel.classList.remove('mobile-position');
             if (comparisonPanel) comparisonPanel.classList.remove('mobile-position');
         }
     }
     
-    // Initialize responsive layout
     initializeResponsiveLayout() {
         this.adjustLayoutForDevice();
         
-        // Listen for resize events
         window.addEventListener('resize', () => {
             this.adjustLayoutForDevice();
         });
         
-        // Listen for orientation changes on mobile
         window.addEventListener('orientationchange', () => {
             setTimeout(() => {
                 this.adjustLayoutForDevice();
@@ -433,20 +406,14 @@ class UIController {
         });
     }
     
-    // Accessibility improvements
     setupAccessibility() {
-        // Add keyboard navigation for custom controls
         this.setupKeyboardNavigation();
         
-        // Add ARIA labels where missing
         this.addAriaLabels();
-        
-        // Setup focus management
         this.setupFocusManagement();
     }
     
     setupKeyboardNavigation() {
-        // Add keyboard support for scenario buttons
         document.querySelectorAll('.scenario-btn').forEach((btn, index) => {
             btn.addEventListener('keydown', (e) => {
                 if (e.key === 'ArrowLeft' || e.key === 'ArrowRight') {
@@ -462,7 +429,6 @@ class UIController {
     }
     
     addAriaLabels() {
-        // Add labels for better screen reader support
         const yearSliders = document.querySelectorAll('.year-slider');
         yearSliders.forEach(slider => {
             if (!slider.getAttribute('aria-label')) {
@@ -474,7 +440,6 @@ class UIController {
     }
     
     setupFocusManagement() {
-        // Manage focus for better keyboard navigation
         const firstFocusable = document.querySelector('button, input, select');
         if (firstFocusable) {
             firstFocusable.focus();

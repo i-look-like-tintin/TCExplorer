@@ -6,17 +6,15 @@ class VisualizationRenderer {
     constructor(app) {
         this.app = app;
         this.heatmapConfig = null;
-        this.gridResolution = 2; // Default grid resolution for density maps
+        this.gridResolution = 2;
     }
     
-    // Clear all visualization layers
     clearAllLayers() {
         this.app.mapManager.clearAllLayers();
         this.clearHeatmapLegends();
         this.hideComparisonPanel();
     }
     
-    // Main method to render standard visualization (tracks, genesis, intensity)
     async renderStandardVisualization(cyclones) {
         const showTracks = document.getElementById('show-tracks').checked;
         const showGenesis = document.getElementById('show-genesis').checked;
@@ -37,7 +35,6 @@ class VisualizationRenderer {
         console.log(`Rendered ${cyclones.length} cyclones in standard mode`);
     }
     
-    // Draw individual cyclone track
     drawCycloneTrack(cyclone) {
         if (!cyclone.track || cyclone.track.length < 2) return;
         
@@ -53,8 +50,7 @@ class VisualizationRenderer {
         
         this.app.mapManager.addToLayer('tracks', polyline);
     }
-    
-    // Draw genesis point
+
     drawGenesisPoint(cyclone) {
         if (!cyclone.track || cyclone.track.length === 0) return;
         
@@ -71,8 +67,7 @@ class VisualizationRenderer {
         
         this.app.mapManager.addToLayer('genesis', marker);
     }
-    
-    // Draw intensity-colored track segments
+
     drawIntensityTrack(cyclone) {
         if (!cyclone.track || cyclone.track.length < 2) return;
         
@@ -92,8 +87,7 @@ class VisualizationRenderer {
             this.app.mapManager.addToLayer('intensity', segment);
         }
     }
-    
-    // Create density heatmap using computed grid
+
     async createDensityHeatmap(cyclones) {
         console.log('Creating density heatmap for', cyclones.length, 'cyclones');
         
@@ -103,7 +97,6 @@ class VisualizationRenderer {
         const lonBins = [];
         const latBins = [];
         
-        // Global coverage: -180 to 180 longitude, -90 to 90 latitude
         for (let lon = -180; lon <= 180; lon += gridResolution) {
             lonBins.push(lon);
         }
@@ -111,10 +104,8 @@ class VisualizationRenderer {
             latBins.push(lat);
         }
         
-        // Initialize frequency grid
         const tcFreq = {};
-        
-        // Process each cyclone
+
         cyclones.forEach(cyclone => {
             if (!cyclone.track || cyclone.track.length === 0) return;
             
@@ -148,13 +139,11 @@ class VisualizationRenderer {
             }
         });
         
-        // Create visual representation
         const rectangles = this.createDensityRectangles(tcFreq, gridResolution);
         const heatmapLayer = L.featureGroup(rectangles);
         
         this.app.mapManager.setHeatmapLayer(heatmapLayer);
         
-        // Update legend and metrics
         const levels = [0, 1, 2, 3, 4, 5, 7, 10, 15, 20, 30, 50, 75, 100];
         this.updateDensityLegend(levels);
         
@@ -164,7 +153,6 @@ class VisualizationRenderer {
         console.log(`Density heatmap created: ${Object.keys(tcFreq).length} active cells`);
     }
     
-    // Create precomputed heatmap
     async createHeatmap(cyclones) {
         const reqId = ++this.app.heatmapRequestId;
         
@@ -184,7 +172,6 @@ class VisualizationRenderer {
                 return;
             }
             
-            // Check if request is still current
             if (reqId !== this.app.heatmapRequestId || !this.app.showHeatmap) return;
             
             console.log(`Creating heatmap with ${densityData.length} cells`);
@@ -195,7 +182,6 @@ class VisualizationRenderer {
             
             this.app.mapManager.setHeatmapLayer(heatmapLayer);
             
-            // Update legend and comparison panel
             const levels = [0, 1, 2, 5, 10, 20, 40, 80, 120, 160];
             const colors = this.getHeatmapColors();
             this.updateHeatmapLegend(levels, colors);
@@ -209,8 +195,7 @@ class VisualizationRenderer {
             this.app.showLoading(false);
         }
     }
-    
-    // Helper methods for density calculations
+
     getCellKey(lat, lon, gridResolution) {
         // Handle longitude wrapping
         while (lon < -180) lon += 360;
@@ -224,7 +209,6 @@ class VisualizationRenderer {
     getLineCells(lat1, lon1, lat2, lon2, gridResolution) {
         const cells = new Set();
         
-        // Handle longitude wrapping for shortest path
         let dLon = lon2 - lon1;
         if (Math.abs(dLon) > 180) {
             if (dLon > 0) {
@@ -265,7 +249,6 @@ class VisualizationRenderer {
         return cells;
     }
     
-    // Create rectangles for density visualization
     createDensityRectangles(tcFreq, gridResolution) {
         const rectangles = [];
         const worldCopies = this.app.mapManager.getVisibleWorldCopies();
@@ -348,7 +331,6 @@ class VisualizationRenderer {
                     
                     rect.bindPopup(popupContent);
                     
-                    // Add hover effects
                     rect.on('mouseover', function(e) {
                         this.setStyle({ weight: 1, color: 'rgba(0, 0, 0, 0.5)' });
                     });
@@ -364,8 +346,6 @@ class VisualizationRenderer {
         
         return rectangles;
     }
-    
-    // Color management
     getTrackColor(category) {
         const colors = {
             0: '#999999', 
@@ -425,7 +405,6 @@ class VisualizationRenderer {
         return colors[0];
     }
     
-    // Legend management
     updateDensityLegend(levels) {
         let densityLegend = document.getElementById('density-legend');
         if (!densityLegend) {
@@ -547,7 +526,6 @@ class VisualizationRenderer {
         if (densityLegend) densityLegend.style.display = 'none';
     }
     
-    // Comparison panel management
     createComparisonPanel() {
         if (!document.getElementById('scenario-comparison')) {
             const panel = document.createElement('div');

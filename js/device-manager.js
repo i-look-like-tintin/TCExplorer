@@ -6,7 +6,6 @@ class DeviceManager {
     constructor(app) {
         this.app = app;
         
-        // Define breakpoints first before any methods that depend on them
         this.breakpoints = {
             mobile: 480,
             tablet: 768,
@@ -14,12 +13,11 @@ class DeviceManager {
             largeDesktop: 1440
         };
         
-        // Now initialize properties that depend on breakpoints
         this.deviceType = this.detectDeviceType();
         this.orientation = this.getOrientation();
         this.touchSupport = this.detectTouchSupport();
         this.performanceLevel = this.assessPerformanceLevel();
-        this.controlPanelExpanded = false; // Track mobile control panel state
+        this.controlPanelExpanded = false;
         
         this.init();
     }
@@ -29,7 +27,6 @@ class DeviceManager {
         this.applyDeviceSpecificSettings();
         this.adjustLayoutForDevice();
         
-        // Check for first-time user after a short delay
         setTimeout(() => {
             this.checkFirstTimeUser();
         }, 1000);
@@ -42,19 +39,16 @@ class DeviceManager {
         });
     }
     
-    // Device type detection
     detectDeviceType() {
         const width = window.innerWidth;
         const userAgent = navigator.userAgent.toLowerCase();
         
-        // Check for specific devices
         if (/iphone|ipod/.test(userAgent)) return 'mobile-ios';
         if (/ipad/.test(userAgent)) return 'tablet-ios';
         if (/android/.test(userAgent)) {
             return width < this.breakpoints.tablet ? 'mobile-android' : 'tablet-android';
         }
         
-        // General categorization
         if (width <= this.breakpoints.mobile) return 'mobile';
         if (width <= this.breakpoints.tablet) return 'tablet';
         if (width <= this.breakpoints.desktop) return 'desktop';
@@ -74,7 +68,7 @@ class DeviceManager {
         return 'landscape';
     }
     
-    // Performance assessment
+    //TODO: again, watch this space, might be doing innaccurate fuckiness in firefox live
     assessPerformanceLevel() {
         const nav = navigator;
         let score = 0;
@@ -109,9 +103,7 @@ class DeviceManager {
         return 'low';
     }
     
-    // Event listeners
     setupEventListeners() {
-        // Resize handler with debouncing
         let resizeTimeout;
         window.addEventListener('resize', () => {
             clearTimeout(resizeTimeout);
@@ -120,27 +112,23 @@ class DeviceManager {
             }, 250);
         });
         
-        // Orientation change handler
         window.addEventListener('orientationchange', () => {
             setTimeout(() => {
                 this.handleOrientationChange();
             }, 100);
         });
         
-        // Network change handler
         if (navigator.connection) {
             navigator.connection.addEventListener('change', () => {
                 this.handleNetworkChange();
             });
         }
         
-        // Visibility change for performance optimization
         document.addEventListener('visibilitychange', () => {
             this.handleVisibilityChange();
         });
     }
     
-    // Event handlers
     handleResize() {
         const oldDeviceType = this.deviceType;
         this.deviceType = this.detectDeviceType();
@@ -181,19 +169,15 @@ class DeviceManager {
         }
     }
     
-    // Device-specific optimizations
     applyDeviceSpecificSettings() {
         const body = document.body;
         
-        // Remove previous device classes
         body.classList.remove('mobile', 'tablet', 'desktop', 'large-desktop', 'touch', 'no-touch');
         
-        // Add current device classes
         body.classList.add(this.getDeviceCategory());
         body.classList.add(this.touchSupport ? 'touch' : 'no-touch');
         body.classList.add(`performance-${this.performanceLevel}`);
         
-        // Apply device-specific settings
         this.optimizeMapForDevice();
         this.adjustInteractionMethods();
         this.optimizeDataLoading();
@@ -214,14 +198,11 @@ class DeviceManager {
     }
     
     applyMobileLayout(controlPanel, legend, infoPanel) {
-        // Mobile-specific layout adjustments
         if (controlPanel) {
-            // Remove any conflicting styles that might interfere with flexbox
             controlPanel.style.flexDirection = 'column';
-            controlPanel.style.maxHeight = ''; // Let CSS handle this
+            controlPanel.style.maxHeight = '';
             controlPanel.style.overflowY = 'auto';
             
-            // Add mobile control panel functionality
             this.setupMobileControlPanel(controlPanel);
         }
         
@@ -230,7 +211,7 @@ class DeviceManager {
             legend.style.right = '10px';
             legend.style.maxWidth = '150px';
             legend.style.fontSize = '11px';
-            legend.style.zIndex = '1001'; // Ensure it's above map
+            legend.style.zIndex = '1001';
         }
         
         if (infoPanel) {
@@ -240,18 +221,15 @@ class DeviceManager {
             infoPanel.style.right = '10px';
             infoPanel.style.top = 'auto';
             infoPanel.style.maxHeight = '30vh';
-            infoPanel.style.zIndex = '1002'; // Ensure it's above legend
+            infoPanel.style.zIndex = '1002'; 
         }
         
-        // Reduce map controls for mobile
         this.optimizeMapControlsForMobile();
     }
     
     setupMobileControlPanel(controlPanel) {
-        // Check if toggle button already exists
         if (document.getElementById('mobile-panel-toggle')) return;
         
-        // Create toggle button
         const toggleButton = document.createElement('button');
         toggleButton.id = 'mobile-panel-toggle';
         toggleButton.className = 'mobile-panel-toggle';
@@ -262,28 +240,21 @@ class DeviceManager {
         toggleButton.setAttribute('aria-label', 'Toggle control panel');
         toggleButton.setAttribute('aria-expanded', 'true');
         
-        // Create wrapper for better control
         const panelWrapper = document.createElement('div');
         panelWrapper.className = 'mobile-panel-wrapper';
-        
-        // Wrap the control panel
         controlPanel.parentNode.insertBefore(panelWrapper, controlPanel);
         panelWrapper.appendChild(toggleButton);
         panelWrapper.appendChild(controlPanel);
         
-        // Add mobile-specific classes
         controlPanel.classList.add('mobile-collapsible');
         
-        // Set initial state (collapsed by default on mobile)
         this.controlPanelExpanded = false;
         this.toggleMobileControlPanel(false, false); // false = collapsed, false = no animation
         
-        // Add event listener
         toggleButton.addEventListener('click', () => {
             this.toggleMobileControlPanel(!this.controlPanelExpanded, true);
         });
         
-        // Add styles for mobile control panel
         this.addMobileControlPanelStyles();
     }
     
@@ -296,13 +267,11 @@ class DeviceManager {
         
         this.controlPanelExpanded = expand;
         
-        // Update button state
         toggleButton.setAttribute('aria-expanded', expand.toString());
         if (toggleIcon) {
             toggleIcon.textContent = expand ? '▲' : '▼';
         }
         
-        // Apply transition class if animating
         if (animate) {
             controlPanel.classList.add('transitioning');
         }
@@ -315,22 +284,18 @@ class DeviceManager {
             controlPanel.classList.add('collapsed');
         }
         
-        // Handle map resize after layout change
         const resizeMap = () => {
             if (this.app.mapManager && this.app.mapManager.map) {
-                // Force map to recalculate its size
                 setTimeout(() => {
                     this.app.mapManager.map.invalidateSize(true);
                 }, 50);
                 
-                // Additional resize after transition completes
                 setTimeout(() => {
                     this.app.mapManager.map.invalidateSize(true);
                 }, animate ? 350 : 100);
             }
         };
         
-        // Remove transition class after animation
         if (animate) {
             setTimeout(() => {
                 controlPanel.classList.remove('transitioning');
@@ -490,7 +455,6 @@ class DeviceManager {
     }
     
     applyTabletLayout(controlPanel, legend, infoPanel) {
-        // Tablet-specific layout adjustments
         if (controlPanel) {
             controlPanel.style.flexDirection = 'row';
             controlPanel.style.flexWrap = 'wrap';
@@ -512,7 +476,6 @@ class DeviceManager {
     }
     
     applyDesktopLayout(controlPanel, legend, infoPanel) {
-        // Desktop-specific layout adjustments
         if (controlPanel) {
             controlPanel.style.flexDirection = 'row';
             controlPanel.style.flexWrap = 'wrap';
@@ -543,12 +506,10 @@ class DeviceManager {
         if (this.isMobile()) {
             const controlPanel = document.getElementById('control-panel');
             if (this.orientation === 'landscape') {
-                // Landscape mobile optimizations
                 if (controlPanel) {
                     controlPanel.style.maxHeight = '120px';
                 }
             } else {
-                // Portrait mobile optimizations
                 if (controlPanel) {
                     controlPanel.style.maxHeight = '200px';
                 }
@@ -563,38 +524,31 @@ class DeviceManager {
         const map = this.app.mapManager.map;
         
         if (this.isMobile()) {
-            // Mobile map optimizations
             map.options.zoomControl = false;
             
-            // Add mobile-friendly zoom controls
             this.addMobileZoomControls(map);
             
-            // Reduce animation duration for performance
             map.options.fadeAnimation = false;
             map.options.zoomAnimation = this.performanceLevel !== 'low';
             
         } else if (this.isTablet()) {
-            // Tablet optimizations
             map.options.zoomAnimation = true;
             map.options.fadeAnimation = this.performanceLevel === 'high';
             
         } else {
-            // Desktop optimizations
             map.options.zoomAnimation = true;
             map.options.fadeAnimation = true;
         }
     }
     
     optimizeMapControlsForMobile() {
-        // Simplify map controls for mobile devices
         const mapContainer = document.getElementById('map');
         if (mapContainer) {
             mapContainer.style.touchAction = 'pan-x pan-y';
         }
     }
     
-    addMobileZoomControls(map) {
-        // Add custom mobile-friendly zoom controls
+    addMobileZoomControls(map) {s
         const zoomControls = L.control({ position: 'bottomright' });
         
         zoomControls.onAdd = function() {
@@ -618,7 +572,6 @@ class DeviceManager {
         zoomControls.addTo(map);
     }
     
-    // Interaction optimizations
     adjustInteractionMethods() {
         if (this.touchSupport) {
             this.optimizeForTouch();
@@ -628,7 +581,6 @@ class DeviceManager {
     }
     
     optimizeForTouch() {
-        // Add touch-specific optimizations
         const style = document.createElement('style');
         style.textContent = `
             .scenario-btn, button, select {
@@ -654,7 +606,6 @@ class DeviceManager {
     }
     
     optimizeForMouse() {
-        // Add mouse-specific optimizations
         const style = document.createElement('style');
         style.textContent = `
             .scenario-btn:hover, button:hover, select:hover {
@@ -681,43 +632,38 @@ class DeviceManager {
         }
     }
     
-    // Performance optimizations
+    //TODO: maybe this is causing low performance mode to be activated incorrectly with firefox. watch this space lol
     optimizeDataLoading() {
         if (this.performanceLevel === 'low' || this.isSlowConnection()) {
-            // Reduce data quality for low-performance devices
+            console.error(this.performanceLevel+' or slow: '+this.isSlowConnection());
             this.enableLowPerformanceMode();
         } else if (this.performanceLevel === 'high') {
             this.enableHighPerformanceMode();
         }
     }
     
+    //yea look, these are probs whats causing issues. hard to replicate locally tho, might have to test in prod again lol
     enableLowPerformanceMode() {
         console.log('Enabling low performance mode');
         
-        // Reduce heatmap resolution
         if (this.app.visualizationRenderer) {
             this.app.visualizationRenderer.gridResolution = 4; // Lower resolution
         }
         
-        // Limit number of cyclones displayed
         this.maxCyclonesToDisplay = 50;
         
-        // Disable animations
         this.disableAnimations();
     }
     
     enableHighPerformanceMode() {
         console.log('Enabling high performance mode');
         
-        // Use higher resolution heatmaps
         if (this.app.visualizationRenderer) {
-            this.app.visualizationRenderer.gridResolution = 1; // Higher resolution
+            this.app.visualizationRenderer.gridResolution = 1;
         }
         
-        // Allow more cyclones
         this.maxCyclonesToDisplay = 500;
         
-        // Enable enhanced animations
         this.enableEnhancedAnimations();
     }
     
