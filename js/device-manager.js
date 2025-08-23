@@ -69,40 +69,73 @@ class DeviceManager {
     }
     
     //TODO: again, watch this space, might be doing innaccurate fuckiness in firefox live
+    //oop it was this lol, think this should help it be less fucky now for my firefox homies
     assessPerformanceLevel() {
-        const nav = navigator;
-        let score = 0;
-        
-        // Memory check
-        if (nav.deviceMemory) {
-            if (nav.deviceMemory >= 8) score += 3;
-            else if (nav.deviceMemory >= 4) score += 2;
-            else if (nav.deviceMemory >= 2) score += 1;
-        }
-        
-        // CPU cores check
-        if (nav.hardwareConcurrency) {
-            if (nav.hardwareConcurrency >= 8) score += 3;
-            else if (nav.hardwareConcurrency >= 4) score += 2;
-            else if (nav.hardwareConcurrency >= 2) score += 1;
-        }
-        
-        // Connection check
-        if (nav.connection) {
-            const connection = nav.connection;
-            if (connection.effectiveType === '4g') score += 2;
-            else if (connection.effectiveType === '3g') score += 1;
-        }
-        
-        // Device type penalty
-        if (this.isMobile()) score -= 2;
-        else if (this.isTablet()) score -= 1;
-        
-        if (score >= 6) return 'high';
-        if (score >= 3) return 'medium';
-        return 'low';
+    const nav = navigator;
+    let score = 0;
+    
+    if (nav.hardwareConcurrency) {
+        if (nav.hardwareConcurrency >= 8) score += 3;
+        else if (nav.hardwareConcurrency >= 4) score += 2;
+        else if (nav.hardwareConcurrency >= 2) score += 1;
+    } else {
+        if (this.isDesktop()) score += 2;
+        else if (this.isTablet()) score += 1;
     }
     
+    if (nav.deviceMemory) {
+        if (nav.deviceMemory >= 8) score += 3;
+        else if (nav.deviceMemory >= 4) score += 2;
+        else if (nav.deviceMemory >= 2) score += 1;
+    } else {
+        const screenPixels = window.screen.width * window.screen.height;
+        if (this.isDesktop()) {
+            if (screenPixels > 2073600) score += 3; // > 1920x1080
+            else score += 2;
+        } else if (this.isTablet()) {
+            score += 1;
+        }
+    }
+    
+    const performanceBonus = this.runSimplePerformanceTest();
+    score += performanceBonus;
+    
+    const userAgent = nav.userAgent.toLowerCase();
+    if (userAgent.includes('firefox')) {
+        score += 1;
+    }
+    
+    if (this.isMobile()) score -= 2;
+    else if (this.isTablet()) score -= 1;
+    
+    if (this.supportsWebGL()) score += 1;
+    if (this.supportsCanvas()) score += 1;
+    
+    if (score >= 7) return 'high';
+    if (score >= 4) return 'medium';
+    return 'low';
+}
+
+runSimplePerformanceTest() {
+    try {
+        const start = performance.now();
+        
+        //this just a simple maths test for user's browser to assess performance on non-chromium boys
+        let result = 0;
+        for (let i = 0; i < 10000; i++) {
+            result += Math.random() * Math.sin(i);
+        }
+        
+        const duration = performance.now() - start;
+        
+        if (duration < 2) return 2;
+        if (duration < 5) return 1;
+        return 0;
+    } catch (error) {
+        return 0;
+    }
+}
+
     setupEventListeners() {
         let resizeTimeout;
         window.addEventListener('resize', () => {
@@ -633,14 +666,14 @@ class DeviceManager {
     }
     
     //TODO: maybe this is causing low performance mode to be activated incorrectly with firefox. watch this space lol
-    optimizeDataLoading() {
-        if (this.performanceLevel === 'low' || this.isSlowConnection()) {
-            console.error(this.performanceLevel+' or slow: '+this.isSlowConnection());
-            this.enableLowPerformanceMode();
-        } else if (this.performanceLevel === 'high') {
-            this.enableHighPerformanceMode();
-        }
+    //yea i think fixed now
+optimizeDataLoading() {
+    if (this.performanceLevel === 'low' && (this.isSlowConnection() || this.isMobile())) {
+        this.enableLowPerformanceMode();
+    } else if (this.performanceLevel === 'high') {
+        this.enableHighPerformanceMode();
     }
+}
     
     //yea look, these are probs whats causing issues. hard to replicate locally tho, might have to test in prod again lol
     enableLowPerformanceMode() {
@@ -850,7 +883,7 @@ class DeviceManager {
         }
     }
     
-    // Check if this is first visit for user guidance
+    //stub for future use, to create a guide
     checkFirstTimeUser() {
         const isFirstTime = !localStorage.getItem('tc-app-visited');
         
