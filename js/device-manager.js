@@ -581,7 +581,7 @@ runSimplePerformanceTest() {
         }
     }
     
-    addMobileZoomControls(map) {s
+    addMobileZoomControls(map) {
         const zoomControls = L.control({ position: 'bottomright' });
         
         zoomControls.onAdd = function() {
