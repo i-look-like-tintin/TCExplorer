@@ -44,7 +44,7 @@ class DataManager {
             console.log('Fetching data with params:', params.toString());
             
             // Make API request
-            const response = await fetch(`api.php?${params}`);
+            const response = await fetch(`php/api.php?${params}`);
             const data = await response.json();
             
             console.log('API Response:', data);
