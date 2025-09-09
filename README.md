@@ -17,6 +17,7 @@ See known issues with this experimental implementation.
 - ~~Map glitches (jumps around) on panning. Investigating - May (Godzilla app.js was beautiful, and we killed him :c ) ((Hmm, it's server side, not a file issue. Doesn't exist in XAMPP) (Also doesn't seem to exist with chromium-based browsers))~~ Fixed. 
 - QUERY: Determine whether experimental heatmap impacts loading of Tc Track data for unseen ensembles, as these use seperate data sources. Initial testing suggests no impact, but query further.
 - ~~Mobile app no longer functions correctly. Control toggles not switching between desktop to mobile.~~ Fixed, I fat-fingered lol
+- QUERY: php files were moved to seperate folder. all references are believed to have been updated, but if php issues occur this is the likely cause.
 
 ## May's Immediate Roadmap
 - ~~Fix known experimental heatmap issues~~
