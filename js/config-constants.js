@@ -12,7 +12,7 @@ const TCConfig = {
     },
     
     api: {
-        baseUrl: 'api.php',
+        baseUrl: 'php/api.php',
         timeout: 60000,
         retryAttempts: 3,
         retryDelay: 1000,
