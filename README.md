@@ -1,5 +1,5 @@
 # Tropical Cyclone Track Visualization Prototype
-# Version 0.12.2
+# Version 0.12.3
 The app can be found running live in a web-facing environment at: https://tropicalcycloneexplorer.azurewebsites.net/
 
 This is designed to be run through XAMPP, and then launched in the browser as localhost/YOUR_PROJECT_DIRECTORY_INSIDE_HTDOCS/index.html
@@ -18,6 +18,7 @@ See known issues with this experimental implementation.
 - QUERY: Determine whether experimental heatmap impacts loading of Tc Track data for unseen ensembles, as these use seperate data sources. Initial testing suggests no impact, but query further.
 - ~~Mobile app no longer functions correctly. Control toggles not switching between desktop to mobile.~~ Fixed, I fat-fingered lol
 - QUERY: php files were moved to seperate folder. all references are believed to have been updated, but if php issues occur this is the likely cause.
+- QUERY: css files were moved to seperate folder. all references are believed to have been updated, but if css issues occur this is the likely cause.
 
 ## May's Immediate Roadmap
 - ~~Fix known experimental heatmap issues~~
