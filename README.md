@@ -1,5 +1,5 @@
 # Tropical Cyclone Track Visualization Prototype
-# Version 0.12.3
+# Version 0.13.0
 The app can be found running live in a web-facing environment at: https://tropicalcycloneexplorer.azurewebsites.net/
 
 This is designed to be run through XAMPP, and then launched in the browser as localhost/YOUR_PROJECT_DIRECTORY_INSIDE_HTDOCS/index.html
@@ -10,6 +10,7 @@ Any issues with this, hit me up. The instructions below may not be super accurat
 See known issues with this experimental implementation.
 - v0.11.0 Modularised JS for extendability, added support for mobile devices.
 - v0.12.0 Added cool shark favicon. Arguably not deserving of a full number bump, but it *is* a really cool shark.
+- v0.13.0 Added support for the long-awaited 'HPB_NAT' scenario. This is historical data with natural warming still included. Also re-styled control group to allow for extra buttons to be added without display nastiness. 
 
 ## Known Issues: 
 - ~~Experimental heatmap mode is forcibly cleared on zooming, requires retoggling checkbox to reappear. Will investigate - may~~ Fixed.
@@ -17,8 +18,7 @@ See known issues with this experimental implementation.
 - ~~Map glitches (jumps around) on panning. Investigating - May (Godzilla app.js was beautiful, and we killed him :c ) ((Hmm, it's server side, not a file issue. Doesn't exist in XAMPP) (Also doesn't seem to exist with chromium-based browsers))~~ Fixed. 
 - QUERY: Determine whether experimental heatmap impacts loading of Tc Track data for unseen ensembles, as these use seperate data sources. Initial testing suggests no impact, but query further.
 - ~~Mobile app no longer functions correctly. Control toggles not switching between desktop to mobile.~~ Fixed, I fat-fingered lol
-- QUERY: php files were moved to seperate folder. all references are believed to have been updated, but if php issues occur this is the likely cause.
-- QUERY: css files were moved to seperate folder. all references are believed to have been updated, but if css issues occur this is the likely cause.
+- QUERY: Sweeping changes have been made to the application in version 0.13.0, by a tired developer who didn't bother to thoroughly test. Things may go wrong. If things do go wrong, feel free to yell at said developer. 
 
 ## May's Immediate Roadmap
 - ~~Fix known experimental heatmap issues~~
