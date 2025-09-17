@@ -21,12 +21,11 @@ See known issues with this experimental implementation.
 - QUERY: Sweeping changes have been made to the application in version 0.13.0, by a tired developer who didn't bother to thoroughly test. Things may go wrong. If things do go wrong, feel free to yell at developer.
 - Mobile view does not handle rotation to landscape correctly.
 
-## May's Immediate Roadmap
+## Immediate Roadmap
 - ~~Fix known experimental heatmap issues~~
 - ~~Clean the project tree, seperate out app.js~~
 - Genesis locations - Refine and include a much more accurate genesis location when cyclone speed reaching 34 knots (17m/s). Ignore path prior to genesis. (Markey working on)
 - Dissipation data points.
-- Add a button to show land-fall locations. Display purely land-fall spots – no tracks. Be able to select the time. Have different coloured dots for land-fall location to show cyclone intensity upon landfall.
 - ~~Add ability to select year ranges, rather than just all years or single year~~
 - ~~Remove sample data functionality - no longer needed with data curl working~~
 - ~~Fix heatmap display~~
@@ -34,12 +33,6 @@ See known issues with this experimental implementation.
 - ~~Clarify Client Notes with client~~
 - ~~Update Density Heatmap in line with client's IPYNB~~
 - ~~add azure support for prototype deployment~~
-
-## Brady's work goals 
-- Edit genisis dot
-- Add mapping for other nations/regions
-- Make it run on a phone???
-- Hight Data 
 
 ## Other Needs:
 - Validate data (I have only partially validated curled TC D4PDF data checking speeds and pressures - May)
