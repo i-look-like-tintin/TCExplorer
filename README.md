@@ -23,7 +23,7 @@ See known issues with this experimental implementation.
 ## May's Immediate Roadmap
 - ~~Fix known experimental heatmap issues~~
 - ~~Clean the project tree, seperate out app.js~~
-- Genesis locations - Refine and include a much more accurate genesis location when cyclone speed reaching 34 knots (17m/s). Ignore path prior to genesis.
+- Genesis locations - Refine and include a much more accurate genesis location when cyclone speed reaching 34 knots (17m/s). Ignore path prior to genesis. (Markey working on)
 - Dissipation data points.
 - Add a button to show land-fall locations. Display purely land-fall spots – no tracks. Be able to select the time. Have different coloured dots for land-fall location to show cyclone intensity upon landfall.
 - ~~Add ability to select year ranges, rather than just all years or single year~~
