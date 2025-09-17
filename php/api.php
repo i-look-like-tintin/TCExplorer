@@ -1,9 +1,7 @@
 <?php
 
-
 require_once 'config.php';
 require_once 'Dp4dfParser.php';
-
 
 $origin = $_SERVER['HTTP_ORIGIN'] ?? '*';
 if (in_array($origin, ALLOWED_ORIGINS)) {
@@ -15,7 +13,7 @@ header('Content-Type: application/json');
 
 class CycloneDataAPI {
     private $dataPath;
-    private $scenarios = ['current', '2k', '4k'];
+    private $scenarios = ['current', 'nat', '2k', '4k'];
     private $parser;
     
     public function __construct() {
@@ -74,23 +72,17 @@ class CycloneDataAPI {
         $ensembleId = isset($_GET['ensemble']) ? (int)$_GET['ensemble'] : 1;
         $sstModel = $_GET['sst'] ?? null;
         
- 
         if (($scenario === '2k' || $scenario === '4k') && !$sstModel) {
             $sstModel = 'CC';
         }
         
- 
         $debug = isset($_GET['debug']) && $_GET['debug'] === 'true';
-        
-        //TODO remove sample data later - no longer needed
         $useSample = isset($_GET['use_sample']) && $_GET['use_sample'] === 'true';
         
         if (!$useSample) {
-
             if ($this->parser === null) {
                 error_log("API: Parser is null, cannot fetch d4PDF data");
             } else {
-
                 if ($debug) {
                     error_log("API: Attempting to fetch d4PDF data for scenario: $scenario, ensemble: $ensembleId, SST: " . ($sstModel ?? 'none'));
                 }
@@ -102,7 +94,6 @@ class CycloneDataAPI {
                         error_log("API: Successfully got " . count($cyclones) . " cyclones from d4PDF");
                     }
                     
-
                     if (isset($_GET['filter']) && $_GET['filter'] === 'australia') {
                         $beforeFilter = count($cyclones);
                         $cyclones = $this->filterToAustralianRegion($cyclones);
@@ -112,16 +103,7 @@ class CycloneDataAPI {
                     }
                     
                     $metadata = $this->getMetadata($scenario);
-                    $metadata['source_file'] = $this->parser->getLastFilename();   // <— add
-
-                    $data = [
-                        'scenario'        => $scenario,
-                        'metadata'        => $metadata,
-                        'ensemble_id'     => $ensembleId,
-                        'data_source'     => 'd4pdf',
-                        'total_cyclones'  => count($cyclones),
-                        'cyclones'        => $cyclones
-                    ];
+                    $metadata['source_file'] = $this->parser->getLastFilename();
 
                     if ($sstModel && ($scenario === '2k' || $scenario === '4k')) {
                         $metadata['sst_model'] = $sstModel;
@@ -146,7 +128,6 @@ class CycloneDataAPI {
             }
         }
         
-
         $jsonFile = DATA_PATH . "sample_{$scenario}_cyclones.json";
         if (file_exists($jsonFile)) {
             if ($debug) {
@@ -166,7 +147,6 @@ class CycloneDataAPI {
         $filtered = [];
         
         foreach ($cyclones as $cyclone) {
-
             $inRegion = false;
             foreach ($cyclone['track'] as $point) {
                 if ($point['lat'] >= BOUNDS['south'] && $point['lat'] <= BOUNDS['north'] &&
@@ -193,6 +173,14 @@ class CycloneDataAPI {
                 'period' => $config['time_period'],
                 'warming' => '0K',
                 'model' => 'd4PDF HPB',
+                'ensemble_members' => $config['ensemble_members'],
+                'ensemble_range' => '1-' . $config['ensemble_members']
+            ],
+            'nat' => [
+                'description' => 'Natural Climate (No Anthropogenic Warming)',
+                'period' => $config['time_period'],
+                'warming' => 'Natural Only',
+                'model' => 'd4PDF HPB NAT',
                 'ensemble_members' => $config['ensemble_members'],
                 'ensemble_range' => '1-' . $config['ensemble_members']
             ],
@@ -230,7 +218,6 @@ class CycloneDataAPI {
     private function processJsonData($jsonData, $scenario) {
         $cyclones = [];
         
-
         if (isset($jsonData['ensemble_data'][0]['cyclones'])) {
             foreach ($jsonData['ensemble_data'][0]['cyclones'] as $cyclone) {
                 $cyclones[] = [
@@ -238,7 +225,7 @@ class CycloneDataAPI {
                     'name' => $cyclone['name'],
                     'year' => $cyclone['year'],
                     'maxCategory' => $cyclone['max_category'],
-                    'maxWind' => round($cyclone['max_wind_speed'] * 1.852), // Convert knots to km/h
+                    'maxWind' => round($cyclone['max_wind_speed'] * 1.852),
                     'minPressure' => $cyclone['min_pressure'],
                     'duration' => round($cyclone['duration_hours'] / 24),
                     'landfall' => $cyclone['landfall'],
@@ -263,11 +250,10 @@ class CycloneDataAPI {
         ];
     }
     
-    //TODO again no longer needed
     private function generateSimulatedCyclones($scenario) {
-
         $scenarioFactors = [
             'current' => ['count' => 15, 'intensity' => 1.0],
+            'nat' => ['count' => 12, 'intensity' => 0.9],
             '2k' => ['count' => 18, 'intensity' => 1.2],
             '4k' => ['count' => 22, 'intensity' => 1.5]
         ];
@@ -275,7 +261,6 @@ class CycloneDataAPI {
         $factor = $scenarioFactors[$scenario];
         $cyclones = [];
         
-
         for ($i = 0; $i < $factor['count']; $i++) {
             $cyclone = $this->generateCyclone($i, $factor['intensity']);
             $cyclones[] = $cyclone;
@@ -293,11 +278,10 @@ class CycloneDataAPI {
         $year = 2020 + ($index % 10);
         $name = $names[$index % count($names)];
         
-
         $startRegions = [
-            ['lat' => -10 + rand(-2, 2), 'lon' => 130 + rand(-5, 5)], // North
-            ['lat' => -15 + rand(-2, 2), 'lon' => 145 + rand(-5, 5)], // Northeast
-            ['lat' => -20 + rand(-2, 2), 'lon' => 115 + rand(-5, 5)]  // Northwest
+            ['lat' => -10 + rand(-2, 2), 'lon' => 130 + rand(-5, 5)],
+            ['lat' => -15 + rand(-2, 2), 'lon' => 145 + rand(-5, 5)], 
+            ['lat' => -20 + rand(-2, 2), 'lon' => 115 + rand(-5, 5)]
         ];
         
         $start = $startRegions[array_rand($startRegions)];
@@ -325,15 +309,12 @@ class CycloneDataAPI {
         $lon = $start['lon'];
         $days = rand(5, 15);
         
-
         $category = min(5, max(1, round(rand(1, 3) * $intensityFactor)));
         
         for ($day = 0; $day < $days; $day++) {
-
             $lat += rand(-10, 5) / 10;
             $lon += rand(-5, 10) / 10;
             
-
             if ($day < $days / 2) {
                 $category = min(5, $category + (rand(0, 100) > 70 ? 1 : 0));
             } else {
@@ -354,7 +335,6 @@ class CycloneDataAPI {
     }
     
     private function checkLandfall($track) {
-
         foreach ($track as $point) {
             if ($point['lat'] > -39 && $point['lat'] < -10 &&
                 $point['lon'] > 113 && $point['lon'] < 154) {
@@ -383,19 +363,15 @@ class CycloneDataAPI {
         ]);
     }
     
-
     private function processDp4dfData($filename, $scenario) {
-
         return [];
     }
 }
-
 
 try {
     $api = new CycloneDataAPI();
     $api->handleRequest();
 } catch (Exception $e) {
-
     header('Content-Type: application/json');
     echo json_encode([
         'success' => false,

@@ -1,20 +1,13 @@
 <?php
 
-
-//honestly, none of this really needs to be its own file, could look to migrate this
-//but its here for the potential need to scale out in the future
-//lemme cook
-//nah dw its more useful now
 define('DB_HOST', 'localhost');
 define('DB_NAME', 'cyclone_viz');
 define('DB_USER', 'root');
 define('DB_PASS', '');
 
-
 define('DATA_PATH', __DIR__ . '/data/');
 define('CACHE_PATH', __DIR__ . '/cache/');
 define('LOG_PATH', __DIR__ . '/logs/');
-
 
 define('DP4DF_BASE_URL', 'https://climate.mri-jma.go.jp/pub/d4pdf/tropical_cyclone_tracks/');
 
@@ -24,6 +17,12 @@ define('DP4DF_FILE_PATTERNS', [
         'ensemble_members' => 100,
         'time_period' => '1951-2011',
         'suffix' => '_1951-2011.txt'
+    ],
+    'nat' => [
+        'prefix' => 'xytrackk319b_HPB_NAT_m',
+        'ensemble_members' => 60,
+        'time_period' => '1951-2010',
+        'suffix' => '_1951-2010.txt'
     ],
     '2k' => [
         'prefix' => 'xytrackk319b_HFB_2K_',
@@ -41,14 +40,12 @@ define('DP4DF_FILE_PATTERNS', [
     ]
 ]);
 
-
 define('BOUNDS', [
     'north' => -5,
     'south' => -45,
     'east' => 160,
     'west' => 105
 ]);
-
 
 define('INTENSITY_CATEGORIES', [
     1 => ['min_wind' => 63, 'max_wind' => 88, 'color' => '#1f78b4'],
@@ -58,11 +55,9 @@ define('INTENSITY_CATEGORIES', [
     5 => ['min_wind' => 200, 'max_wind' => 999, 'color' => '#6a3d9a']
 ]);
 
-
 define('API_RATE_LIMIT', 100);
 define('API_CACHE_DURATION', 3600); 
 define('API_DEBUG_MODE', isset($_GET['debug']) && $_GET['debug'] === 'true');
-
 
 define('MAP_DEFAULT_CENTER', [-25.2744, 133.7751]);
 define('MAP_DEFAULT_ZOOM', 4);
@@ -83,7 +78,6 @@ define('CACHE_LIFETIME', 86400);
 define('MAX_MEMORY_LIMIT', '512M');
 define('EXECUTION_TIME_LIMIT', 300); 
 
-
 define('NETCDF_AVAILABLE', extension_loaded('netcdf'));
 define('NETCDF_VARIABLES', [
     'track_id' => 'track_id',
@@ -99,7 +93,6 @@ define('LOG_LEVEL', 'INFO');
 define('LOG_FILE_PREFIX', 'cyclone_viz_');
 define('LOG_ROTATION_DAYS', 7);
 
-
 define('ALLOWED_ORIGINS', [
     'http://localhost',
     'https://www.unsw.edu.au',
@@ -114,7 +107,6 @@ define('FEATURES', [
     'user_authentication' => false
 ]);
 
-
 define('ERROR_MESSAGES', [
     'data_not_found' => 'Cyclone data not found for the specified scenario',
     'invalid_scenario' => 'Invalid climate scenario specified',
@@ -123,14 +115,12 @@ define('ERROR_MESSAGES', [
     'rate_limit' => 'API rate limit exceeded'
 ]);
 
-
 $requiredDirs = [DATA_PATH, CACHE_PATH, LOG_PATH];
 foreach ($requiredDirs as $dir) {
     if (!file_exists($dir)) {
         mkdir($dir, 0755, true);
     }
 }
-
 
 $envConfig = __DIR__ . '/config.local.php';
 if (file_exists($envConfig)) {
