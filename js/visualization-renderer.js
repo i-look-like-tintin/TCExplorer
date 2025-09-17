@@ -416,6 +416,7 @@ class VisualizationRenderer {
         
         const scenarioInfo = {
             'current': 'Historical (1951-2011)',
+            'nat': 'Natural Climate (1951-2010)',
             '2k': '+2K Warming (2031-2090)',
             '4k': '+4K Warming (2051-2110)'
         };
@@ -475,6 +476,7 @@ class VisualizationRenderer {
         
         const scenarioInfo = {
             'current': 'Historical (1951-2011)',
+            'nat': 'Natural Climate (1951-2010)',
             '2k': '+2K Warming (2031-2090)',
             '4k': '+4K Warming (2051-2110)'
         };

@@ -1,7 +1,3 @@
-/**
- * Data Manager
- * Handles data loading, API calls, caching, and data processing
- */
 class DataManager {
     constructor(app) {
         this.app = app;
@@ -9,18 +5,17 @@ class DataManager {
         this.loadingQueue = new Set();
     }
     
-    // Generate cache key for current configuration
     getCacheKey() {
-        return this.app.currentScenario === 'current' 
-            ? `${this.app.currentScenario}_${this.app.currentEnsemble}`
-            : `${this.app.currentScenario}_${this.app.currentEnsemble}_${this.app.currentSSTModel}`;
+        if (this.app.currentScenario === 'current' || this.app.currentScenario === 'nat') {
+            return `${this.app.currentScenario}_${this.app.currentEnsemble}`;
+        } else {
+            return `${this.app.currentScenario}_${this.app.currentEnsemble}_${this.app.currentSSTModel}`;
+        }
     }
     
-    // Main data loading method
     async loadData(forceRefresh = false) {
         const cacheKey = this.getCacheKey();
         
-        // Prevent duplicate requests
         if (this.loadingQueue.has(cacheKey)) {
             console.log('Data already loading for:', cacheKey);
             return;
@@ -30,7 +25,6 @@ class DataManager {
             this.app.showLoading(true);
             this.updateDataStatus('Loading data...');
             
-            // Check cache first
             if (!forceRefresh && this.app.cycloneData[cacheKey]) {
                 console.log('Using cached data for:', cacheKey);
                 await this.app.updateVisualization();
@@ -39,11 +33,9 @@ class DataManager {
             
             this.loadingQueue.add(cacheKey);
             
-            // Build API parameters
             const params = this.buildAPIParams();
             console.log('Fetching data with params:', params.toString());
             
-            // Make API request
             const response = await fetch(`php/api.php?${params}`);
             const data = await response.json();
             
@@ -70,7 +62,6 @@ class DataManager {
         }
     }
     
-    // Build API parameters based on current state
     buildAPIParams() {
         const params = new URLSearchParams({
             action: 'getCycloneData',
@@ -96,6 +87,11 @@ class DataManager {
                 case 'current':
                     const ensembleNumCurrent = String(ensemble).padStart(3, '0');
                     filename += `density_HPB_m${ensembleNumCurrent}_1951-2011.txt`;
+                    break;
+                    
+                case 'nat':
+                    const ensembleNumNat = String(ensemble).padStart(3, '0');
+                    filename += `density_HPB_NAT_m${ensembleNumNat}_1951-2010.txt`;
                     break;
                     
                 case '2k':
@@ -141,7 +137,6 @@ class DataManager {
         }
     }
     
-    // Parse density CSV data
     parseDensityCSV(csvText) {
         const lines = csvText.trim().split('\n');
         const headers = lines[0].split(',');
@@ -153,7 +148,6 @@ class DataManager {
             const row = {};
             headers.forEach((header, index) => {
                 const value = values[index];
-                // Parse numbers
                 if (['ix', 'iy', 'count'].includes(header.trim())) {
                     row[header.trim()] = parseInt(value);
                 } else if (['lon_west', 'lon_east', 'lat_south', 'lat_north', 'lon_center', 'lat_center'].includes(header.trim())) {
@@ -169,35 +163,28 @@ class DataManager {
         return data;
     }
     
-    // Get current data set
     getCurrentData() {
         const cacheKey = this.getCacheKey();
         return this.app.cycloneData[cacheKey];
     }
     
-    // filter cyclones by whatever criteria - supports this criteria when added
-    //TODO: this
     filterCyclones(cyclones, filters = {}) {
         let filtered = [...cyclones];
         
-        // Year range filter
         if (filters.yearRange) {
             filtered = filtered.filter(c => 
                 c.year >= filters.yearRange.min && c.year <= filters.yearRange.max
             );
         }
         
-        // Category filter
         if (filters.minCategory) {
             filtered = filtered.filter(c => c.maxCategory >= filters.minCategory);
         }
         
-        // Regional filter
         if (filters.region === 'australia') {
             filtered = filtered.filter(c => this.hasAustralianTrack(c));
         }
         
-        // Landfall filter
         if (filters.landfallOnly) {
             filtered = filtered.filter(c => c.landfall);
         }
@@ -205,7 +192,6 @@ class DataManager {
         return filtered;
     }
     
-    // Check if cyclone has track points in Australian region
     hasAustralianTrack(cyclone) {
         if (!cyclone.track || cyclone.track.length === 0) return false;
         
@@ -214,7 +200,6 @@ class DataManager {
         );
     }
     
-    // Data status management
     updateDataStatus(message, type = 'info') {
         const statusEl = document.getElementById('data-status');
         if (statusEl) {
@@ -244,7 +229,6 @@ class DataManager {
         this.updateDataStatus(statusMsg, 'success');
     }
     
-    // Calculate various metrics from cyclone data
     calculateMetrics(cyclones) {
         const metrics = {
             totalCyclones: cyclones.length,
@@ -259,26 +243,21 @@ class DataManager {
         let totalCategory = 0;
         
         cyclones.forEach(cyclone => {
-            // Category metrics
             if (cyclone.maxCategory >= 3) {
                 metrics.severeCyclones++;
             }
             totalCategory += cyclone.maxCategory || 0;
             
-            // Category distribution
             if (cyclone.maxCategory >= 1 && cyclone.maxCategory <= 5) {
                 metrics.categoryDistribution[cyclone.maxCategory]++;
             }
             
-            // Wind speed
             metrics.maxWindSpeed = Math.max(metrics.maxWindSpeed, cyclone.maxWind || 0);
             
-            // Landfall
             if (cyclone.landfall) {
                 metrics.landfallCount++;
             }
             
-            // Year range
             if (cyclone.year) {
                 metrics.yearRange.min = Math.min(metrics.yearRange.min, cyclone.year);
                 metrics.yearRange.max = Math.max(metrics.yearRange.max, cyclone.year);
@@ -287,7 +266,6 @@ class DataManager {
         
         metrics.avgMaxCategory = cyclones.length > 0 ? (totalCategory / cyclones.length).toFixed(1) : 0;
         
-        // Handle case where no cyclones have years
         if (metrics.yearRange.min === Infinity) {
             metrics.yearRange = { min: 0, max: 0 };
         }
@@ -295,7 +273,6 @@ class DataManager {
         return metrics;
     }
     
-    // Get data summary for current configuration
     getDataSummary() {
         const data = this.getCurrentData();
         if (!data || !data.cyclones) return null;
@@ -312,7 +289,6 @@ class DataManager {
         };
     }
     
-    // Clear cache for specific scenario or all
     clearCache(scenario = null) {
         if (scenario) {
             Object.keys(this.app.cycloneData).forEach(key => {
@@ -326,10 +302,10 @@ class DataManager {
         console.log('Cache cleared for:', scenario || 'all scenarios');
     }
     
-    // Preload data for common scenarios
     async preloadCommonScenarios() {
         const commonScenarios = [
             { scenario: 'current', ensemble: 1 },
+            { scenario: 'nat', ensemble: 1 },
             { scenario: '2k', ensemble: 1, sst: 'CC' },
             { scenario: '4k', ensemble: 1, sst: 'CC' }
         ];
@@ -346,7 +322,6 @@ class DataManager {
                 
                 await this.loadData();
                 
-                // Restore original state
                 this.app.currentScenario = originalScenario;
                 this.app.currentEnsemble = originalEnsemble;
                 this.app.currentSSTModel = originalSST;

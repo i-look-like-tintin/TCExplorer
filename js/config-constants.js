@@ -1,11 +1,7 @@
-/**
- * Application Configuration and Constants
- * Central configuration file for the TC Visualization application
- */
 const TCConfig = {
     app: {
         name: 'Tropical Cyclone Track Visualization',
-        version: '0.12.3',
+        version: '0.13.0',
         description: 'd4PDF Climate Model Projections for Australia',
         author: 'Team 7 Sharks',
         buildDate: '2024-08-21'
@@ -16,7 +12,7 @@ const TCConfig = {
         timeout: 60000,
         retryAttempts: 3,
         retryDelay: 1000,
-        cacheLifetime: 3600000, // 1 hour cache - honestly could be longer but i think this should balance cost
+        cacheLifetime: 3600000,
         debugMode: false
     },
     
@@ -51,6 +47,17 @@ const TCConfig = {
             warming: '0K',
             model: 'd4PDF HPB',
             color: '#2c3e50',
+            requiresSST: false
+        },
+        nat: {
+            id: 'nat',
+            name: 'Natural (1951-2010)',
+            description: 'Natural Climate (No Anthropogenic Warming)',
+            yearRange: { min: 1951, max: 2010 },
+            ensembleRange: { min: 1, max: 100 },
+            warming: 'Natural Only',
+            model: 'd4PDF HPB NAT',
+            color: '#27ae60',
             requiresSST: false
         },
         '2k': {
@@ -165,7 +172,6 @@ const TCConfig = {
         }
     },
     
-    // Heatmap Configuration
     heatmap: {
         density: {
             levels: [0, 1, 2, 3, 4, 5, 7, 10, 15, 20, 30, 50, 75, 100],
@@ -185,7 +191,7 @@ const TCConfig = {
                 'rgba(145, 0, 13, 1)',  
                 'rgba(103, 0, 13, 1)'
             ],
-            gridResolution: 2 // 2 degs lat longs rectangles
+            gridResolution: 2
         },
         precomputed: {
             levels: [0, 1, 2, 5, 10, 20, 40, 80, 120, 160],
@@ -204,7 +210,6 @@ const TCConfig = {
         }
     },
     
-    // Data Processing Configuration
     dataProcessing: {
         maxCyclonesToDisplay: {
             desktop: 1000,
@@ -219,11 +224,10 @@ const TCConfig = {
         filterDefaults: {
             minCategory: 1,
             australiaRegion: true,
-            landfallBuffer: 50 // km
+            landfallBuffer: 50
         }
     },
     
-    // Performance Configuration
     performance: {
         animationDuration: {
             high: 300,
@@ -237,7 +241,7 @@ const TCConfig = {
         },
         cacheSize: {
             maxEntries: 50,
-            maxAge: 3600000 // 1 hour
+            maxAge: 3600000
         }
     },
     
@@ -254,7 +258,7 @@ const TCConfig = {
             defaultPosition: 'top-right'
         },
         panels: {
-            autoHideDelay: 10000, // hide after 10 secs automatically
+            autoHideDelay: 10000,
             animationDuration: 300
         }
     },
@@ -282,7 +286,6 @@ const TCConfig = {
         errorReporting: false
     },
     
-    // This me map and me data
     external: {
         australiaBoundaries: {
             url: 'https://raw.githubusercontent.com/nvkelso/natural-earth-vector/master/geojson/ne_50m_admin_0_countries.geojson',
@@ -293,6 +296,7 @@ const TCConfig = {
             basePath: 'density_data/',
             filePattern: {
                 current: 'density_HPB_m{ensemble}_1951-2011.txt',
+                nat: 'density_HPB_NAT_m{ensemble}_1951-2010.txt',
                 '2k': 'density_HFB_2K_{sst}_m{ensemble}_2031-2090.txt',
                 '4k': 'density_HFB_4K_{sst}_m{ensemble}_2051-2110.txt'
             }
@@ -318,7 +322,6 @@ const TCConfig = {
 };
 
 const TCConfigUtils = {
-    // Get scenario configuration
     getScenario(scenarioId) {
         return TCConfig.scenarios[scenarioId] || null;
     },
@@ -374,7 +377,6 @@ const TCConfigUtils = {
         return config.colors[0];
     },
     
-    // Validate scenario configuration
     validateScenario(scenarioId) {
         const scenario = this.getScenario(scenarioId);
         if (!scenario) return false;
@@ -385,7 +387,6 @@ const TCConfigUtils = {
                scenario.description;
     },
     
-    // Get API endpoint
     getAPIEndpoint(action = '') {
         return action ? `${TCConfig.api.baseUrl}?action=${action}` : TCConfig.api.baseUrl;
     },
@@ -403,12 +404,10 @@ const TCConfigUtils = {
         return `${filename}.${format}`;
     },
     
-    //TODO: yea, probs another boy thats causing some troubles
     mergeConfig(userConfig) {
         return this.deepMerge(TCConfig, userConfig);
     },
     
-    // Deep merge utility
     deepMerge(target, source) {
         const result = { ...target };
         

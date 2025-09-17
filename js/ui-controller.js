@@ -1,7 +1,3 @@
-/**
- * UI Controller
- * Handles user interface interactions, event listeners, and control updates
- */
 class UIController {
     constructor(app) {
         this.app = app;
@@ -9,7 +5,7 @@ class UIController {
     }
     
     initializeEventListeners() {
-        this.setupScenarioButtons();
+        this.setupScenarioDropdown();
         this.setupEnsembleControls();
         this.setupVisualizationToggles();
         this.setupYearRangeControls();
@@ -19,21 +15,17 @@ class UIController {
         console.log('Event listeners initialized');
     }
     
-    setupScenarioButtons() {
-        document.querySelectorAll('.scenario-btn').forEach(btn => {
-            btn.addEventListener('click', async (e) => {
+    setupScenarioDropdown() {
+        const scenarioSelect = document.getElementById('scenario-select');
+        if (scenarioSelect) {
+            scenarioSelect.addEventListener('change', async (e) => {
                 await this.handleScenarioChange(e);
             });
-        });
+        }
     }
     
     async handleScenarioChange(e) {
-        document.querySelectorAll('.scenario-btn').forEach(btn => {
-            btn.classList.remove('active');
-        });
-        e.target.classList.add('active');
-        
-        const newScenario = e.target.dataset.scenario;
+        const newScenario = e.target.value;
         await this.app.changeScenario(newScenario);
     }
     
@@ -55,7 +47,6 @@ class UIController {
             if (enabled) {
                 document.getElementById('show-density-heatmap').checked = false;
                 this.setTrackDisplays(false);
-                //TODO: yea, and again, i dont really love this map save
                 this.app.mapManager.saveMapState();
             }
             await this.app.toggleVisualizationMode('heatmap', enabled);
@@ -74,7 +65,6 @@ class UIController {
         ['show-tracks', 'show-genesis', 'show-intensity'].forEach(id => {
             document.getElementById(id).addEventListener('change', async (e) => {
                 if (e.target.checked && (this.app.showHeatmap || this.app.showDensityHeatmap)) {
-                    // Disable heatmap modes when switching to track displays
                     document.getElementById('show-heatmap').checked = false;
                     document.getElementById('show-density-heatmap').checked = false;
                     this.app.showHeatmap = false;
@@ -183,6 +173,7 @@ class UIController {
         
         const ensembleLimits = {
             'current': { max: 100, available: 100, note: '(1-100 available)' },
+            'nat': { max: 60, available: 60, note: '(1-60 available)' },
             '2k': { max: 9, available: 9, note: '(101-109 on server)' },
             '4k': { max: 15, available: 15, note: '(101-115 on server)' }
         };
@@ -317,32 +308,9 @@ class UIController {
         
         infoPanel.classList.remove('hidden');
         
-        // Auto-hide after 10 seconds
         setTimeout(() => {
             infoPanel.classList.add('hidden');
         }, 10000);
-    }
-    
-    //TODO: stub for later work
-    validateInput(value, min, max, fieldName) {
-        if (isNaN(value) || value < min || value > max) {
-            this.showValidationError(`${fieldName} must be between ${min} and ${max}`);
-            return false;
-        }
-        return true;
-    }
-    
-    showValidationError(message) {
-        const errorEl = document.getElementById('validation-error');
-        if (errorEl) {
-            errorEl.textContent = message;
-            errorEl.style.display = 'block';
-            setTimeout(() => {
-                errorEl.style.display = 'none';
-            }, 3000);
-        } else {
-            this.app.utils.showNotification(message, 'error');
-        }
     }
     
     enableControls() {
@@ -359,7 +327,6 @@ class UIController {
         });
     }
     
-    // Responsive layout adjustments
     adjustLayoutForDevice() {
         const isMobile = window.innerWidth <= 768;
         const isTablet = window.innerWidth <= 1024 && window.innerWidth > 768;
@@ -404,45 +371,5 @@ class UIController {
                 this.adjustLayoutForDevice();
             }, 100);
         });
-    }
-    
-    setupAccessibility() {
-        this.setupKeyboardNavigation();
-        
-        this.addAriaLabels();
-        this.setupFocusManagement();
-    }
-    
-    setupKeyboardNavigation() {
-        document.querySelectorAll('.scenario-btn').forEach((btn, index) => {
-            btn.addEventListener('keydown', (e) => {
-                if (e.key === 'ArrowLeft' || e.key === 'ArrowRight') {
-                    e.preventDefault();
-                    const buttons = document.querySelectorAll('.scenario-btn');
-                    const nextIndex = e.key === 'ArrowRight' ? 
-                        (index + 1) % buttons.length : 
-                        (index - 1 + buttons.length) % buttons.length;
-                    buttons[nextIndex].focus();
-                }
-            });
-        });
-    }
-    
-    addAriaLabels() {
-        const yearSliders = document.querySelectorAll('.year-slider');
-        yearSliders.forEach(slider => {
-            if (!slider.getAttribute('aria-label')) {
-                slider.setAttribute('aria-label', 
-                    slider.id.includes('min') ? 'Minimum year' : 'Maximum year'
-                );
-            }
-        });
-    }
-    
-    setupFocusManagement() {
-        const firstFocusable = document.querySelector('button, input, select');
-        if (firstFocusable) {
-            firstFocusable.focus();
-        }
     }
 }
