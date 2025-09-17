@@ -31,18 +31,13 @@
         
         <div id="control-panel">
             <div class="control-group">
-                <label>Climate Scenario:</label>
-                <div class="scenario-buttons">
-                    <button class="scenario-btn active" data-scenario="current" aria-label="Historical Climate Scenario">
-                        Historical (1951-2011)
-                    </button>
-                    <button class="scenario-btn" data-scenario="2k" aria-label="2K Warming Scenario">
-                        +2K Warming (2031-2090)
-                    </button>
-                    <button class="scenario-btn" data-scenario="4k" aria-label="4K Warming Scenario">
-                        +4K Warming (2051-2110)
-                    </button>
-                </div>
+                <label for="scenario-select">Climate Scenario:</label>
+                <select id="scenario-select" class="scenario-select">
+                    <option value="current">Historical (1951-2011)</option>
+                    <option value="nat">Natural Climate (1951-2010)</option>
+                    <option value="2k">+2K Warming (2031-2090)</option>
+                    <option value="4k">+4K Warming (2051-2110)</option>
+                </select>
             </div>
             
             <div class="control-group" id="sst-selector" style="display: none;">
