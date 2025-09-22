@@ -74,14 +74,15 @@ This project will develop an interactive web-based platform to visualize and com
 Expected Deliverables:
 - A web-friendly dashboard.
 - Interactive map layers of:
-- TC tracks (by model, warming level, ensemble member, and period)
-- Genesis points, landfall location, and intensity categories
+    - TC tracks (by model, warming level, ensemble member, and period)  
+    - Genesis points, landfall location, and intensity categories
 - Time sliders to animate TC evolution and frequency over time.
 - Clickable TC tracks to show metadata (e.g., date, intensity, pressure, wind speed).
 - Scenario toggle buttons: e.g., Past Climate, Past no warming, +2 K future, +4 K future.
 - Scenario difference toggle buttons: e.g., Past Climate, Past no warming, +2 K future, +4 K future.
 - Data export functionality (e.g., filtered CSV download).
 - A layer management panel (show/hide: genesis density, track density, intensity bins).
+- A complete user guide to outline how to use the project.
 
                         #
                        ###
