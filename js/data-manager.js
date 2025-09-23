@@ -3,17 +3,96 @@ class DataManager {
         this.app = app;
         this.cache = new Map();
         this.loadingQueue = new Set();
+        this.comparisonDataA = null;
+        this.comparisonDataB = null;
     }
     
-    getCacheKey() {
-        if (this.app.currentScenario === 'current' || this.app.currentScenario === 'nat') {
-            return `${this.app.currentScenario}_${this.app.currentEnsemble}`;
+    getCacheKey(scenario = null, ensemble = null, sstModel = null) {
+        const s = scenario || this.app.currentScenario;
+        const e = ensemble || this.app.currentEnsemble;
+        const sst = sstModel || this.app.currentSSTModel;
+        
+        if (s === 'current' || s === 'nat') {
+            return `${s}_${e}`;
         } else {
-            return `${this.app.currentScenario}_${this.app.currentEnsemble}_${this.app.currentSSTModel}`;
+            return `${s}_${e}_${sst}`;
+        }
+    }
+    
+    getComparisonCacheKey(scenarioType) {
+        if (scenarioType === 'A') {
+            return this.getCacheKey(
+                this.app.comparisonScenarioA, 
+                this.app.comparisonEnsembleA, 
+                this.app.comparisonSSTModelA
+            );
+        } else {
+            return this.getCacheKey(
+                this.app.comparisonScenarioB, 
+                this.app.comparisonEnsembleB, 
+                this.app.comparisonSSTModelB
+            );
+        }
+    }
+    
+    async loadComparisonData(scenarioA, ensembleA, sstModelA, scenarioB, ensembleB, sstModelB) {
+        const cacheKeyA = this.getCacheKey(scenarioA, ensembleA, sstModelA);
+        const cacheKeyB = this.getCacheKey(scenarioB, ensembleB, sstModelB);
+        
+        const loadPromises = [];
+        
+        if (!this.app.cycloneData[cacheKeyA]) {
+            loadPromises.push(this.loadSpecificScenario(scenarioA, ensembleA, sstModelA, cacheKeyA));
+        }
+        
+        if (!this.app.cycloneData[cacheKeyB]) {
+            loadPromises.push(this.loadSpecificScenario(scenarioB, ensembleB, sstModelB, cacheKeyB));
+        }
+        
+        if (loadPromises.length > 0) {
+            await Promise.all(loadPromises);
+        }
+        
+        this.comparisonDataA = this.app.cycloneData[cacheKeyA];
+        this.comparisonDataB = this.app.cycloneData[cacheKeyB];
+        
+        this.updateComparisonDataStatus();
+    }
+    
+    async loadSpecificScenario(scenario, ensemble, sstModel, cacheKey) {
+        if (this.loadingQueue.has(cacheKey)) {
+            return;
+        }
+        
+        try {
+            this.loadingQueue.add(cacheKey);
+            
+            const params = this.buildAPIParams(scenario, ensemble, sstModel);
+            console.log(`Loading ${scenario} data with params:`, params.toString());
+            
+            const response = await fetch(`php/api.php?${params}`);
+            const data = await response.json();
+            
+            if (data.success) {
+                this.app.cycloneData[cacheKey] = data.data;
+                console.log(`Loaded ${data.data.cyclones.length} cyclones for ${scenario}`);
+            } else {
+                throw new Error(data.error || 'Unknown API error');
+            }
+            
+        } catch (error) {
+            console.error(`Error loading data for ${scenario}:`, error);
+            throw error;
+        } finally {
+            this.loadingQueue.delete(cacheKey);
         }
     }
     
     async loadData(forceRefresh = false) {
+        if (this.app.comparisonMode) {
+            return;
+        }
+        
         const cacheKey = this.getCacheKey();
         
         if (this.loadingQueue.has(cacheKey)) {
@@ -62,21 +141,59 @@ class DataManager {
         }
     }
     
-    buildAPIParams() {
+    buildAPIParams(scenario = null, ensemble = null, sstModel = null) {
+        const s = scenario || this.app.currentScenario;
+        const e = ensemble || this.app.currentEnsemble;
+        const sst = sstModel || this.app.currentSSTModel;
+        
         const params = new URLSearchParams({
             action: 'getCycloneData',
-            scenario: this.app.currentScenario,
-            ensemble: this.app.currentEnsemble,
-            filter: this.app.filterAustralia ? 'australia' : 'all',
+            scenario: s,
+            ensemble: e,
+            filter: 'all',
             use_sample: 'false',
             debug: 'true'
         });
         
-        if (this.app.currentScenario === '2k' || this.app.currentScenario === '4k') {
-            params.append('sst', this.app.currentSSTModel);
+        if (s === '2k' || s === '4k') {
+            params.append('sst', sst);
         }
         
         return params;
+    }
+    
+    getComparisonData(scenarioType) {
+        if (scenarioType === 'A') {
+            return this.comparisonDataA;
+        } else if (scenarioType === 'B') {
+            return this.comparisonDataB;
+        }
+        return null;
+    }
+    
+    updateComparisonDataStatus() {
+        if (this.comparisonDataA && this.comparisonDataB) {
+            const countA = this.comparisonDataA.cyclones.length;
+            const countB = this.comparisonDataB.cyclones.length;
+            
+            const scenarioAName = this.getScenarioDisplayName(this.app.comparisonScenarioA);
+            const scenarioBName = this.getScenarioDisplayName(this.app.comparisonScenarioB);
+            
+            this.updateDataStatus(
+                `Comparison: ${scenarioAName} (${countA}) vs ${scenarioBName} (${countB})`, 
+                'success'
+            );
+        }
+    }
+    
+    getScenarioDisplayName(scenario) {
+        const names = {
+            'current': 'Historical',
+            'nat': 'Natural',
+            '2k': '+2K',
+            '4k': '+4K'
+        };
+        return names[scenario] || scenario;
     }
     
     async fetchPrecomputedDensity(scenario, ensemble, sstModel) {
@@ -164,40 +281,15 @@ class DataManager {
     }
     
     getCurrentData() {
+        if (this.app.comparisonMode) {
+            return {
+                A: this.comparisonDataA,
+                B: this.comparisonDataB
+            };
+        }
+        
         const cacheKey = this.getCacheKey();
         return this.app.cycloneData[cacheKey];
-    }
-    
-    filterCyclones(cyclones, filters = {}) {
-        let filtered = [...cyclones];
-        
-        if (filters.yearRange) {
-            filtered = filtered.filter(c => 
-                c.year >= filters.yearRange.min && c.year <= filters.yearRange.max
-            );
-        }
-        
-        if (filters.minCategory) {
-            filtered = filtered.filter(c => c.maxCategory >= filters.minCategory);
-        }
-        
-        if (filters.region === 'australia') {
-            filtered = filtered.filter(c => this.hasAustralianTrack(c));
-        }
-        
-        if (filters.landfallOnly) {
-            filtered = filtered.filter(c => c.landfall);
-        }
-        
-        return filtered;
-    }
-    
-    hasAustralianTrack(cyclone) {
-        if (!cyclone.track || cyclone.track.length === 0) return false;
-        
-        return cyclone.track.some(point => 
-            this.app.mapManager.isInAustralianRegion(point.lat, point.lon)
-        );
     }
     
     updateDataStatus(message, type = 'info') {
@@ -274,12 +366,34 @@ class DataManager {
     }
     
     getDataSummary() {
+        if (this.app.comparisonMode) {
+            const dataA = this.getComparisonData('A');
+            const dataB = this.getComparisonData('B');
+            
+            return {
+                comparisonMode: true,
+                scenarioA: {
+                    scenario: this.app.comparisonScenarioA,
+                    ensemble: this.app.comparisonEnsembleA,
+                    sstModel: this.app.comparisonSSTModelA,
+                    metrics: dataA ? this.calculateMetrics(dataA.cyclones) : null
+                },
+                scenarioB: {
+                    scenario: this.app.comparisonScenarioB,
+                    ensemble: this.app.comparisonEnsembleB,
+                    sstModel: this.app.comparisonSSTModelB,
+                    metrics: dataB ? this.calculateMetrics(dataB.cyclones) : null
+                }
+            };
+        }
+        
         const data = this.getCurrentData();
         if (!data || !data.cyclones) return null;
         
         const metrics = this.calculateMetrics(data.cyclones);
         
         return {
+            comparisonMode: false,
             scenario: this.app.currentScenario,
             ensemble: this.app.currentEnsemble,
             sstModel: this.app.currentSSTModel,
@@ -299,6 +413,10 @@ class DataManager {
         } else {
             this.app.cycloneData = {};
         }
+        
+        this.comparisonDataA = null;
+        this.comparisonDataB = null;
+        
         console.log('Cache cleared for:', scenario || 'all scenarios');
     }
     

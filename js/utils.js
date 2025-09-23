@@ -1,13 +1,8 @@
-/**
- * Utility Functions and Helpers
- * Contains common utility functions, export functionality, and helper methods
- */
 class TCUtils {
     constructor() {
         this.notificationId = 0;
     }
     
-    // Notification system
     showNotification(message, type = 'info', duration = 5000) {
         const notificationId = `notification-${++this.notificationId}`;
         
@@ -24,7 +19,6 @@ class TCUtils {
         notification.style.opacity = '1';
         notification.style.display = 'block';
         
-        // Auto-remove notification
         setTimeout(() => {
             notification.style.opacity = '0';
             setTimeout(() => {
@@ -63,7 +57,64 @@ class TCUtils {
         return baseStyles + `background: ${typeColors[type] || typeColors.info};`;
     }
     
-    // Data export functionality
+    exportComparisonToCSV(dataA, dataB, scenarioA, scenarioB, ensembleA, ensembleB, sstModelA, sstModelB, yearRange) {
+        if (!dataA?.cyclones || !dataB?.cyclones) {
+            this.showNotification('No comparison data to export', 'error');
+            return;
+        }
+        
+        let cyclonesA = dataA.cyclones;
+        let cyclonesB = dataB.cyclones;
+        
+        if (yearRange) {
+            cyclonesA = cyclonesA.filter(c => 
+                c.year >= yearRange.min && c.year <= yearRange.max
+            );
+            cyclonesB = cyclonesB.filter(c => 
+                c.year >= yearRange.min && c.year <= yearRange.max
+            );
+        }
+        
+        let csv = 'Scenario,ID,Name,Year,Genesis Month,Max Category,Max Wind (km/h),Min Pressure (hPa),Duration (days),Genesis Lat,Genesis Lon,Landfall\n';
+        
+        const scenarioAName = this.getScenarioDisplayName(scenarioA);
+        const scenarioBName = this.getScenarioDisplayName(scenarioB);
+        
+        cyclonesA.forEach(cyclone => {
+            csv += `${scenarioAName},${cyclone.id},${cyclone.name},${cyclone.year},${cyclone.genesis_month || 'N/A'},${cyclone.maxCategory},${cyclone.maxWind},${cyclone.minPressure},${cyclone.duration_days || cyclone.duration},${cyclone.genesis_lat},${cyclone.genesis_lon},${cyclone.landfall ? 'Yes' : 'No'}\n`;
+        });
+        
+        cyclonesB.forEach(cyclone => {
+            csv += `${scenarioBName},${cyclone.id},${cyclone.name},${cyclone.year},${cyclone.genesis_month || 'N/A'},${cyclone.maxCategory},${cyclone.maxWind},${cyclone.minPressure},${cyclone.duration_days || cyclone.duration},${cyclone.genesis_lat},${cyclone.genesis_lon},${cyclone.landfall ? 'Yes' : 'No'}\n`;
+        });
+        
+        const blob = new Blob([csv], { type: 'text/csv' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        
+        let filename = `cyclone_comparison_${scenarioA}_vs_${scenarioB}`;
+        filename += `_ensemble${ensembleA}_vs_${ensembleB}`;
+        
+        if ((scenarioA === '2k' || scenarioA === '4k') && sstModelA) {
+            filename += `_${sstModelA}`;
+        }
+        if ((scenarioB === '2k' || scenarioB === '4k') && sstModelB) {
+            filename += `_${sstModelB}`;
+        }
+        
+        if (yearRange) {
+            filename += `_${yearRange.min}-${yearRange.max}`;
+        }
+        filename += `_${this.formatDate(new Date())}.csv`;
+        
+        a.download = filename;
+        a.click();
+        URL.revokeObjectURL(url);
+        
+        this.showNotification(`Exported comparison: ${cyclonesA.length} vs ${cyclonesB.length} cyclones`, 'success');
+    }
+    
     exportToCSV(data, scenario, ensemble, sstModel, yearRange) {
         if (!data || !data.cyclones) {
             this.showNotification('No data to export', 'error');
@@ -160,7 +211,6 @@ class TCUtils {
         
         cyclones.forEach(cyclone => {
             if (cyclone.track && cyclone.track.length > 0) {
-                // Create LineString for track
                 const coordinates = cyclone.track.map(point => [point.lon, point.lat]);
                 
                 const feature = {
@@ -205,6 +255,119 @@ class TCUtils {
         this.showNotification(`Exported ${cyclones.length} cyclones to GeoJSON`, 'success');
     }
     
+    exportComparisonToGeoJSON(cyclonesA, cyclonesB, scenarioA, scenarioB, ensembleA, ensembleB, sstModelA, sstModelB) {
+        if (!cyclonesA || cyclonesA.length === 0 || !cyclonesB || cyclonesB.length === 0) {
+            this.showNotification('No comparison data to export', 'error');
+            return;
+        }
+        
+        const geojson = {
+            type: "FeatureCollection",
+            metadata: {
+                comparisonMode: true,
+                scenarioA: { scenario: scenarioA, ensemble: ensembleA, sstModel: sstModelA },
+                scenarioB: { scenario: scenarioB, ensemble: ensembleB, sstModel: sstModelB },
+                exportDate: new Date().toISOString(),
+                cycloneCountA: cyclonesA.length,
+                cycloneCountB: cyclonesB.length
+            },
+            features: []
+        };
+        
+        cyclonesA.forEach(cyclone => {
+            if (cyclone.track && cyclone.track.length > 0) {
+                const coordinates = cyclone.track.map(point => [point.lon, point.lat]);
+                
+                const feature = {
+                    type: "Feature",
+                    geometry: {
+                        type: "LineString",
+                        coordinates: coordinates
+                    },
+                    properties: {
+                        scenario: this.getScenarioDisplayName(scenarioA),
+                        scenarioType: 'A',
+                        id: cyclone.id,
+                        name: cyclone.name,
+                        year: cyclone.year,
+                        maxCategory: cyclone.maxCategory,
+                        maxWind: cyclone.maxWind,
+                        minPressure: cyclone.minPressure,
+                        duration: cyclone.duration_days || cyclone.duration,
+                        landfall: cyclone.landfall,
+                        genesisLat: cyclone.genesis_lat,
+                        genesisLon: cyclone.genesis_lon
+                    }
+                };
+                
+                geojson.features.push(feature);
+            }
+        });
+        
+        cyclonesB.forEach(cyclone => {
+            if (cyclone.track && cyclone.track.length > 0) {
+                const coordinates = cyclone.track.map(point => [point.lon, point.lat]);
+                
+                const feature = {
+                    type: "Feature",
+                    geometry: {
+                        type: "LineString",
+                        coordinates: coordinates
+                    },
+                    properties: {
+                        scenario: this.getScenarioDisplayName(scenarioB),
+                        scenarioType: 'B',
+                        id: cyclone.id,
+                        name: cyclone.name,
+                        year: cyclone.year,
+                        maxCategory: cyclone.maxCategory,
+                        maxWind: cyclone.maxWind,
+                        minPressure: cyclone.minPressure,
+                        duration: cyclone.duration_days || cyclone.duration,
+                        landfall: cyclone.landfall,
+                        genesisLat: cyclone.genesis_lat,
+                        genesisLon: cyclone.genesis_lon
+                    }
+                };
+                
+                geojson.features.push(feature);
+            }
+        });
+        
+        const blob = new Blob([JSON.stringify(geojson, null, 2)], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        
+        let filename = `cyclone_comparison_${scenarioA}_vs_${scenarioB}`;
+        filename += `_ensemble${ensembleA}_vs_${ensembleB}`;
+        
+        if ((scenarioA === '2k' || scenarioA === '4k') && sstModelA) {
+            filename += `_${sstModelA}`;
+        }
+        if ((scenarioB === '2k' || scenarioB === '4k') && sstModelB) {
+            filename += `_${sstModelB}`;
+        }
+        
+        filename += `_${this.formatDate(new Date())}.geojson`;
+        
+        a.download = filename;
+        a.click();
+        URL.revokeObjectURL(url);
+        
+        this.showNotification(`Exported comparison: ${cyclonesA.length} vs ${cyclonesB.length} cyclones to GeoJSON`, 'success');
+    }
+    
+    getScenarioDisplayName(scenario) {
+        const names = {
+            'current': 'Historical',
+            'nat': 'Natural',
+            '2k': '2K_Warming',
+            '4k': '4K_Warming'
+        };
+        return names[scenario] || scenario;
+    }
+    
     formatDate(date, format = 'YYYY-MM-DD') {
         const year = date.getFullYear();
         const month = String(date.getMonth() + 1).padStart(2, '0');
@@ -231,7 +394,7 @@ class TCUtils {
     }
     
     calculateDistance(lat1, lon1, lat2, lon2) {
-        const R = 6371; // earth radius in km
+        const R = 6371;
         const dLat = this.toRadians(lat2 - lat1);
         const dLon = this.toRadians(lon2 - lon1);
         const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
@@ -249,7 +412,6 @@ class TCUtils {
         return radians * (180 / Math.PI);
     }
     
-    //calc bearing between two points
     calculateBearing(lat1, lon1, lat2, lon2) {
         const dLon = this.toRadians(lon2 - lon1);
         const lat1Rad = this.toRadians(lat1);
@@ -476,7 +638,6 @@ class TCUtils {
         this.showNotification(`An error occurred in ${context}. Please try again.`, 'error');
     }
     
-    //TODO: stub for future erropr reporting
     reportError(error, context) {
         console.log('Error reported:', { error, context, timestamp: new Date().toISOString() });
     }

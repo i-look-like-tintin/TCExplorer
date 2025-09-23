@@ -5,7 +5,6 @@ class TCVisualization {
         this.currentSSTModel = 'CC';
         this.cycloneData = {};
         this.selectedCyclone = null;
-        this.filterAustralia = true;
         this.yearRange = null;
         this.scenarioYearRanges = {
             'current': { min: 1951, max: 2011 },
@@ -14,8 +13,16 @@ class TCVisualization {
             '4k': { min: 2051, max: 2110 }
         };
         
+        // Comparison mode properties
+        this.comparisonMode = false;
+        this.comparisonScenarioA = 'current';
+        this.comparisonEnsembleA = 1;
+        this.comparisonSSTModelA = 'CC';
+        this.comparisonScenarioB = '2k';
+        this.comparisonEnsembleB = 1;
+        this.comparisonSSTModelB = 'CC';
+        
         this.showHeatmap = false;
-        this.showDensityHeatmap = false;
         this.heatmapRequestId = 0;
         
         this.mapManager = new MapManager(this);
@@ -42,7 +49,83 @@ class TCVisualization {
         }
     }
     
+    async toggleComparisonMode(enabled) {
+        this.comparisonMode = enabled;
+        
+        if (enabled) {
+            this.showHeatmap = false;
+            this.showDensityHeatmap = false;
+            this.uiController.updateComparisonUI(true);
+            this.uiController.disableHeatmapControls();
+            await this.loadComparisonData();
+        } else {
+            this.uiController.updateComparisonUI(false);
+            this.uiController.enableHeatmapControls();
+            await this.dataManager.loadData();
+        }
+    }
+    
+    async loadComparisonData() {
+        this.showLoading(true, 'Loading comparison data...');
+        
+        try {
+            await this.dataManager.loadComparisonData(
+                this.comparisonScenarioA, 
+                this.comparisonEnsembleA, 
+                this.comparisonSSTModelA,
+                this.comparisonScenarioB, 
+                this.comparisonEnsembleB, 
+                this.comparisonSSTModelB
+            );
+            
+            await this.updateVisualization();
+        } catch (error) {
+            console.error('Failed to load comparison data:', error);
+            this.utils.showNotification('Failed to load comparison data', 'error');
+        } finally {
+            this.showLoading(false);
+        }
+    }
+    
+    async changeComparisonScenario(scenarioType, newScenario) {
+        if (scenarioType === 'A') {
+            if (this.comparisonScenarioA === newScenario) return;
+            this.comparisonScenarioA = newScenario;
+        } else {
+            if (this.comparisonScenarioB === newScenario) return;
+            this.comparisonScenarioB = newScenario;
+        }
+        
+        this.uiController.updateComparisonEnsembleSelectors();
+        await this.loadComparisonData();
+    }
+    
+    async changeComparisonEnsemble(scenarioType, newEnsemble) {
+        if (scenarioType === 'A') {
+            if (this.comparisonEnsembleA === newEnsemble) return;
+            this.comparisonEnsembleA = newEnsemble;
+        } else {
+            if (this.comparisonEnsembleB === newEnsemble) return;
+            this.comparisonEnsembleB = newEnsemble;
+        }
+        
+        await this.loadComparisonData();
+    }
+    
+    async changeComparisonSST(scenarioType, newSST) {
+        if (scenarioType === 'A') {
+            if (this.comparisonSSTModelA === newSST) return;
+            this.comparisonSSTModelA = newSST;
+        } else {
+            if (this.comparisonSSTModelB === newSST) return;
+            this.comparisonSSTModelB = newSST;
+        }
+        
+        await this.loadComparisonData();
+    }
+    
     async changeScenario(newScenario) {
+        if (this.comparisonMode) return;
         if (this.currentScenario === newScenario) return;
         
         this.currentScenario = newScenario;
@@ -52,6 +135,7 @@ class TCVisualization {
     }
     
     async changeEnsemble(newEnsemble) {
+        if (this.comparisonMode) return;
         if (this.currentEnsemble === newEnsemble) return;
         
         this.currentEnsemble = newEnsemble;
@@ -59,6 +143,7 @@ class TCVisualization {
     }
     
     async changeSST(newSST) {
+        if (this.comparisonMode) return;
         if (this.currentSSTModel === newSST) return;
         
         this.currentSSTModel = newSST;
@@ -66,32 +151,70 @@ class TCVisualization {
     }
     
     async toggleVisualizationMode(mode, enabled) {
-        switch (mode) {
-            case 'heatmap':
-                this.showHeatmap = enabled;
-                if (enabled) {
-                    this.showDensityHeatmap = false;
-                    this.uiController.disableYearControls('Severity Mode');
-                } else {
-                    this.uiController.enableYearControls();
-                }
-                break;
-                
-            case 'density':
-                this.showDensityHeatmap = enabled;
-                if (enabled) {
-                    this.showHeatmap = false;
-                    this.uiController.disableYearControls('Density Mode');
-                } else {
-                    this.uiController.enableYearControls();
-                }
-                break;
+        if (this.comparisonMode && mode === 'heatmap') {
+            this.utils.showNotification('Heatmap mode not available in comparison mode', 'info');
+            return;
+        }
+        
+        if (mode === 'heatmap') {
+            this.showHeatmap = enabled;
+            if (enabled) {
+                this.uiController.disableYearControls('Severity Mode');
+            } else {
+                this.uiController.enableYearControls();
+            }
         }
         
         await this.updateVisualization();
     }
     
     async updateVisualization() {
+        if (this.comparisonMode) {
+            await this.updateComparisonVisualization();
+        } else {
+            await this.updateSingleVisualization();
+        }
+    }
+    
+    async updateComparisonVisualization() {
+        const dataA = this.dataManager.getComparisonData('A');
+        const dataB = this.dataManager.getComparisonData('B');
+        
+        if (!dataA?.cyclones || !dataB?.cyclones) return;
+        
+        this.visualizationRenderer.clearAllLayers();
+        
+        let cyclonesA = dataA.cyclones;
+        let cyclonesB = dataB.cyclones;
+        
+        if (this.yearRange) {
+            const boundsA = this.scenarioYearRanges[this.comparisonScenarioA];
+            const boundsB = this.scenarioYearRanges[this.comparisonScenarioB];
+            
+            if (this.yearRange.min >= boundsA.min && this.yearRange.max <= boundsA.max) {
+                cyclonesA = cyclonesA.filter(c => 
+                    c.year >= this.yearRange.min && c.year <= this.yearRange.max
+                );
+            }
+            
+            if (this.yearRange.min >= boundsB.min && this.yearRange.max <= boundsB.max) {
+                cyclonesB = cyclonesB.filter(c => 
+                    c.year >= this.yearRange.min && c.year <= this.yearRange.max
+                );
+            }
+        }
+        
+        await this.visualizationRenderer.renderComparisonVisualization(
+            cyclonesA, 
+            cyclonesB,
+            this.comparisonScenarioA,
+            this.comparisonScenarioB
+        );
+        
+        console.log(`Comparison: ${cyclonesA.length} vs ${cyclonesB.length} cyclones`);
+    }
+    
+    async updateSingleVisualization() {
         const cacheKey = this.dataManager.getCacheKey();
         const data = this.cycloneData[cacheKey];
         
@@ -100,26 +223,29 @@ class TCVisualization {
         this.visualizationRenderer.clearAllLayers();
         
         let cyclones = data.cyclones;
-        if (!this.showDensityHeatmap && this.yearRange) {
+        if (this.yearRange) {
             cyclones = cyclones.filter(c => 
                 c.year >= this.yearRange.min && c.year <= this.yearRange.max
             );
         }
         
-        if (this.showDensityHeatmap) {
-            await this.visualizationRenderer.createDensityHeatmap(cyclones);
-        } else if (this.showHeatmap) {
+        if (this.showHeatmap) {
             await this.visualizationRenderer.createHeatmap(cyclones);
         } else {
             await this.visualizationRenderer.renderStandardVisualization(cyclones);
         }
         
-        const displayMode = this.showDensityHeatmap ? 'density heatmap' : 
-                           (this.showHeatmap ? 'severity heatmap' : 'tracks');
+        const displayMode = this.showHeatmap ? 'severity heatmap' : 'tracks';
         console.log(`Showing ${cyclones.length} cyclones in ${displayMode} mode`);
     }
     
     updateYearRange(min, max) {
+        if (this.comparisonMode) {
+            this.yearRange = { min, max };
+            this.updateVisualization();
+            return;
+        }
+        
         const bounds = this.scenarioYearRanges[this.currentScenario];
         
         if (min === bounds.min && max === bounds.max) {
@@ -137,6 +263,14 @@ class TCVisualization {
     }
     
     exportData() {
+        if (this.comparisonMode) {
+            this.exportComparisonData();
+        } else {
+            this.exportSingleData();
+        }
+    }
+    
+    exportSingleData() {
         const cacheKey = this.dataManager.getCacheKey();
         const data = this.cycloneData[cacheKey];
         
@@ -146,6 +280,24 @@ class TCVisualization {
         }
         
         this.utils.exportToCSV(data, this.currentScenario, this.currentEnsemble, this.currentSSTModel, this.yearRange);
+    }
+    
+    exportComparisonData() {
+        const dataA = this.dataManager.getComparisonData('A');
+        const dataB = this.dataManager.getComparisonData('B');
+        
+        if (!dataA?.cyclones || !dataB?.cyclones) {
+            alert('No comparison data to export');
+            return;
+        }
+        
+        this.utils.exportComparisonToCSV(
+            dataA, dataB,
+            this.comparisonScenarioA, this.comparisonScenarioB,
+            this.comparisonEnsembleA, this.comparisonEnsembleB,
+            this.comparisonSSTModelA, this.comparisonSSTModelB,
+            this.yearRange
+        );
     }
     
     showLoading(show, message = 'Loading cyclone data...') {
@@ -166,9 +318,21 @@ class TCVisualization {
             ensemble: this.currentEnsemble,
             sstModel: this.currentSSTModel,
             yearRange: this.yearRange,
+            comparisonMode: this.comparisonMode,
+            comparisonScenarios: {
+                A: {
+                    scenario: this.comparisonScenarioA,
+                    ensemble: this.comparisonEnsembleA,
+                    sstModel: this.comparisonSSTModelA
+                },
+                B: {
+                    scenario: this.comparisonScenarioB,
+                    ensemble: this.comparisonEnsembleB,
+                    sstModel: this.comparisonSSTModelB
+                }
+            },
             visualizationModes: {
-                heatmap: this.showHeatmap,
-                density: this.showDensityHeatmap
+                heatmap: this.showHeatmap
             },
             dataLoaded: Object.keys(this.cycloneData).length > 0,
             deviceInfo: this.deviceManager ? this.deviceManager.getDeviceInfo() : null,

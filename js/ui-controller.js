@@ -10,9 +10,39 @@ class UIController {
         this.setupVisualizationToggles();
         this.setupYearRangeControls();
         this.setupActionButtons();
-        this.setupFilterControls();
+        this.setupComparisonControls();
         
         console.log('Event listeners initialized');
+    }
+    
+    setupComparisonControls() {
+        document.getElementById('comparison-mode').addEventListener('change', async (e) => {
+            await this.app.toggleComparisonMode(e.target.checked);
+        });
+        
+        document.getElementById('scenario-a-select').addEventListener('change', async (e) => {
+            await this.app.changeComparisonScenario('A', e.target.value);
+        });
+        
+        document.getElementById('scenario-b-select').addEventListener('change', async (e) => {
+            await this.app.changeComparisonScenario('B', e.target.value);
+        });
+        
+        document.getElementById('ensemble-a-select').addEventListener('change', async (e) => {
+            await this.app.changeComparisonEnsemble('A', parseInt(e.target.value));
+        });
+        
+        document.getElementById('ensemble-b-select').addEventListener('change', async (e) => {
+            await this.app.changeComparisonEnsemble('B', parseInt(e.target.value));
+        });
+        
+        document.getElementById('sst-a-select').addEventListener('change', async (e) => {
+            await this.app.changeComparisonSST('A', e.target.value);
+        });
+        
+        document.getElementById('sst-b-select').addEventListener('change', async (e) => {
+            await this.app.changeComparisonSST('B', e.target.value);
+        });
     }
     
     setupScenarioDropdown() {
@@ -45,30 +75,17 @@ class UIController {
         document.getElementById('show-heatmap').addEventListener('change', async (e) => {
             const enabled = e.target.checked;
             if (enabled) {
-                document.getElementById('show-density-heatmap').checked = false;
                 this.setTrackDisplays(false);
                 this.app.mapManager.saveMapState();
             }
             await this.app.toggleVisualizationMode('heatmap', enabled);
         });
         
-        document.getElementById('show-density-heatmap').addEventListener('change', async (e) => {
-            const enabled = e.target.checked;
-            if (enabled) {
-                document.getElementById('show-heatmap').checked = false;
-                this.setTrackDisplays(false);
-                this.app.mapManager.saveMapState();
-            }
-            await this.app.toggleVisualizationMode('density', enabled);
-        });
-        
         ['show-tracks', 'show-genesis', 'show-intensity'].forEach(id => {
             document.getElementById(id).addEventListener('change', async (e) => {
-                if (e.target.checked && (this.app.showHeatmap || this.app.showDensityHeatmap)) {
+                if (e.target.checked && this.app.showHeatmap) {
                     document.getElementById('show-heatmap').checked = false;
-                    document.getElementById('show-density-heatmap').checked = false;
                     this.app.showHeatmap = false;
-                    this.app.showDensityHeatmap = false;
                     this.enableYearControls();
                 }
                 
@@ -106,10 +123,20 @@ class UIController {
         let min = parseInt(yearMinSlider.value);
         let max = parseInt(yearMaxSlider.value);
         
-        const bounds = this.app.scenarioYearRanges[this.app.currentScenario];
-        
-        min = Math.max(bounds.min, Math.min(bounds.max, min));
-        max = Math.max(bounds.min, Math.min(bounds.max, max));
+        if (this.app.comparisonMode) {
+            const boundsA = this.app.scenarioYearRanges[this.app.comparisonScenarioA];
+            const boundsB = this.app.scenarioYearRanges[this.app.comparisonScenarioB];
+            
+            const minYear = Math.min(boundsA.min, boundsB.min);
+            const maxYear = Math.max(boundsA.max, boundsB.max);
+            
+            min = Math.max(minYear, Math.min(maxYear, min));
+            max = Math.max(minYear, Math.min(maxYear, max));
+        } else {
+            const bounds = this.app.scenarioYearRanges[this.app.currentScenario];
+            min = Math.max(bounds.min, Math.min(bounds.max, min));
+            max = Math.max(bounds.min, Math.min(bounds.max, max));
+        }
         
         if (min > max) {
             if (this.lastChangedSlider === 'min') {
@@ -155,15 +182,105 @@ class UIController {
         });
         
         document.getElementById('refresh-data').addEventListener('click', async () => {
-            await this.app.dataManager.loadData(true);
+            if (this.app.comparisonMode) {
+                await this.app.loadComparisonData();
+            } else {
+                await this.app.dataManager.loadData(true);
+            }
         });
     }
     
-    setupFilterControls() {
-        document.getElementById('filter-australia').addEventListener('change', async (e) => {
-            this.app.filterAustralia = e.target.checked;
-            await this.app.dataManager.loadData();
-        });
+    updateComparisonUI(comparisonMode) {
+        const singleModeControls = document.getElementById('single-mode-controls');
+        const comparisonModeControls = document.getElementById('comparison-mode-controls');
+        
+        if (comparisonMode) {
+            singleModeControls.style.display = 'none';
+            comparisonModeControls.style.display = 'flex';
+            this.updateComparisonEnsembleSelectors();
+            this.updateComparisonYearSlider();
+        } else {
+            singleModeControls.style.display = 'flex';
+            comparisonModeControls.style.display = 'none';
+            this.updateEnsembleSelector();
+            this.updateYearSlider();
+        }
+    }
+    
+    updateComparisonEnsembleSelectors() {
+        this.updateComparisonScenarioControls('A', this.app.comparisonScenarioA);
+        this.updateComparisonScenarioControls('B', this.app.comparisonScenarioB);
+    }
+    
+    updateComparisonScenarioControls(scenarioType, scenario) {
+        const ensembleSelect = document.getElementById(`ensemble-${scenarioType.toLowerCase()}-select`);
+        const sstSelector = document.getElementById(`sst-${scenarioType.toLowerCase()}-selector`);
+        const ensembleInfo = document.getElementById(`ensemble-${scenarioType.toLowerCase()}-info`);
+        
+        const ensembleLimits = {
+            'current': { max: 100, note: '(1-100)' },
+            'nat': { max: 60, note: '(1-60)' },
+            '2k': { max: 9, note: '(101-109 on server)' },
+            '4k': { max: 15, note: '(101-115 on server)' }
+        };
+        
+        const limit = ensembleLimits[scenario];
+        
+        if (ensembleInfo) {
+            ensembleInfo.textContent = limit.note;
+        }
+        
+        if (scenario === '2k' || scenario === '4k') {
+            if (sstSelector) sstSelector.style.display = 'flex';
+        } else {
+            if (sstSelector) sstSelector.style.display = 'none';
+        }
+        
+        if (ensembleSelect) {
+            const currentValue = parseInt(ensembleSelect.value);
+            ensembleSelect.innerHTML = '';
+            
+            for (let i = 1; i <= Math.min(limit.max, 15); i++) {
+                const option = document.createElement('option');
+                option.value = i;
+                option.textContent = `Ensemble ${i}`;
+                ensembleSelect.appendChild(option);
+            }
+            
+            if (currentValue <= limit.max) {
+                ensembleSelect.value = currentValue;
+            } else {
+                ensembleSelect.value = 1;
+                if (scenarioType === 'A') {
+                    this.app.comparisonEnsembleA = 1;
+                } else {
+                    this.app.comparisonEnsembleB = 1;
+                }
+            }
+        }
+    }
+    
+    updateComparisonYearSlider() {
+        const yearMinSlider = document.getElementById('year-slider-min');
+        const yearMaxSlider = document.getElementById('year-slider-max');
+        
+        const boundsA = this.app.scenarioYearRanges[this.app.comparisonScenarioA];
+        const boundsB = this.app.scenarioYearRanges[this.app.comparisonScenarioB];
+        
+        const minYear = Math.min(boundsA.min, boundsB.min);
+        const maxYear = Math.max(boundsA.max, boundsB.max);
+        
+        yearMinSlider.min = minYear;
+        yearMinSlider.max = maxYear;
+        yearMinSlider.value = minYear;
+        
+        yearMaxSlider.min = minYear;
+        yearMaxSlider.max = maxYear;
+        yearMaxSlider.value = maxYear;
+        
+        this.app.yearRange = null;
+        this.updateSliderRange();
+        this.updateYearDisplay();
     }
     
     updateEnsembleSelector() {
@@ -230,21 +347,35 @@ class UIController {
         const yearMaxSlider = document.getElementById('year-slider-max');
         const yearDisplay = document.getElementById('year-display');
         
-        if (this.app.showDensityHeatmap) {
-            yearDisplay.textContent = 'All Years (Density Mode)';
-        } else if (this.app.showHeatmap) {
+        if (this.app.showHeatmap) {
             yearDisplay.textContent = 'All Years (Severity Mode)';
         } else {
-            const bounds = this.app.scenarioYearRanges[this.app.currentScenario];
             const min = parseInt(yearMinSlider.value);
             const max = parseInt(yearMaxSlider.value);
             
-            if (min === bounds.min && max === bounds.max) {
-                yearDisplay.textContent = `${bounds.min} - ${bounds.max}`;
-            } else if (min === max) {
-                yearDisplay.textContent = `Year: ${min}`;
+            if (this.app.comparisonMode) {
+                const boundsA = this.app.scenarioYearRanges[this.app.comparisonScenarioA];
+                const boundsB = this.app.scenarioYearRanges[this.app.comparisonScenarioB];
+                const minYear = Math.min(boundsA.min, boundsB.min);
+                const maxYear = Math.max(boundsA.max, boundsB.max);
+                
+                if (min === minYear && max === maxYear) {
+                    yearDisplay.textContent = `${minYear} - ${maxYear} (Both scenarios)`;
+                } else if (min === max) {
+                    yearDisplay.textContent = `Year: ${min}`;
+                } else {
+                    yearDisplay.textContent = `${min} - ${max}`;
+                }
             } else {
-                yearDisplay.textContent = `${min} - ${max}`;
+                const bounds = this.app.scenarioYearRanges[this.app.currentScenario];
+                
+                if (min === bounds.min && max === bounds.max) {
+                    yearDisplay.textContent = `${bounds.min} - ${bounds.max}`;
+                } else if (min === max) {
+                    yearDisplay.textContent = `Year: ${min}`;
+                } else {
+                    yearDisplay.textContent = `${min} - ${max}`;
+                }
             }
         }
     }
@@ -253,12 +384,9 @@ class UIController {
         const yearMinSlider = document.getElementById('year-slider-min');
         const yearMaxSlider = document.getElementById('year-slider-max');
         const yearDisplay = document.getElementById('year-display');
-        const bounds = this.app.scenarioYearRanges[this.app.currentScenario];
         
         yearMinSlider.disabled = true;
         yearMaxSlider.disabled = true;
-        yearMinSlider.value = bounds.min;
-        yearMaxSlider.value = bounds.max;
         yearDisplay.textContent = `All Years (${mode})`;
         yearDisplay.classList.add('disabled');
         this.app.yearRange = null;
@@ -274,6 +402,15 @@ class UIController {
         yearMaxSlider.disabled = false;
         yearDisplay.classList.remove('disabled');
         this.updateYearDisplay();
+    }
+    
+    disableHeatmapControls() {
+        document.getElementById('show-heatmap').disabled = true;
+        document.getElementById('show-heatmap').checked = false;
+    }
+    
+    enableHeatmapControls() {
+        document.getElementById('show-heatmap').disabled = false;
     }
     
     setTrackDisplays(enabled) {

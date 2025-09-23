@@ -1,18 +1,133 @@
-/**
- * Visualization Renderer
- * Handles rendering of cyclone tracks, heatmaps, and other visualizations
- */
 class VisualizationRenderer {
     constructor(app) {
         this.app = app;
         this.heatmapConfig = null;
         this.gridResolution = 2;
+        this.comparisonColors = {
+            A: { 
+                track: '#3498db', 
+                genesis: '#2980b9',
+                name: 'Scenario A'
+            },
+            B: { 
+                track: '#e74c3c', 
+                genesis: '#c0392b',
+                name: 'Scenario B'
+            }
+        };
     }
     
     clearAllLayers() {
         this.app.mapManager.clearAllLayers();
         this.clearHeatmapLegends();
         this.hideComparisonPanel();
+    }
+    
+    async renderComparisonVisualization(cyclonesA, cyclonesB, scenarioA, scenarioB) {
+        const showTracks = document.getElementById('show-tracks').checked;
+        const showGenesis = document.getElementById('show-genesis').checked;
+        const showIntensity = document.getElementById('show-intensity').checked;
+        
+        if (showTracks || showIntensity) {
+            cyclonesA.forEach(cyclone => {
+                this.drawComparisonTrack(cyclone, 'A', showIntensity);
+            });
+            
+            cyclonesB.forEach(cyclone => {
+                this.drawComparisonTrack(cyclone, 'B', showIntensity);
+            });
+        }
+        
+        if (showGenesis) {
+            cyclonesA.forEach(cyclone => {
+                this.drawComparisonGenesisPoint(cyclone, 'A');
+            });
+            
+            cyclonesB.forEach(cyclone => {
+                this.drawComparisonGenesisPoint(cyclone, 'B');
+            });
+        }
+        
+        this.updateComparisonLegend(scenarioA, scenarioB);
+        this.showComparisonMetrics(cyclonesA, cyclonesB, scenarioA, scenarioB);
+        
+        console.log(`Rendered comparison: ${cyclonesA.length} (${scenarioA}) vs ${cyclonesB.length} (${scenarioB})`);
+    }
+    
+    drawComparisonTrack(cyclone, scenarioType, useIntensity = false) {
+        if (!cyclone.track || cyclone.track.length < 2) return;
+        
+        if (useIntensity) {
+            this.drawComparisonIntensityTrack(cyclone, scenarioType);
+        } else {
+            const latlngs = cyclone.track.map(point => [point.lat, point.lon]);
+            const color = this.comparisonColors[scenarioType].track;
+            
+            const polyline = L.polyline(latlngs, {
+                color: color,
+                weight: 2,
+                opacity: 0.7
+            });
+            
+            polyline.on('click', () => this.app.selectCyclone(cyclone));
+            
+            this.app.mapManager.addToLayer('tracks', polyline);
+        }
+    }
+    
+    drawComparisonIntensityTrack(cyclone, scenarioType) {
+        if (!cyclone.track || cyclone.track.length < 2) return;
+        
+        const baseColor = this.comparisonColors[scenarioType].track;
+        
+        for (let i = 0; i < cyclone.track.length - 1; i++) {
+            const start = cyclone.track[i];
+            const end = cyclone.track[i + 1];
+            
+            const intensityColor = this.blendColors(
+                baseColor, 
+                this.getIntensityColor(start.category), 
+                0.6
+            );
+            
+            const segment = L.polyline(
+                [[start.lat, start.lon], [end.lat, end.lon]], 
+                {
+                    color: intensityColor,
+                    weight: 4,
+                    opacity: 0.8
+                }
+            );
+            
+            this.app.mapManager.addToLayer('intensity', segment);
+        }
+    }
+    
+    drawComparisonGenesisPoint(cyclone, scenarioType) {
+        if (!cyclone.track || cyclone.track.length === 0) return;
+        
+        const genesis = cyclone.track[0];
+        const color = this.comparisonColors[scenarioType].genesis;
+        const scenarioName = this.getScenarioDisplayName(
+            scenarioType === 'A' ? this.app.comparisonScenarioA : this.app.comparisonScenarioB
+        );
+        
+        const marker = L.circleMarker([genesis.lat, genesis.lon], {
+            radius: 6,
+            fillColor: color,
+            color: 'white',
+            weight: 2,
+            fillOpacity: 0.8
+        });
+        
+        marker.bindPopup(`
+            <strong>${cyclone.name}</strong><br>
+            Scenario: ${scenarioName}<br>
+            Genesis: ${genesis.date}<br>
+            Year: ${cyclone.year}
+        `);
+        
+        this.app.mapManager.addToLayer('genesis', marker);
     }
     
     async renderStandardVisualization(cyclones) {
@@ -87,72 +202,154 @@ class VisualizationRenderer {
             this.app.mapManager.addToLayer('intensity', segment);
         }
     }
-
-    async createDensityHeatmap(cyclones) {
-        console.log('Creating density heatmap for', cyclones.length, 'cyclones');
+    
+    updateComparisonLegend(scenarioA, scenarioB) {
+        const legend = document.getElementById('legend');
+        const scenarioAName = this.getScenarioDisplayName(scenarioA);
+        const scenarioBName = this.getScenarioDisplayName(scenarioB);
         
-        this.clearAllLayers();
-        
-        const gridResolution = this.gridResolution;
-        const lonBins = [];
-        const latBins = [];
-        
-        for (let lon = -180; lon <= 180; lon += gridResolution) {
-            lonBins.push(lon);
-        }
-        for (let lat = -90; lat <= 90; lat += gridResolution) {
-            latBins.push(lat);
-        }
-        
-        const tcFreq = {};
-
-        cyclones.forEach(cyclone => {
-            if (!cyclone.track || cyclone.track.length === 0) return;
+        legend.innerHTML = `
+            <h4>Scenario Comparison</h4>
+            <div class="legend-item" style="margin-bottom: 0.8rem;">
+                <span class="legend-color" style="background: ${this.comparisonColors.A.track}; border: 1px solid #fff;"></span>
+                <span><strong>${scenarioAName}</strong></span>
+            </div>
+            <div class="legend-item" style="margin-bottom: 0.8rem;">
+                <span class="legend-color" style="background: ${this.comparisonColors.B.track}; border: 1px solid #fff;"></span>
+                <span><strong>${scenarioBName}</strong></span>
+            </div>
             
-            const processedCells = new Set();
+            <div style="margin-top: 1rem; padding-top: 0.5rem; border-top: 1px solid #ddd;">
+                <h4>Intensity Categories</h4>
+                <div class="legend-item">
+                    <span class="legend-color" style="background: #1f78b4;"></span>
+                    <span>Category 1</span>
+                </div>
+                <div class="legend-item">
+                    <span class="legend-color" style="background: #33a02c;"></span>
+                    <span>Category 2</span>
+                </div>
+                <div class="legend-item">
+                    <span class="legend-color" style="background: #ff7f00;"></span>
+                    <span>Category 3</span>
+                </div>
+                <div class="legend-item">
+                    <span class="legend-color" style="background: #e31a1c;"></span>
+                    <span>Category 4</span>
+                </div>
+                <div class="legend-item">
+                    <span class="legend-color" style="background: #6a3d9a;"></span>
+                    <span>Category 5</span>
+                </div>
+            </div>
             
-            for (let i = 0; i < cyclone.track.length; i++) {
-                const point = cyclone.track[i];
-                const pointCell = this.getCellKey(point.lat, point.lon, gridResolution);
-                
-                if (!processedCells.has(pointCell)) {
-                    processedCells.add(pointCell);
-                    tcFreq[pointCell] = (tcFreq[pointCell] || 0) + 1;
-                }
-                
-                // Add line segments between points
-                if (i < cyclone.track.length - 1) {
-                    const nextPoint = cyclone.track[i + 1];
-                    const lineCells = this.getLineCells(
-                        point.lat, point.lon, 
-                        nextPoint.lat, nextPoint.lon, 
-                        gridResolution
-                    );
-                    
-                    lineCells.forEach(cellKey => {
-                        if (!processedCells.has(cellKey)) {
-                            processedCells.add(cellKey);
-                            tcFreq[cellKey] = (tcFreq[cellKey] || 0) + 1;
-                        }
-                    });
-                }
-            }
-        });
-        
-        const rectangles = this.createDensityRectangles(tcFreq, gridResolution);
-        const heatmapLayer = L.featureGroup(rectangles);
-        
-        this.app.mapManager.setHeatmapLayer(heatmapLayer);
-        
-        const levels = [0, 1, 2, 3, 4, 5, 7, 10, 15, 20, 30, 50, 75, 100];
-        this.updateDensityLegend(levels);
-        
-        const metrics = this.calculateDensityMetrics(tcFreq);
-        this.updateDensityComparisonPanel(metrics);
-        
-        console.log(`Density heatmap created: ${Object.keys(tcFreq).length} active cells`);
+            <p style="font-size: 11px; margin-top: 10px; color: #666; font-style: italic;">
+                ${this.getShowIntensityNotice()}
+            </p>
+        `;
     }
     
+    getShowIntensityNotice() {
+        const showIntensity = document.getElementById('show-intensity').checked;
+        if (showIntensity) {
+            return 'Intensity colors blend with scenario colors when both are enabled.';
+        }
+        return 'Enable "Show Intensity Colors" to see category-based coloring.';
+    }
+    
+    showComparisonMetrics(cyclonesA, cyclonesB, scenarioA, scenarioB) {
+        const metricsA = this.app.dataManager.calculateMetrics(cyclonesA);
+        const metricsB = this.app.dataManager.calculateMetrics(cyclonesB);
+        
+        const scenarioAName = this.getScenarioDisplayName(scenarioA);
+        const scenarioBName = this.getScenarioDisplayName(scenarioB);
+        
+        const content = document.getElementById('comparison-content');
+        if (content) {
+            content.innerHTML = `
+                <div class="comparison-item" style="background: rgba(52, 152, 219, 0.1);">
+                    <div class="scenario-label" style="color: ${this.comparisonColors.A.track};">
+                        <strong>${scenarioAName}</strong>
+                    </div>
+                    <div class="metric">Total: ${metricsA.totalCyclones}</div>
+                    <div class="metric">Severe (Cat 3+): ${metricsA.severeCyclones}</div>
+                    <div class="metric">Avg Category: ${metricsA.avgMaxCategory}</div>
+                    <div class="metric">Landfalls: ${metricsA.landfallCount}</div>
+                </div>
+                
+                <div class="comparison-item" style="background: rgba(231, 76, 60, 0.1); margin-top: 8px;">
+                    <div class="scenario-label" style="color: ${this.comparisonColors.B.track};">
+                        <strong>${scenarioBName}</strong>
+                    </div>
+                    <div class="metric">Total: ${metricsB.totalCyclones}</div>
+                    <div class="metric">Severe (Cat 3+): ${metricsB.severeCyclones}</div>
+                    <div class="metric">Avg Category: ${metricsB.avgMaxCategory}</div>
+                    <div class="metric">Landfalls: ${metricsB.landfallCount}</div>
+                </div>
+                
+                ${this.getComparisonInsights(metricsA, metricsB, scenarioA, scenarioB)}
+            `;
+        }
+        
+        this.showComparisonPanel();
+    }
+    
+    getComparisonInsights(metricsA, metricsB, scenarioA, scenarioB) {
+        const totalDiff = metricsB.totalCyclones - metricsA.totalCyclones;
+        const severeDiff = metricsB.severeCyclones - metricsA.severeCyclones;
+        const landfallDiff = metricsB.landfallCount - metricsA.landfallCount;
+        
+        let insights = '<div style="margin-top: 12px; padding-top: 8px; border-top: 1px solid #ddd;">';
+        
+        if (totalDiff !== 0) {
+            const change = totalDiff > 0 ? 'increase' : 'decrease';
+            const color = totalDiff > 0 ? '#e67e22' : '#27ae60';
+            insights += `<p style="font-size: 11px; color: ${color}; margin: 2px 0;">
+                <strong>${Math.abs(totalDiff)} cyclone ${change}</strong> between scenarios
+            </p>`;
+        }
+        
+        if (severeDiff !== 0) {
+            const change = severeDiff > 0 ? 'increase' : 'decrease';
+            const color = severeDiff > 0 ? '#e74c3c' : '#27ae60';
+            insights += `<p style="font-size: 11px; color: ${color}; margin: 2px 0;">
+                <strong>${Math.abs(severeDiff)} severe cyclone ${change}</strong>
+            </p>`;
+        }
+        
+        insights += '</div>';
+        return insights;
+    }
+    
+    getScenarioDisplayName(scenario) {
+        const names = {
+            'current': 'Historical',
+            'nat': 'Natural',
+            '2k': '+2K Warming',
+            '4k': '+4K Warming'
+        };
+        return names[scenario] || scenario;
+    }
+    
+    blendColors(color1, color2, ratio) {
+        const hex1 = color1.replace('#', '');
+        const hex2 = color2.replace('#', '');
+        
+        const r1 = parseInt(hex1.substr(0, 2), 16);
+        const g1 = parseInt(hex1.substr(2, 2), 16);
+        const b1 = parseInt(hex1.substr(4, 2), 16);
+        
+        const r2 = parseInt(hex2.substr(0, 2), 16);
+        const g2 = parseInt(hex2.substr(2, 2), 16);
+        const b2 = parseInt(hex2.substr(4, 2), 16);
+        
+        const r = Math.round(r1 * (1 - ratio) + r2 * ratio);
+        const g = Math.round(g1 * (1 - ratio) + g2 * ratio);
+        const b = Math.round(b1 * (1 - ratio) + b2 * ratio);
+        
+        return '#' + [r, g, b].map(x => x.toString(16).padStart(2, '0')).join('');
+    }
+
     async createHeatmap(cyclones) {
         const reqId = ++this.app.heatmapRequestId;
         
@@ -196,105 +393,6 @@ class VisualizationRenderer {
         }
     }
 
-    getCellKey(lat, lon, gridResolution) {
-        // Handle longitude wrapping
-        while (lon < -180) lon += 360;
-        while (lon > 180) lon -= 360;
-        
-        const lonIdx = Math.floor((lon + 180) / gridResolution);
-        const latIdx = Math.floor((lat + 90) / gridResolution);
-        return `${latIdx},${lonIdx}`;
-    }
-    
-    getLineCells(lat1, lon1, lat2, lon2, gridResolution) {
-        const cells = new Set();
-        
-        let dLon = lon2 - lon1;
-        if (Math.abs(dLon) > 180) {
-            if (dLon > 0) {
-                dLon = dLon - 360;
-            } else {
-                dLon = dLon + 360;
-            }
-        }
-        lon2 = lon1 + dLon;
-        
-        // Convert to grid coordinates
-        const x1 = (lon1 + 180) / gridResolution;
-        const y1 = (lat1 + 90) / gridResolution;
-        const x2 = (lon2 + 180) / gridResolution;
-        const y2 = (lat2 + 90) / gridResolution;
-        
-        // Sample points along the line
-        const distance = Math.sqrt(Math.pow(x2 - x1, 2) + Math.pow(y2 - y1, 2));
-        const steps = Math.max(Math.ceil(distance * 2), 2);
-        
-        for (let i = 0; i <= steps; i++) {
-            const t = i / steps;
-            const x = x1 + (x2 - x1) * t;
-            const y = y1 + (y2 - y1) * t;
-            
-            const cellX = Math.floor(x);
-            const cellY = Math.floor(y);
-            
-            // Convert back to lat/lon for the cell key
-            const cellLat = (cellY * gridResolution) - 90;
-            const cellLon = (cellX * gridResolution) - 180;
-            
-            if (cellLat >= -90 && cellLat < 90 && cellLon >= -180 && cellLon < 180) {
-                cells.add(this.getCellKey(cellLat, cellLon, gridResolution));
-            }
-        }
-        
-        return cells;
-    }
-    
-    createDensityRectangles(tcFreq, gridResolution) {
-        const rectangles = [];
-        const worldCopies = this.app.mapManager.getVisibleWorldCopies();
-        const colors = this.getDensityColors();
-        const levels = [0, 1, 2, 3, 4, 5, 7, 10, 15, 20, 30, 50, 75, 100];
-        
-        Object.keys(tcFreq).forEach(cellKey => {
-            const count = tcFreq[cellKey];
-            if (count > 0) {
-                const [latIdx, lonIdx] = cellKey.split(',').map(Number);
-                
-                const lat = (latIdx * gridResolution) - 90;
-                const lon = (lonIdx * gridResolution) - 180;
-                
-                const fillColor = this.getColorForCount(count, levels, colors);
-                const rectStyle = {
-                    fillColor: fillColor,
-                    fillOpacity: 0.8,
-                    weight: 0.5,
-                    color: 'rgba(100, 100, 100, 0.3)',
-                    interactive: true
-                };
-                
-                worldCopies.forEach(offset => {
-                    const bounds = [
-                        [lat, lon + offset],
-                        [lat + gridResolution, lon + gridResolution + offset]
-                    ];
-                    
-                    if (lon + offset > -540 && lon + gridResolution + offset < 540) {
-                        const rect = L.rectangle(bounds, rectStyle);
-                        rect.bindPopup(`
-                            <strong>TC Track Density</strong><br>
-                            Cell: ${lat.toFixed(1)}°, ${lon.toFixed(1)}°<br>
-                            Track Count: ${count}
-                        `);
-                        rectangles.push(rect);
-                    }
-                });
-            }
-        });
-        
-        return rectangles;
-    }
-    
-    // Create rectangles for precomputed heatmap
     createPrecomputedHeatmapRectangles(activeCells) {
         const rectangles = [];
         const worldCopies = this.app.mapManager.getVisibleWorldCopies();
@@ -346,6 +444,7 @@ class VisualizationRenderer {
         
         return rectangles;
     }
+    
     getTrackColor(category) {
         const colors = {
             0: '#999999', 
@@ -362,37 +461,18 @@ class VisualizationRenderer {
         return this.getTrackColor(category);
     }
     
-    getDensityColors() {
-        return [
-            'rgba(255, 255, 255, 0)',     // 0 - transparent
-            'rgba(254, 254, 217, 0.7)',   // 1 - very pale yellow
-            'rgba(254, 248, 195, 0.75)',  // 2 - pale yellow
-            'rgba(254, 235, 162, 0.8)',   // 3 - light yellow
-            'rgba(254, 217, 118, 0.85)',  // 4 - yellow
-            'rgba(254, 196, 79, 0.85)',   // 5 - golden yellow
-            'rgba(254, 173, 67, 0.9)',    // 7 - orange-yellow
-            'rgba(252, 141, 60, 0.9)',    // 10 - light orange
-            'rgba(248, 105, 51, 0.9)',    // 15 - orange
-            'rgba(238, 75, 43, 0.95)',    // 20 - dark orange
-            'rgba(220, 50, 32, 0.95)',    // 30 - orange-red
-            'rgba(187, 21, 26, 0.95)',    // 50 - red
-            'rgba(145, 0, 13, 1)',        // 75 - dark red
-            'rgba(103, 0, 13, 1)'         // 100+ - darkest red
-        ];
-    }
-    
     getHeatmapColors() {
         return [
-            'rgba(255, 255, 255, 0)',     // 0 - transparent
-            'rgba(255, 255, 220, 0.6)',   // 1 - very light yellow
-            'rgba(255, 255, 178, 0.7)',   // 2 - light yellow
-            'rgba(255, 237, 160, 0.75)',  // 5 - yellow
-            'rgba(255, 200, 100, 0.8)',   // 10 - orange-yellow
-            'rgba(255, 150, 50, 0.85)',   // 20 - orange
-            'rgba(255, 100, 0, 0.9)',     // 40 - dark orange
-            'rgba(255, 50, 0, 0.95)',     // 80 - red-orange
-            'rgba(200, 0, 0, 0.95)',      // 120 - red
-            'rgba(139, 0, 0, 1)'          // 160+ - dark red
+            'rgba(255, 255, 255, 0)',     
+            'rgba(255, 255, 220, 0.6)',   
+            'rgba(255, 255, 178, 0.7)',   
+            'rgba(255, 237, 160, 0.75)',  
+            'rgba(255, 200, 100, 0.8)',   
+            'rgba(255, 150, 50, 0.85)',   
+            'rgba(255, 100, 0, 0.9)',     
+            'rgba(255, 50, 0, 0.95)',     
+            'rgba(200, 0, 0, 0.95)',      
+            'rgba(139, 0, 0, 1)'          
         ];
     }
     
@@ -403,66 +483,6 @@ class VisualizationRenderer {
             }
         }
         return colors[0];
-    }
-    
-    updateDensityLegend(levels) {
-        let densityLegend = document.getElementById('density-legend');
-        if (!densityLegend) {
-            densityLegend = document.createElement('div');
-            densityLegend.id = 'density-legend';
-            densityLegend.className = 'legend-box';
-            document.getElementById('legend').appendChild(densityLegend);
-        }
-        
-        const scenarioInfo = {
-            'current': 'Historical (1951-2011)',
-            'nat': 'Natural Climate (1951-2010)',
-            '2k': '+2K Warming (2031-2090)',
-            '4k': '+4K Warming (2051-2110)'
-        };
-        
-        const colors = this.getDensityColors();
-        const displayLevels = [
-            { value: 100, color: colors[13], label: '100+' },
-            { value: 75, color: colors[12], label: '75-99' },
-            { value: 50, color: colors[11], label: '50-74' },
-            { value: 30, color: colors[10], label: '30-49' },
-            { value: 20, color: colors[9], label: '20-29' },
-            { value: 15, color: colors[8], label: '15-19' },
-            { value: 10, color: colors[7], label: '10-14' },
-            { value: 7, color: colors[6], label: '7-9' },
-            { value: 5, color: colors[5], label: '5-6' },
-            { value: 4, color: colors[4], label: '4' },
-            { value: 3, color: colors[3], label: '3' },
-            { value: 2, color: colors[2], label: '2' },
-            { value: 1, color: colors[1], label: '1' }
-        ];
-        
-        let legendHTML = `
-            <h4>TC Track Density</h4>
-            <p style="font-size: 12px; margin: 5px 0;">${scenarioInfo[this.app.currentScenario]}</p>
-            <div class="density-legend-items">
-        `;
-        
-        displayLevels.forEach((level) => {
-            legendHTML += `
-                <div class="legend-item" style="margin: 2px 0; display: flex; align-items: center;">
-                    <span class="legend-color" style="background: ${level.color}; width: 25px; height: 14px; display: inline-block; border: 1px solid #999;"></span>
-                    <span style="font-size: 11px; margin-left: 6px; min-width: 40px;">${level.label}</span>
-                </div>
-            `;
-        });
-        
-        legendHTML += `
-            </div>
-            <p style="font-size: 11px; margin-top: 10px; font-style: italic; color: #666;">
-                Number of TC tracks per grid cell<br>
-                (${this.gridResolution}° × ${this.gridResolution}° resolution)
-            </p>
-        `;
-        
-        densityLegend.innerHTML = legendHTML;
-        densityLegend.style.display = 'block';
     }
     
     updateHeatmapLegend(levels, colors) {
@@ -523,9 +543,7 @@ class VisualizationRenderer {
     
     clearHeatmapLegends() {
         const heatmapLegend = document.getElementById('heatmap-legend');
-        const densityLegend = document.getElementById('density-legend');
         if (heatmapLegend) heatmapLegend.style.display = 'none';
-        if (densityLegend) densityLegend.style.display = 'none';
     }
     
     createComparisonPanel() {
@@ -551,7 +569,9 @@ class VisualizationRenderer {
         
         if (panel && content) {
             panel.classList.add('active');
-            this.updateComparisonContent(content, metrics);
+            if (!this.app.comparisonMode) {
+                this.updateComparisonContent(content, metrics);
+            }
         }
     }
     
