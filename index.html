@@ -30,54 +30,146 @@
         </header>
         
         <div id="control-panel">
+            <!-- Comparison Mode Toggle -->
             <div class="control-group">
-                <label for="scenario-select">Climate Scenario:</label>
-                <select id="scenario-select" class="scenario-select">
-                    <option value="current">Historical (1951-2011)</option>
-                    <option value="nat">Natural Climate (1951-2010)</option>
-                    <option value="2k">+2K Warming (2031-2090)</option>
-                    <option value="4k">+4K Warming (2051-2110)</option>
-                </select>
-            </div>
-            
-            <div class="control-group" id="sst-selector" style="display: none;">
-                <label for="sst-select">SST Model:</label>
-                <select id="sst-select" aria-label="Sea Surface Temperature Model">
-                    <option value="CC">CCSM4 (CC)</option>
-                    <option value="GF">GFDL-CM3 (GF)</option>
-                    <option value="HA">HadGEM-AO2 (HA)</option>
-                    <option value="MI">MIROC5 (MI)</option>
-                    <option value="MP">MPI-ESM-MR (MP)</option>
-                    <option value="MR">MRI-CGCM3 (MR)</option>
-                </select>
-            </div>
-            
-            <div class="control-group">
-                <label for="ensemble-select">Ensemble Member:</label>
-                <select id="ensemble-select" aria-label="Ensemble Member">
-                    <option value="1">Ensemble 1</option>
-                    <option value="2">Ensemble 2</option>
-                    <option value="3">Ensemble 3</option>
-                    <option value="4">Ensemble 4</option>
-                    <option value="5">Ensemble 5</option>
-                    <option value="6">Ensemble 6</option>
-                    <option value="7">Ensemble 7</option>
-                    <option value="8">Ensemble 8</option>
-                    <option value="9">Ensemble 9</option>
-                </select>
-                <span id="ensemble-info" class="info-text" aria-live="polite"></span>
+                <label class="checkbox-label comparison-toggle">
+                    <input type="checkbox" id="comparison-mode" aria-describedby="comparison-desc"> 
+                    <span class="comparison-toggle-text">Compare Scenarios</span>
+                </label>
+                <div id="comparison-desc" class="sr-only">Enable to compare two different climate scenarios side by side</div>
             </div>
 
+            <!-- Single Mode Controls -->
+            <div id="single-mode-controls" class="mode-controls">
+                <div class="control-group">
+                    <label for="scenario-select">Climate Scenario:</label>
+                    <select id="scenario-select" class="scenario-select">
+                        <option value="current">Historical (1951-2011)</option>
+                        <option value="nat">Natural Climate (1951-2010)</option>
+                        <option value="2k">+2K Warming (2031-2090)</option>
+                        <option value="4k">+4K Warming (2051-2110)</option>
+                    </select>
+                </div>
+                
+                <div class="control-group" id="sst-selector" style="display: none;">
+                    <label for="sst-select">SST Model:</label>
+                    <select id="sst-select" aria-label="Sea Surface Temperature Model">
+                        <option value="CC">CCSM4 (CC)</option>
+                        <option value="GF">GFDL-CM3 (GF)</option>
+                        <option value="HA">HadGEM-AO2 (HA)</option>
+                        <option value="MI">MIROC5 (MI)</option>
+                        <option value="MP">MPI-ESM-MR (MP)</option>
+                        <option value="MR">MRI-CGCM3 (MR)</option>
+                    </select>
+                </div>
+                
+                <div class="control-group">
+                    <label for="ensemble-select">Ensemble Member:</label>
+                    <select id="ensemble-select" aria-label="Ensemble Member">
+                        <option value="1">Ensemble 1</option>
+                        <option value="2">Ensemble 2</option>
+                        <option value="3">Ensemble 3</option>
+                        <option value="4">Ensemble 4</option>
+                        <option value="5">Ensemble 5</option>
+                        <option value="6">Ensemble 6</option>
+                        <option value="7">Ensemble 7</option>
+                        <option value="8">Ensemble 8</option>
+                        <option value="9">Ensemble 9</option>
+                    </select>
+                    <span id="ensemble-info" class="info-text" aria-live="polite"></span>
+                </div>
+            </div>
+
+            <!-- Comparison Mode Controls -->
+            <div id="comparison-mode-controls" class="mode-controls" style="display: none;">
+                <div class="comparison-scenarios">
+                    <!-- Scenario A -->
+                    <div class="comparison-scenario" data-scenario="A">
+                        <h4 class="scenario-heading">Scenario A</h4>
+                        
+                        <div class="control-group">
+                            <label for="scenario-a-select">Climate Scenario:</label>
+                            <select id="scenario-a-select" class="scenario-select">
+                                <option value="current">Historical (1951-2011)</option>
+                                <option value="nat">Natural Climate (1951-2010)</option>
+                                <option value="2k">+2K Warming (2031-2090)</option>
+                                <option value="4k">+4K Warming (2051-2110)</option>
+                            </select>
+                        </div>
+                        
+                        <div class="control-group" id="sst-a-selector" style="display: none;">
+                            <label for="sst-a-select">SST Model:</label>
+                            <select id="sst-a-select" aria-label="SST Model A">
+                                <option value="CC">CCSM4 (CC)</option>
+                                <option value="GF">GFDL-CM3 (GF)</option>
+                                <option value="HA">HadGEM-AO2 (HA)</option>
+                                <option value="MI">MIROC5 (MI)</option>
+                                <option value="MP">MPI-ESM-MR (MP)</option>
+                                <option value="MR">MRI-CGCM3 (MR)</option>
+                            </select>
+                        </div>
+                        
+                        <div class="control-group">
+                            <label for="ensemble-a-select">Ensemble:</label>
+                            <select id="ensemble-a-select" aria-label="Ensemble A">
+                                <option value="1">Ensemble 1</option>
+                                <option value="2">Ensemble 2</option>
+                                <option value="3">Ensemble 3</option>
+                                <option value="4">Ensemble 4</option>
+                                <option value="5">Ensemble 5</option>
+                            </select>
+                            <span id="ensemble-a-info" class="info-text" aria-live="polite"></span>
+                        </div>
+                    </div>
+
+                    <!-- Scenario B -->
+                    <div class="comparison-scenario" data-scenario="B">
+                        <h4 class="scenario-heading">Scenario B</h4>
+                        
+                        <div class="control-group">
+                            <label for="scenario-b-select">Climate Scenario:</label>
+                            <select id="scenario-b-select" class="scenario-select">
+                                <option value="current">Historical (1951-2011)</option>
+                                <option value="nat">Natural Climate (1951-2010)</option>
+                                <option value="2k" selected>+2K Warming (2031-2090)</option>
+                                <option value="4k">+4K Warming (2051-2110)</option>
+                            </select>
+                        </div>
+                        
+                        <div class="control-group" id="sst-b-selector" style="display: flex;">
+                            <label for="sst-b-select">SST Model:</label>
+                            <select id="sst-b-select" aria-label="SST Model B">
+                                <option value="CC">CCSM4 (CC)</option>
+                                <option value="GF">GFDL-CM3 (GF)</option>
+                                <option value="HA">HadGEM-AO2 (HA)</option>
+                                <option value="MI">MIROC5 (MI)</option>
+                                <option value="MP">MPI-ESM-MR (MP)</option>
+                                <option value="MR">MRI-CGCM3 (MR)</option>
+                            </select>
+                        </div>
+                        
+                        <div class="control-group">
+                            <label for="ensemble-b-select">Ensemble:</label>
+                            <select id="ensemble-b-select" aria-label="Ensemble B">
+                                <option value="1">Ensemble 1</option>
+                                <option value="2">Ensemble 2</option>
+                                <option value="3">Ensemble 3</option>
+                                <option value="4">Ensemble 4</option>
+                                <option value="5">Ensemble 5</option>
+                            </select>
+                            <span id="ensemble-b-info" class="info-text" aria-live="polite"></span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Display Options -->
             <div class="control-group">
                 <label>Display Options:</label>
                 <div class="toggle-options">
                     <label class="checkbox-label">
                         <input type="checkbox" id="show-heatmap" aria-describedby="heatmap-desc"> 
                         Show Heatmap
-                    </label>
-                    <label class="checkbox-label">
-                        <input type="checkbox" id="show-density-heatmap" aria-describedby="density-desc"> 
-                        Show Heatmap (old&sunset)
                     </label>
                     <label class="checkbox-label">
                         <input type="checkbox" id="show-tracks" checked aria-describedby="tracks-desc"> 
@@ -91,13 +183,10 @@
                         <input type="checkbox" id="show-intensity" aria-describedby="intensity-desc"> 
                         Show Intensity Colors
                     </label>
-                    <label class="checkbox-label">
-                        <input type="checkbox" id="filter-australia" checked aria-describedby="filter-desc"> 
-                        Filter to Australian Region
-                    </label>
                 </div>
             </div>
             
+            <!-- Year Range -->
             <div class="control-group">
                 <label>Year Range:</label>
                 <div class="year-range-container">
@@ -117,6 +206,7 @@
                 <div id="year-display" class="year-display" aria-live="polite">All Years</div>
             </div>
             
+            <!-- Action Buttons -->
             <div class="control-group">
                 <button id="export-data" class="export-btn" aria-describedby="export-desc">
                     Export Data (CSV)
@@ -175,28 +265,23 @@
         <h2>Application Instructions</h2>
         <p>This application displays tropical cyclone tracks for different climate scenarios. 
            Use the controls above the map to select scenarios, ensemble members, and display options. 
-           The map shows cyclone tracks, and you can click on tracks for more information.</p>
+           The map shows cyclone tracks, and you can click on tracks for more information.
+           Enable "Compare Scenarios" to view two scenarios simultaneously with different colors.</p>
     </div>
 
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script src="https://unpkg.com/leaflet.heat@0.2.0/dist/leaflet-heat.js"></script>
     
-    <!-- maintain this load order or things get scary -->
-    
     <script src="./js/config-constants.js"></script>
-    
     <script src="./js/utils.js"></script>
-    
     <script src="./js/map-manager.js"></script>
     <script src="./js/data-manager.js"></script>
     <script src="./js/visualization-renderer.js"></script>
     <script src="./js/ui-controller.js"></script>
     <script src="./js/device-manager.js"></script>
-    
     <script src="./js/app.js"></script>
     
     <script>
-        // Register service worker when available
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', () => {
                 navigator.serviceWorker.register('./js/sw.js')
@@ -205,7 +290,6 @@
             });
         }
         
-        // Performance monitoring - again, i think this causing firefox fuckiness, imma keep an eye on it
         window.addEventListener('load', () => {
             if (performance.mark) {
                 performance.mark('app-loaded');
@@ -232,7 +316,6 @@
         });
         
         document.addEventListener('keydown', (event) => {
-            // Ctrl/Cmd + M to toggle mobile controls
             if ((event.ctrlKey || event.metaKey) && event.key === 'm') {
                 event.preventDefault();
                 if (window.tcApp && window.tcApp.deviceManager && window.tcApp.deviceManager.isMobile()) {
