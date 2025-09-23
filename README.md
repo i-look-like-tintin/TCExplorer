@@ -1,5 +1,5 @@
 # Tropical Cyclone Track Visualization Prototype
-# Version 0.13.1
+# Version 0.14.0
 The app can be found running live in a web-facing environment at: https://tropicalcycloneexplorer.azurewebsites.net/
 
 This is designed to be run through XAMPP, and then launched in the browser as localhost/YOUR_PROJECT_DIRECTORY_INSIDE_HTDOCS/index.html
@@ -10,16 +10,21 @@ Any issues with this, hit me up. The instructions below may not be super accurat
 See known issues with this experimental implementation.
 - v0.11.0 Modularised JS for extendability, added support for mobile devices.
 - v0.12.0 Added cool shark favicon. Arguably not deserving of a full number bump, but it *is* a really cool shark.
-- v0.13.0 Added support for the long-awaited 'HPB_NAT' scenario. This is historical data with natural warming still included. Also re-styled control group to allow for extra buttons to be added without display nastiness. 
+- v0.13.0 Added support for the long-awaited 'HPB_NAT' scenario. This is historical data with natural warming still included. Also re-styled control group to allow for extra buttons to be added without display nastiness.
+- v0.14.0 Added scenario comparison functionality. Now different scenarios can be compared in terms of tracks and genesis locations. Also removed old heatmap visualisation, and removed the "Filter to Aus" toggle as I have deemed it no longer necessary lol
 
 ## Known Issues: 
 - ~~Experimental heatmap mode is forcibly cleared on zooming, requires retoggling checkbox to reappear. Will investigate - may~~ Fixed.
 - ~~Lat/long of precomputed data in experimental heatmap incorrectly formatted.~~ Fixed.
 - ~~Map glitches (jumps around) on panning. Investigating - May (Godzilla app.js was beautiful, and we killed him :c ) ((Hmm, it's server side, not a file issue. Doesn't exist in XAMPP) (Also doesn't seem to exist with chromium-based browsers))~~ Fixed. 
-- QUERY: Determine whether experimental heatmap impacts loading of Tc Track data for unseen ensembles, as these use seperate data sources. Initial testing suggests no impact, but query further.
+- ~~QUERY: Determine whether experimental heatmap impacts loading of Tc Track data for unseen ensembles, as these use seperate data sources. Initial testing suggests no impact, but query further.~~ Nup, I'm happy with.
 - ~~Mobile app no longer functions correctly. Control toggles not switching between desktop to mobile.~~ Fixed, I fat-fingered lol
-- QUERY: Sweeping changes have been made to the application in version 0.13.0, by a tired developer who didn't bother to thoroughly test. Things may go wrong. If things do go wrong, feel free to yell at developer.
-- Mobile view does not handle rotation to landscape correctly.
+- QUERY: Sweeping changes have been made to the application in version ~~0.13.0~~ 0.14.0, by a tired developer who didn't bother to thoroughly test. Things may go wrong. If things do go wrong, feel free to yell at developer.
+- Mobile view does not handle rotation to landscape correctly. As of 0.14.0, mobile view now requires further updates to remain functional with scenario comparison.
+- Compare Scenarios button slightly off centre.
+- Intensity colours option is super duper unperformant. I will look at fixing at some point.
+-  Certain info boxes are not clearing when views are switched. For example, intensity categories and scenario comparison info both persist when switching to heatmap.
+-  Heatmap option should be greyed out when in comparison view, or some form of heatmap comparison added?
 
 ## Immediate Roadmap
 - ~~Fix known experimental heatmap issues~~
