@@ -1,0 +1,453 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Genesis Detection Validation Test</title>
+    <style>
+        body { 
+            font-family: Arial, sans-serif; 
+            margin: 20px; 
+            background: #f5f5f5; 
+        }
+        .container { 
+            max-width: 1400px; 
+            margin: 0 auto; 
+            background: white; 
+            padding: 20px; 
+            border-radius: 8px; 
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1); 
+        }
+        .controls { 
+            margin-bottom: 20px; 
+            padding: 15px; 
+            background: #ecf0f1; 
+            border-radius: 5px; 
+            display: flex; 
+            gap: 10px; 
+            align-items: center;
+        }
+        button { 
+            background: #3498db; 
+            color: white; 
+            border: none; 
+            padding: 10px 20px; 
+            border-radius: 4px; 
+            cursor: pointer; 
+        }
+        button:hover { background: #2980b9; }
+        button:disabled { background: #95a5a6; cursor: not-allowed; }
+        
+        select { 
+            padding: 8px; 
+            border: 1px solid #ddd; 
+            border-radius: 4px; 
+        }
+        
+        .summary { 
+            background: #d5dbdb; 
+            padding: 15px; 
+            border-radius: 5px; 
+            margin-bottom: 20px; 
+            display: none;
+        }
+        
+        .results-table { 
+            width: 100%; 
+            border-collapse: collapse; 
+            margin-top: 20px; 
+        }
+        
+        .results-table th, .results-table td { 
+            border: 1px solid #ddd; 
+            padding: 12px; 
+            text-align: left; 
+            vertical-align: top;
+        }
+        
+        .results-table th { 
+            background: #34495e; 
+            color: white; 
+            font-weight: bold; 
+        }
+        
+        .results-table tr:nth-child(even) { 
+            background: #f9f9f9; 
+        }
+        
+        .pass { color: #27ae60; font-weight: bold; }
+        .fail { color: #e74c3c; font-weight: bold; }
+        .warning { color: #f39c12; font-weight: bold; }
+        
+        .cyclone-name { font-weight: bold; color: #2c3e50; }
+        .coordinates { font-family: monospace; font-size: 0.9em; }
+        .wind-speed { font-weight: bold; }
+        .date { font-family: monospace; }
+        
+        .loading { 
+            text-align: center; 
+            color: #666; 
+            font-style: italic; 
+            padding: 40px;
+        }
+        
+        .error { 
+            color: #e74c3c; 
+            background: #fdf2f2; 
+            padding: 15px; 
+            border: 1px solid #e74c3c; 
+            border-radius: 4px; 
+            margin: 20px 0;
+        }
+        
+        .info-box {
+            background: #e8f5e8;
+            border: 1px solid #27ae60;
+            padding: 15px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+        }
+        
+        .wind-threshold { 
+            background: #fff3cd; 
+            border: 1px solid #ffc107; 
+            padding: 8px; 
+            border-radius: 3px; 
+            font-size: 0.9em;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Genesis Detection Validation Test</h1>
+        
+        <div class="info-box">
+            <h3>Test Purpose</h3>
+            <p>This test validates the genesis detection logic by comparing:</p>
+            <ul>
+                <li><strong>Expected:</strong> First track point where wind speed reaches ≥34 knots (≥63 km/h)</li>
+                <li><strong>Actual:</strong> What the current genesis detection code identifies</li>
+                <li><strong>Baseline:</strong> The very first track point for comparison</li>
+            </ul>
+            <div class="wind-threshold">
+                <strong>Wind Speed Conversion:</strong> 34 knots = 63 km/h = 17.5 m/s
+            </div>
+        </div>
+        
+        <div class="controls">
+            <button onclick="runValidationTest()" id="testBtn">Run Genesis Validation Test</button>
+            <select id="scenario">
+                <option value="current">Historical</option>
+                <option value="2k">+2K Warming</option>
+                <option value="4k">+4K Warming</option>
+            </select>
+            <select id="ensemble">
+                <option value="1">Ensemble 1</option>
+                <option value="2">Ensemble 2</option>
+                <option value="3">Ensemble 3</option>
+            </select>
+            <select id="maxCyclones">
+                <option value="10">First 10 cyclones</option>
+                <option value="25">First 25 cyclones</option>
+                <option value="50">First 50 cyclones</option>
+                <option value="100">First 100 cyclones</option>
+                <option value="-1">All cyclones</option>
+            </select>
+            <button onclick="exportTableData()" id="exportBtn" disabled>Export CSV</button>
+        </div>
+        
+        <div id="summary" class="summary"></div>
+        
+        <div id="results">
+            <p class="loading">Click "Run Genesis Validation Test" to begin analysis...</p>
+        </div>
+    </div>
+
+    <script>
+        let testData = [];
+        let allCyclones = [];
+
+        // This function replicates the EXACT logic from visualization-renderer.js
+        function getActualGenesisFromVisualizationLogic(cyclone) {
+            if (!cyclone.track || cyclone.track.length === 0) return null;
+            
+            // This is the EXACT line from drawGenesisPoint() in visualization-renderer.js
+            const genesis = cyclone.track.find(point => point.windSpeed >= 63) || cyclone.track[0];
+            return genesis;
+        }
+
+        // Function to simulate the track filtering logic from visualization-renderer.js
+        function getActualTrackFromVisualizationLogic(cyclone) {
+            if (!cyclone.track || cyclone.track.length < 2) return [];
+            
+            // This replicates the logic from drawCycloneTrack() in visualization-renderer.js
+            const genesisIndex = cyclone.track.findIndex(point => point.windSpeed && point.windSpeed >= 63);
+            let trackFromGenesis = genesisIndex >= 0 ? cyclone.track.slice(genesisIndex) : cyclone.track;
+            
+            // If filtered track is too short, fall back to full track
+            if (trackFromGenesis.length < 2 && cyclone.track.length >= 2) {
+                trackFromGenesis = cyclone.track;
+            }
+            
+            return trackFromGenesis;
+        }
+
+        async function runValidationTest() {
+            const scenario = document.getElementById('scenario').value;
+            const ensemble = document.getElementById('ensemble').value;
+            const maxCyclones = parseInt(document.getElementById('maxCyclones').value);
+            const resultsDiv = document.getElementById('results');
+            const summaryDiv = document.getElementById('summary');
+            const testBtn = document.getElementById('testBtn');
+            const exportBtn = document.getElementById('exportBtn');
+            
+            testBtn.disabled = true;
+            exportBtn.disabled = true;
+            resultsDiv.innerHTML = '<p class="loading">Loading cyclone data and analyzing genesis points...</p>';
+            summaryDiv.style.display = 'none';
+            testData = [];
+            
+            try {
+                const response = await fetch(`php/api.php?action=getCycloneData&scenario=${scenario}&ensemble=${ensemble}&filter=all&use_sample=false&debug=true`);
+                const data = await response.json();
+                
+                if (!data.success || !data.data.cyclones) {
+                    throw new Error('Failed to load cyclone data');
+                }
+                
+                allCyclones = data.data.cyclones;
+                const cyclonesToTest = maxCyclones > 0 ? allCyclones.slice(0, maxCyclones) : allCyclones;
+                
+                let passCount = 0;
+                let failCount = 0;
+                let warningCount = 0;
+                
+                let tableHTML = `
+                    <table class="results-table">
+                        <thead>
+                            <tr>
+                                <th>Cyclone</th>
+                                <th>Expected Genesis<br>(≥34 knots / ≥63 km/h)</th>
+                                <th>Actual Genesis<br>(Current Logic)</th>
+                                <th>First Track Point<br>(Baseline)</th>
+                                <th>Status</th>
+                                <th>Notes</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                `;
+                
+                cyclonesToTest.forEach((cyclone, index) => {
+                    if (!cyclone.track || cyclone.track.length === 0) {
+                        tableHTML += createEmptyRow(cyclone, 'NO_TRACK');
+                        warningCount++;
+                        return;
+                    }
+                    
+                    // Expected: First point ≥63 km/h (manual calculation)
+                    const expectedGenesisPoint = cyclone.track.find(point => point.windSpeed && point.windSpeed >= 63);
+                    const expectedIndex = expectedGenesisPoint ? 
+                        cyclone.track.findIndex(point => point === expectedGenesisPoint) : -1;
+                    
+                    // Actual: What the visualization-renderer.js logic returns
+                    const actualGenesisPoint = getActualGenesisFromVisualizationLogic(cyclone);
+                    const actualIndex = actualGenesisPoint ? 
+                        cyclone.track.findIndex(point => 
+                            point.lat === actualGenesisPoint.lat && 
+                            point.lon === actualGenesisPoint.lon && 
+                            point.date === actualGenesisPoint.date
+                        ) : -1;
+                    
+                    // Baseline: First track point
+                    const firstPoint = cyclone.track[0];
+                    
+                    // Determine test result
+                    let status = 'UNKNOWN';
+                    let notes = '';
+                    
+                    if (!expectedGenesisPoint) {
+                        // No point reaches 63 km/h, should use first point
+                        if (actualIndex === 0) {
+                            status = 'PASS';
+                            notes = 'No point ≥63 km/h, correctly using first point';
+                            passCount++;
+                        } else {
+                            status = 'FAIL';
+                            notes = 'No point ≥63 km/h, but not using first point';
+                            failCount++;
+                        }
+                    } else {
+                        // Point exists ≥63 km/h
+                        if (expectedIndex === actualIndex) {
+                            status = 'PASS';
+                            notes = 'Genesis point correctly identified';
+                            passCount++;
+                        } else {
+                            status = 'FAIL';
+                            notes = `Expected index ${expectedIndex}, got ${actualIndex}`;
+                            failCount++;
+                        }
+                    }
+                    
+                    // Store test data
+                    const testResult = {
+                        name: cyclone.name,
+                        year: cyclone.year,
+                        status: status,
+                        notes: notes,
+                        expected: expectedGenesisPoint,
+                        actual: actualGenesisPoint,
+                        first: firstPoint,
+                        expectedIndex: expectedIndex,
+                        actualIndex: actualIndex,
+                        trackLength: cyclone.track.length
+                    };
+                    testData.push(testResult);
+                    
+                    tableHTML += createTableRow(testResult);
+                });
+                
+                tableHTML += '</tbody></table>';
+                resultsDiv.innerHTML = tableHTML;
+                
+                // Show summary
+                const totalTests = cyclonesToTest.length;
+                const passRate = ((passCount / totalTests) * 100).toFixed(1);
+                
+                summaryDiv.innerHTML = `
+                    <h3>Validation Results Summary</h3>
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px;">
+                        <div><strong>Total Cyclones:</strong> ${totalTests}</div>
+                        <div><strong>Scenario:</strong> ${scenario} (Ensemble ${ensemble})</div>
+                        <div class="pass"><strong>✓ Passed:</strong> ${passCount}</div>
+                        <div class="fail"><strong>✗ Failed:</strong> ${failCount}</div>
+                        <div class="warning"><strong>⚠ Warnings:</strong> ${warningCount}</div>
+                        <div><strong>Pass Rate:</strong> ${passRate}%</div>
+                    </div>
+                `;
+                summaryDiv.style.display = 'block';
+                
+            } catch (error) {
+                resultsDiv.innerHTML = `<div class="error">Error: ${error.message}</div>`;
+            } finally {
+                testBtn.disabled = false;
+                exportBtn.disabled = testData.length === 0;
+            }
+        }
+        
+        function createTableRow(test) {
+            const statusClass = test.status === 'PASS' ? 'pass' : (test.status === 'FAIL' ? 'fail' : 'warning');
+            const statusIcon = test.status === 'PASS' ? '✓' : (test.status === 'FAIL' ? '✗' : '⚠');
+            
+            return `
+                <tr>
+                    <td>
+                        <div class="cyclone-name">${test.name}</div>
+                        <div>Year: ${test.year}</div>
+                        <div style="font-size: 0.9em; color: #666;">Track: ${test.trackLength} points</div>
+                    </td>
+                    <td>
+                        ${test.expected ? `
+                            <div class="date">${test.expected.date}</div>
+                            <div class="coordinates">Lat: ${test.expected.lat.toFixed(2)}°, Lon: ${test.expected.lon.toFixed(2)}°</div>
+                            <div class="wind-speed">Wind: ${test.expected.windSpeed} km/h</div>
+                            <div style="font-size: 0.8em; color: #666;">Index: ${test.expectedIndex}</div>
+                        ` : `
+                            <div class="warning">No point ≥63 km/h</div>
+                            <div style="font-size: 0.8em; color: #666;">Should use first point</div>
+                        `}
+                    </td>
+                    <td>
+                        <div class="date">${test.actual.date}</div>
+                        <div class="coordinates">Lat: ${test.actual.lat.toFixed(2)}°, Lon: ${test.actual.lon.toFixed(2)}°</div>
+                        <div class="wind-speed">Wind: ${test.actual.windSpeed} km/h</div>
+                        <div style="font-size: 0.8em; color: #666;">Index: ${test.actualIndex}</div>
+                    </td>
+                    <td>
+                        <div class="date">${test.first.date}</div>
+                        <div class="coordinates">Lat: ${test.first.lat.toFixed(2)}°, Lon: ${test.first.lon.toFixed(2)}°</div>
+                        <div class="wind-speed">Wind: ${test.first.windSpeed} km/h</div>
+                        <div style="font-size: 0.8em; color: #666;">Index: 0</div>
+                    </td>
+                    <td class="${statusClass}">
+                        ${statusIcon} ${test.status}
+                    </td>
+                    <td style="font-size: 0.9em;">
+                        ${test.notes}
+                    </td>
+                </tr>
+            `;
+        }
+        
+        function createEmptyRow(cyclone, reason) {
+            testData.push({
+                name: cyclone.name,
+                year: cyclone.year,
+                status: 'WARNING',
+                notes: reason === 'NO_TRACK' ? 'No track data available' : 'Unknown issue'
+            });
+            
+            return `
+                <tr>
+                    <td>
+                        <div class="cyclone-name">${cyclone.name}</div>
+                        <div>Year: ${cyclone.year}</div>
+                    </td>
+                    <td colspan="4" class="warning">
+                        ${reason === 'NO_TRACK' ? 'No track data available' : 'Data issue'}
+                    </td>
+                    <td class="warning">⚠ WARNING</td>
+                </tr>
+            `;
+        }
+        
+        function exportTableData() {
+            if (testData.length === 0) {
+                alert('No test data to export. Run the test first.');
+                return;
+            }
+            
+            const headers = [
+                'Cyclone Name', 'Year', 'Status', 'Expected Date', 'Expected Lat', 'Expected Lon', 
+                'Expected Wind (km/h)', 'Actual Date', 'Actual Lat', 'Actual Lon', 'Actual Wind (km/h)',
+                'First Point Date', 'First Point Lat', 'First Point Lon', 'First Point Wind (km/h)', 'Notes'
+            ];
+            
+            const csvData = [headers];
+            
+            testData.forEach(test => {
+                csvData.push([
+                    test.name,
+                    test.year,
+                    test.status,
+                    test.expected ? test.expected.date : 'N/A',
+                    test.expected ? test.expected.lat.toFixed(4) : 'N/A',
+                    test.expected ? test.expected.lon.toFixed(4) : 'N/A',
+                    test.expected ? test.expected.windSpeed : 'N/A',
+                    test.actual ? test.actual.date : 'N/A',
+                    test.actual ? test.actual.lat.toFixed(4) : 'N/A', 
+                    test.actual ? test.actual.lon.toFixed(4) : 'N/A',
+                    test.actual ? test.actual.windSpeed : 'N/A',
+                    test.first ? test.first.date : 'N/A',
+                    test.first ? test.first.lat.toFixed(4) : 'N/A',
+                    test.first ? test.first.lon.toFixed(4) : 'N/A',
+                    test.first ? test.first.windSpeed : 'N/A',
+                    test.notes
+                ]);
+            });
+            
+            const csvContent = csvData.map(row => 
+                row.map(cell => `"${cell}"`).join(',')
+            ).join('\\n');
+            
+            const blob = new Blob([csvContent], { type: 'text/csv' });
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = `genesis_validation_${new Date().toISOString().slice(0,10)}.csv`;
+            link.click();
+            URL.revokeObjectURL(url);
+        }
+    </script>
+</body>
+</html>
