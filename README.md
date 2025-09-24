@@ -53,7 +53,7 @@ See known issues with this experimental implementation.
 
 - Add a button to show ‘ensemble mean’  
 
-- Add a button to show land-fall locations. Display purely land-fall spots – no tracks. Be able to select the time. Have different coloured dots for land-fall location to show cyclone intensity upon landfall.  <-- In progress - May 
+- Add a button to show land-fall locations. Display purely land-fall spots – no tracks. Be able to select the time. Have different coloured dots for land-fall location to show cyclone intensity upon landfall.  <-- In progress - Olivia
 
 - Intensity – highest intensity, filter by intensity levels.  
 
