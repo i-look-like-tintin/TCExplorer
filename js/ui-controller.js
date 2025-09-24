@@ -88,11 +88,15 @@ class UIController {
                     this.app.showHeatmap = false;
                     this.enableYearControls();
                 }
-                
+
                 const layerName = id.replace('show-', '');
                 this.app.mapManager.toggleLayer(layerName, e.target.checked);
                 await this.app.updateVisualization();
             });
+        });
+
+        document.getElementById('show-pre-cat1').addEventListener('change', async (e) => {
+            await this.app.updateVisualization();
         });
     }
     

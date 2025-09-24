@@ -106,6 +106,9 @@ class DataManager {
             
             if (!forceRefresh && this.app.cycloneData[cacheKey]) {
                 console.log('Using cached data for:', cacheKey);
+                const cachedData = this.app.cycloneData[cacheKey];
+                this.updateSourceFileDisplay(cachedData);
+                this.showDataInfo(cachedData);
                 await this.app.updateVisualization();
                 return;
             }
@@ -280,6 +283,41 @@ class DataManager {
         return data;
     }
     
+    filterTrackFromCategory1(cyclones, showPreCat1 = false) {
+        if (showPreCat1 || !cyclones) {
+            return cyclones;
+        }
+
+        return cyclones.map(cyclone => {
+            if (!cyclone.track || cyclone.track.length === 0) {
+                return cyclone;
+            }
+
+            const firstCat1Index = cyclone.track.findIndex(point => point.category >= 1);
+
+            if (firstCat1Index === -1) {
+                return cyclone;
+            }
+
+            if (firstCat1Index === 0) {
+                return cyclone;
+            }
+
+            const filteredCyclone = { ...cyclone };
+            filteredCyclone.originalTrack = [...cyclone.track];
+            filteredCyclone.track = cyclone.track.slice(firstCat1Index);
+
+            if (filteredCyclone.track.length > 0) {
+                const genesis = filteredCyclone.track[0];
+                filteredCyclone.genesis_lat = genesis.lat;
+                filteredCyclone.genesis_lon = genesis.lon;
+                filteredCyclone.start_date = genesis.date;
+            }
+
+            return filteredCyclone;
+        }).filter(cyclone => cyclone.track && cyclone.track.length > 0);
+    }
+
     getCurrentData() {
         if (this.app.comparisonMode) {
             return {

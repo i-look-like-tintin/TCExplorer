@@ -179,13 +179,14 @@ class TCVisualization {
     async updateComparisonVisualization() {
         const dataA = this.dataManager.getComparisonData('A');
         const dataB = this.dataManager.getComparisonData('B');
-        
+
         if (!dataA?.cyclones || !dataB?.cyclones) return;
-        
+
         this.visualizationRenderer.clearAllLayers();
-        
-        let cyclonesA = dataA.cyclones;
-        let cyclonesB = dataB.cyclones;
+
+        const showPreCat1 = document.getElementById('show-pre-cat1')?.checked || false;
+        let cyclonesA = this.dataManager.filterTrackFromCategory1(dataA.cyclones, showPreCat1);
+        let cyclonesB = this.dataManager.filterTrackFromCategory1(dataB.cyclones, showPreCat1);
         
         if (this.yearRange) {
             const boundsA = this.scenarioYearRanges[this.comparisonScenarioA];
@@ -217,12 +218,13 @@ class TCVisualization {
     async updateSingleVisualization() {
         const cacheKey = this.dataManager.getCacheKey();
         const data = this.cycloneData[cacheKey];
-        
+
         if (!data || !data.cyclones) return;
-        
+
         this.visualizationRenderer.clearAllLayers();
-        
-        let cyclones = data.cyclones;
+
+        const showPreCat1 = document.getElementById('show-pre-cat1')?.checked || false;
+        let cyclones = this.dataManager.filterTrackFromCategory1(data.cyclones, showPreCat1);
         if (this.yearRange) {
             cyclones = cyclones.filter(c => 
                 c.year >= this.yearRange.min && c.year <= this.yearRange.max
