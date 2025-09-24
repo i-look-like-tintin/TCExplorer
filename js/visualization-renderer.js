@@ -77,30 +77,54 @@ class VisualizationRenderer {
     
     drawComparisonIntensityTrack(cyclone, scenarioType) {
         if (!cyclone.track || cyclone.track.length < 2) return;
-        
+
         const baseColor = this.comparisonColors[scenarioType].track;
-        
-        for (let i = 0; i < cyclone.track.length - 1; i++) {
-            const start = cyclone.track[i];
-            const end = cyclone.track[i + 1];
-            
-            const intensityColor = this.blendColors(
-                baseColor, 
-                this.getIntensityColor(start.category), 
-                0.6
-            );
-            
-            const segment = L.polyline(
-                [[start.lat, start.lon], [end.lat, end.lon]], 
-                {
+
+        // Group consecutive segments by category to reduce polyline objects
+        const segmentGroups = [];
+        let currentGroup = {
+            category: cyclone.track[0].category,
+            points: [[cyclone.track[0].lat, cyclone.track[0].lon]]
+        };
+
+        for (let i = 1; i < cyclone.track.length; i++) {
+            const point = cyclone.track[i];
+            if (point.category === currentGroup.category) {
+                // Same category, add to current group
+                currentGroup.points.push([point.lat, point.lon]);
+            } else {
+                // Different category, start new group
+                // Add last point of current group to maintain continuity
+                currentGroup.points.push([point.lat, point.lon]);
+                segmentGroups.push(currentGroup);
+                currentGroup = {
+                    category: point.category,
+                    points: [[point.lat, point.lon]]
+                };
+            }
+        }
+        // Don't forget the last group
+        if (currentGroup.points.length > 0) {
+            segmentGroups.push(currentGroup);
+        }
+
+        // Draw each group as a single polyline with blended color
+        segmentGroups.forEach(group => {
+            if (group.points.length >= 2) {
+                const intensityColor = this.blendColors(
+                    baseColor,
+                    this.getIntensityColor(group.category),
+                    0.6
+                );
+
+                const polyline = L.polyline(group.points, {
                     color: intensityColor,
                     weight: 4,
                     opacity: 0.8
-                }
-            );
-            
-            this.app.mapManager.addToLayer('intensity', segment);
-        }
+                });
+                this.app.mapManager.addToLayer('intensity', polyline);
+            }
+        });
     }
     
     drawComparisonGenesisPoint(cyclone, scenarioType) {
@@ -185,22 +209,46 @@ class VisualizationRenderer {
 
     drawIntensityTrack(cyclone) {
         if (!cyclone.track || cyclone.track.length < 2) return;
-        
-        for (let i = 0; i < cyclone.track.length - 1; i++) {
-            const start = cyclone.track[i];
-            const end = cyclone.track[i + 1];
-            
-            const segment = L.polyline(
-                [[start.lat, start.lon], [end.lat, end.lon]], 
-                {
-                    color: this.getIntensityColor(start.category),
+
+        // Group consecutive segments by category to reduce polyline objects
+        const segmentGroups = [];
+        let currentGroup = {
+            category: cyclone.track[0].category,
+            points: [[cyclone.track[0].lat, cyclone.track[0].lon]]
+        };
+
+        for (let i = 1; i < cyclone.track.length; i++) {
+            const point = cyclone.track[i];
+            if (point.category === currentGroup.category) {
+                // Same category, add to current group
+                currentGroup.points.push([point.lat, point.lon]);
+            } else {
+                // Different category, start new group
+                // Add last point of current group to maintain continuity
+                currentGroup.points.push([point.lat, point.lon]);
+                segmentGroups.push(currentGroup);
+                currentGroup = {
+                    category: point.category,
+                    points: [[point.lat, point.lon]]
+                };
+            }
+        }
+        // Don't forget the last group
+        if (currentGroup.points.length > 0) {
+            segmentGroups.push(currentGroup);
+        }
+
+        // Draw each group as a single polyline
+        segmentGroups.forEach(group => {
+            if (group.points.length >= 2) {
+                const polyline = L.polyline(group.points, {
+                    color: this.getIntensityColor(group.category),
                     weight: 4,
                     opacity: 0.8
-                }
-            );
-            
-            this.app.mapManager.addToLayer('intensity', segment);
-        }
+                });
+                this.app.mapManager.addToLayer('intensity', polyline);
+            }
+        });
     }
     
     updateComparisonLegend(scenarioA, scenarioB) {
