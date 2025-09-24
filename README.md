@@ -1,5 +1,5 @@
 # Tropical Cyclone Track Visualization Prototype
-# Version 0.14.0
+# Version 0.14.5
 The app can be found running live in a web-facing environment at: https://tropicalcycloneexplorer.azurewebsites.net/
 
 This is designed to be run through XAMPP, and then launched in the browser as localhost/YOUR_PROJECT_DIRECTORY_INSIDE_HTDOCS/index.html
@@ -12,6 +12,7 @@ See known issues with this experimental implementation.
 - v0.12.0 Added cool shark favicon. Arguably not deserving of a full number bump, but it *is* a really cool shark.
 - v0.13.0 Added support for the long-awaited 'HPB_NAT' scenario. This is historical data with natural warming still included. Also re-styled control group to allow for extra buttons to be added without display nastiness.
 - v0.14.0 Added scenario comparison functionality. Now different scenarios can be compared in terms of tracks and genesis locations. Also removed old heatmap visualisation, and removed the "Filter to Aus" toggle as I have deemed it no longer necessary lol
+- v0.14.5 Genesis locations modified to first occurence >= Cat 1 (previously just first data point). This can be toggled with the relevant button. Loading text also fixed to correctly display loaded cache data. Assorted styling improved. 
 
 ## Known Issues: 
 - ~~Experimental heatmap mode is forcibly cleared on zooming, requires retoggling checkbox to reappear. Will investigate - may~~ Fixed.
@@ -21,7 +22,6 @@ See known issues with this experimental implementation.
 - ~~Mobile app no longer functions correctly. Control toggles not switching between desktop to mobile.~~ Fixed, I fat-fingered lol
 - QUERY: Sweeping changes have been made to the application in version ~~0.13.0~~ 0.14.0, by a tired developer who didn't bother to thoroughly test. Things may go wrong. If things do go wrong, feel free to yell at developer.
 - Mobile view does not handle rotation to landscape correctly. As of 0.14.0, mobile view now requires further updates to remain functional with scenario comparison.
-- Compare Scenarios button slightly off centre.
 - Intensity colours option is super duper unperformant. I will look at fixing at some point.
 -  Certain info boxes are not clearing when views are switched. For example, intensity categories and scenario comparison info both persist when switching to heatmap.
 -  Heatmap option should be greyed out when in comparison view, or some form of heatmap comparison added?
@@ -29,7 +29,7 @@ See known issues with this experimental implementation.
 ## Immediate Roadmap
 - ~~Fix known experimental heatmap issues~~
 - ~~Clean the project tree, seperate out app.js~~
-- Genesis locations - Refine and include a much more accurate genesis location when cyclone speed reaching 34 knots (17m/s). Ignore path prior to genesis. (Markey working on)
+- ~~Genesis locations - Refine and include a much more accurate genesis location when cyclone speed reaching 34 knots (17m/s). Ignore path prior to genesis. (Markey working on)~~
 - Dissipation data points.
 - ~~Add ability to select year ranges, rather than just all years or single year~~
 - ~~Remove sample data functionality - no longer needed with data curl working~~
@@ -45,25 +45,25 @@ See known issues with this experimental implementation.
 
 ## Client Notes:
 - ~~Density and frequency maps. Include a unit converted to something / per year. Allows for experiment comparison – defined unit for everything.~~
--  Genesis locations - Refine and include a much more accurate genesis location when cyclone speed reaching 34 knots (17m/s). Ignore path prior to genesis. <-- In progress - Markey
+-  ~~Genesis locations - Refine and include a much more accurate genesis location when cyclone speed reaching 34 knots (17m/s). Ignore path prior to genesis. <-- In progress - Markey~~
 
-- Checks to see how the genesis will change as the warming increases.  
+- ~~Checks to see how the genesis will change as the warming increases.~~
 
-- Historical period to show different member and what does it mean – to produce an overall pattern. Producing average locations.  
+- ~~Historical period to show different member and what does it mean – to produce an overall pattern. Producing average locations.~~  
 
-- Add a button to show ‘ensemble mean’  
+- Add a button to show ‘ensemble mean’ <-- Yea, still not sure what this one means  
 
 - Add a button to show land-fall locations. Display purely land-fall spots – no tracks. Be able to select the time. Have different coloured dots for land-fall location to show cyclone intensity upon landfall.  <-- In progress - Olivia
 
 - Intensity – highest intensity, filter by intensity levels.  
 
-- Dissipation data points.  <-- In progress - May 
+- Dissipation data points. 
 
 - Integrate one more layer using the BOM dataset – observations straight from BOM, will be supplied.  
 
-- Zoom, and improve navigation, export function with longitude/latitude inputs to export a small region of data.  
+- Export function with longitude/latitude inputs to export a small region of data.  
 
-- Add a historical period with no warming.  
+- ~~Add a historical period with no warming.~~  
 
 - ~~Overall map with heat maps for complete historical data.~~  
 
