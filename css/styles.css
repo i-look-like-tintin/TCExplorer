@@ -65,6 +65,11 @@ header p {
 }
 
 /* Comparison Mode Toggle */
+.comparison-toggle-group {
+    justify-content: flex-end;
+    padding-top: 1.5rem;
+}
+
 .comparison-toggle {
     flex-direction: row !important;
     align-items: center;
