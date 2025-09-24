@@ -1,5 +1,5 @@
 # Tropical Cyclone Track Visualization Prototype
-# Version 0.14.5
+# Version 0.14.6
 The app can be found running live in a web-facing environment at: https://tropicalcycloneexplorer.azurewebsites.net/
 
 This is designed to be run through XAMPP, and then launched in the browser as localhost/YOUR_PROJECT_DIRECTORY_INSIDE_HTDOCS/index.html
@@ -22,7 +22,7 @@ See known issues with this experimental implementation.
 - ~~Mobile app no longer functions correctly. Control toggles not switching between desktop to mobile.~~ Fixed, I fat-fingered lol
 - QUERY: Sweeping changes have been made to the application in version ~~0.13.0~~ 0.14.0, by a tired developer who didn't bother to thoroughly test. Things may go wrong. If things do go wrong, feel free to yell at developer.
 - Mobile view does not handle rotation to landscape correctly. As of 0.14.0, mobile view now requires further updates to remain functional with scenario comparison.
-- Intensity colours option is super duper unperformant. I will look at fixing at some point.
+- ~~Intensity colours option is super duper unperformant. I will look at fixing at some point.~~ Fixed.
 -  Certain info boxes are not clearing when views are switched. For example, intensity categories and scenario comparison info both persist when switching to heatmap.
 -  Heatmap option should be greyed out when in comparison view, or some form of heatmap comparison added?
 
