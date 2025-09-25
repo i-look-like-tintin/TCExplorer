@@ -37,9 +37,9 @@ header p {
 }
 
 #control-panel {
-    background-color: white;
+    background-color: transparent;
     padding: 1rem;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    box-shadow: none;
     display: flex;
     gap: 1.5rem;
     align-items: flex-start;
@@ -48,6 +48,111 @@ header p {
     max-height: 200px;
     overflow-y: auto;
     flex-shrink: 0;
+    position: relative;
+    transition: all 0.3s ease-out;
+}
+
+/* Desktop Collapsible Styles */
+.desktop-collapsible-wrapper {
+    position: relative;
+    flex-shrink: 0;
+    width: 100%;
+    background-color: white;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    transition: all 0.3s ease-out;
+    overflow: hidden;
+}
+
+.desktop-collapsible-wrapper.collapsed {
+    max-height: 0;
+    min-height: 0;
+    overflow: hidden;
+    box-shadow: none;
+    margin: 0;
+    padding: 0;
+    border: none;
+}
+
+.desktop-toggle-button {
+    position: fixed;
+    right: 20px;
+    top: 90px;  /* Position below header */
+    background: #3498db;
+    color: white;
+    border: none;
+    padding: 0.6rem 1.2rem;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 0.9rem;
+    font-weight: 600;
+    transition: all 0.3s ease;
+    z-index: 1000;
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+    min-width: 150px;
+    justify-content: center;
+}
+
+.desktop-toggle-button:hover {
+    background: #2980b9;
+    transform: scale(1.05);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+}
+
+.desktop-toggle-button:active {
+    transform: scale(0.98);
+}
+
+.desktop-toggle-button .toggle-icon {
+    transition: transform 0.3s ease;
+    font-size: 1.1rem;
+    display: inline-block;
+}
+
+#control-panel.desktop-collapsed {
+    display: none;
+}
+
+#control-panel.desktop-expanded {
+    display: flex;
+}
+
+/* Button state when controls are collapsed */
+.desktop-toggle-button.collapsed-state,
+body.controls-collapsed .desktop-toggle-button {
+    background: #e74c3c;  /* Red color when collapsed to draw attention */
+    animation: pulse 2s infinite;
+}
+
+.desktop-toggle-button.collapsed-state:hover,
+body.controls-collapsed .desktop-toggle-button:hover {
+    background: #c0392b;
+    animation: none;
+}
+
+.desktop-toggle-button.collapsed-state .toggle-icon,
+body.controls-collapsed .desktop-toggle-button .toggle-icon {
+    transform: rotate(180deg);
+}
+
+/* Pulse animation for collapsed state */
+@keyframes pulse {
+    0% {
+        box-shadow: 0 2px 8px rgba(231, 76, 60, 0.4);
+    }
+    50% {
+        box-shadow: 0 2px 16px rgba(231, 76, 60, 0.6);
+    }
+    100% {
+        box-shadow: 0 2px 8px rgba(231, 76, 60, 0.4);
+    }
+}
+
+/* Smooth transition for the map when control panel collapses */
+#map-container {
+    transition: height 0.3s ease-out;
 }
 
 .control-group {
@@ -822,6 +927,28 @@ header p {
         align-items: stretch;
         max-height: none;
         overflow-y: visible;
+        background-color: white !important;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1) !important;
+    }
+
+    /* Hide desktop toggle button on tablets and mobile */
+    .desktop-toggle-button {
+        display: none !important;
+    }
+
+    .desktop-collapsible-wrapper {
+        position: static !important;
+        background: none !important;
+        box-shadow: none !important;
+    }
+
+    #control-panel.desktop-collapsed,
+    #control-panel.desktop-expanded {
+        display: flex !important;
+        transform: none !important;
+        opacity: 1 !important;
+        pointer-events: auto !important;
+        position: static !important;
     }
     
     .mode-controls {
@@ -879,6 +1006,8 @@ header p {
         gap: 0.75rem;
         max-height: 300px;
         overflow-y: auto;
+        background-color: white !important;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1) !important;
     }
     
     .comparison-toggle {
