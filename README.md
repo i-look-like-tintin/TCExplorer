@@ -41,7 +41,7 @@ See known issues with this experimental implementation.
 - ~~add azure support for prototype deployment~~
 
 ## Other Needs:
-- Validate data (I have only partially validated curled TC D4PDF data checking speeds and pressures - May)
+- ~~Validate data (I have only partially validated curled TC D4PDF data checking speeds and pressures - May)~~ Na, happy with.
 - ~~Fix CSS display elements. Info boxes do not fit correctly on sub-1440p displays. Some control bar elements are misaligned.~~
 
 ## Client Notes:
