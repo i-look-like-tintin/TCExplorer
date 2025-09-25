@@ -11,7 +11,8 @@ class UIController {
         this.setupYearRangeControls();
         this.setupActionButtons();
         this.setupComparisonControls();
-        
+        this.setupDesktopCollapsible();
+
         console.log('Event listeners initialized');
     }
     
@@ -502,15 +503,114 @@ class UIController {
     
     initializeResponsiveLayout() {
         this.adjustLayoutForDevice();
-        
+
         window.addEventListener('resize', () => {
             this.adjustLayoutForDevice();
         });
-        
+
         window.addEventListener('orientationchange', () => {
             setTimeout(() => {
                 this.adjustLayoutForDevice();
             }, 100);
         });
+    }
+
+    setupDesktopCollapsible() {
+        // Only setup collapsible for desktop mode
+        if (window.innerWidth <= 1024) return;
+
+        const controlPanel = document.getElementById('control-panel');
+        if (!controlPanel || document.getElementById('desktop-panel-toggle')) return;
+
+        // Create wrapper for desktop collapsible
+        const wrapper = document.createElement('div');
+        wrapper.className = 'desktop-collapsible-wrapper';
+        controlPanel.parentNode.insertBefore(wrapper, controlPanel);
+        wrapper.appendChild(controlPanel);
+
+        // Create toggle button for desktop
+        const toggleButton = document.createElement('button');
+        toggleButton.id = 'desktop-panel-toggle';
+        toggleButton.className = 'desktop-toggle-button';
+        toggleButton.innerHTML = `
+            <span class="toggle-icon">▲</span>
+            <span class="toggle-text">Hide Controls</span>
+        `;
+        toggleButton.setAttribute('aria-label', 'Toggle control panel');
+        toggleButton.setAttribute('aria-expanded', 'true');
+        toggleButton.setAttribute('title', 'Click to toggle controls (Ctrl+P)');
+
+        // Append button to document body so it's always visible
+        document.body.appendChild(toggleButton);
+        wrapper.appendChild(controlPanel);
+
+        // Initialize as expanded
+        this.desktopPanelExpanded = true;
+        controlPanel.classList.add('desktop-expanded');
+
+        // Add click handler
+        toggleButton.addEventListener('click', () => {
+            this.toggleDesktopControlPanel();
+        });
+
+        // Add keyboard shortcut (Ctrl/Cmd + P)
+        document.addEventListener('keydown', (e) => {
+            if ((e.ctrlKey || e.metaKey) && e.key === 'p' && !e.shiftKey) {
+                e.preventDefault();
+                this.toggleDesktopControlPanel();
+            }
+        });
+    }
+
+    toggleDesktopControlPanel() {
+        const controlPanel = document.getElementById('control-panel');
+        const toggleButton = document.getElementById('desktop-panel-toggle');
+        const wrapper = document.querySelector('.desktop-collapsible-wrapper');
+        const toggleIcon = toggleButton?.querySelector('.toggle-icon');
+
+        if (!controlPanel || !toggleButton || !wrapper) return;
+
+        this.desktopPanelExpanded = !this.desktopPanelExpanded;
+
+        toggleButton.setAttribute('aria-expanded', this.desktopPanelExpanded.toString());
+
+        const toggleText = toggleButton?.querySelector('.toggle-text');
+
+        if (this.desktopPanelExpanded) {
+            controlPanel.classList.remove('desktop-collapsed');
+            controlPanel.classList.add('desktop-expanded');
+            wrapper.classList.remove('collapsed');
+            document.body.classList.remove('controls-collapsed');
+            if (toggleIcon) toggleIcon.textContent = '▲';
+            if (toggleText) toggleText.textContent = 'Hide Controls';
+            toggleButton.setAttribute('title', 'Click to hide controls (Ctrl+P)');
+            toggleButton.classList.remove('collapsed-state');
+        } else {
+            controlPanel.classList.remove('desktop-expanded');
+            controlPanel.classList.add('desktop-collapsed');
+            wrapper.classList.add('collapsed');
+            document.body.classList.add('controls-collapsed');
+            if (toggleIcon) toggleIcon.textContent = '▼';
+            if (toggleText) toggleText.textContent = 'Show Controls';
+            toggleButton.setAttribute('title', 'Click to show controls (Ctrl+P)');
+            toggleButton.classList.add('collapsed-state');
+        }
+
+        // Show notification only when first collapsed
+        if (!this.desktopPanelExpanded && !this.desktopShortcutNotified) {
+            this.desktopShortcutNotified = true;
+            this.app.utils.showNotification(
+                'Tip: Use Ctrl+P (Cmd+P on Mac) to quickly toggle controls',
+                'info',
+                5000
+            );
+        }
+
+        // Adjust map container if needed
+        if (this.app.mapManager) {
+            setTimeout(() => {
+                this.app.mapManager.map.invalidateSize();
+            }, 350);
+        }
     }
 }
