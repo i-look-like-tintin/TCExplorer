@@ -15,15 +15,41 @@ class VisualizationRenderer {
                 name: 'Scenario B'
             }
         };
+                    // Land-fall mode state
+            this.landfallLayer   = L.layerGroup();
+            this.landfallEnabled = false;
+            
+            // Cache DOM for land-fall controls
+            this.$lfToggle  = document.getElementById('toggle-landfall');
+            this.$lfWrap    = document.getElementById('landfall-controls');
+            this.$lfYear    = document.getElementById('landfall-year');
+            this.$lfYearLbl = document.getElementById('landfall-year-label');
+            this.$lfLegend  = document.getElementById('landfall-legend');
+            
+            // Wire UI
+            if (this.$lfToggle) {
+              this.$lfToggle.addEventListener('change', () => {
+                if (this.$lfToggle.checked) this.enableLandfallMode();
+                else this.disableLandfallMode();
+              });
+            }
+            if (this.$lfYear) {
+              this.$lfYear.addEventListener('input', () => this.renderLandfall());
+            }
     }
     
     clearAllLayers() {
         this.app.mapManager.clearAllLayers();
         this.clearHeatmapLegends();
         this.hideComparisonPanel();
+
+        if (this.landfallLayer) this.landfallLayer.clearLayers();
     }
     
     async renderComparisonVisualization(cyclonesA, cyclonesB, scenarioA, scenarioB) {
+
+        if (this.landfallEnabled) return this.renderLandfall();
+        
         const showTracks = document.getElementById('show-tracks').checked;
         const showGenesis = document.getElementById('show-genesis').checked;
         const showIntensity = document.getElementById('show-intensity').checked;
@@ -155,6 +181,9 @@ class VisualizationRenderer {
     }
     
     async renderStandardVisualization(cyclones) {
+
+        if (this.landfallEnabled) return this.renderLandfall();
+        
         const showTracks = document.getElementById('show-tracks').checked;
         const showGenesis = document.getElementById('show-genesis').checked;
         const showIntensity = document.getElementById('show-intensity').checked;
@@ -206,7 +235,7 @@ class VisualizationRenderer {
         
         this.app.mapManager.addToLayer('genesis', marker);
     }
-
+    
     drawIntensityTrack(cyclone) {
         if (!cyclone.track || cyclone.track.length < 2) return;
 
@@ -680,6 +709,160 @@ class VisualizationRenderer {
             avgDensity: totalCells > 0 ? (totalPoints / totalCells).toFixed(1) : 0,
             gridResolution: this.gridResolution
         };
+    }
+    // ============ LAND-FALL ============
+    // Turn on: clear other layers (dots only)
+    enableLandfallMode() {
+      this.landfallEnabled = true;
+
+      this.clearAllLayers();
+    
+      if (this.$lfWrap) this.$lfWrap.style.display = '';
+      this.buildLandfallLegend();
+      this.setLandfallYearBounds();
+    
+      const map = this.app.mapManager.map;
+      if (!map.hasLayer(this.landfallLayer)) this.landfallLayer.addTo(map);
+    
+      this.renderLandfall();
+    }
+    
+    // Turn off: remove dots, hide controls
+    disableLandfallMode() {
+      this.landfallEnabled = false;
+    
+      const map = this.app.mapManager.map;
+      if (map.hasLayer(this.landfallLayer)) map.removeLayer(this.landfallLayer);
+      this.landfallLayer.clearLayers();
+    
+      if (this.$lfWrap) this.$lfWrap.style.display = 'none';
+    }
+    
+    // Build the legend for land-fall categories
+    buildLandfallLegend() {
+      if (!this.$lfLegend) return;
+      const rows = [
+        ['#999999','TD/TS'],
+        ['#1f78b4','Cat 1'],
+        ['#33a02c','Cat 2'],
+        ['#ff7f00','Cat 3'],
+        ['#e31a1c','Cat 4'],
+        ['#6a3d9a','Cat 5']
+      ];
+      this.$lfLegend.innerHTML = rows.map(([c,t]) =>
+        `<div style="display:flex;align-items:center;gap:8px;margin:2px 0">
+           <span style="width:14px;height:14px;border-radius:50%;border:1px solid #00000022;background:${c}"></span>
+           <span>${t}</span>
+         </div>`).join('');
+    } 
+    // Compute slider min/max from land-fall records
+    setLandfallYearBounds() {
+      if (!this.$lfYear) return;
+      const years = this.getLandfallPoints()
+        .map(p => this.yearOf(p.time ?? p.year))
+        .filter(Number.isFinite)
+        .sort((a,b)=>a-b);
+    
+      if (!years.length) return;
+      const minY = years[0], maxY = years[years.length-1];
+    
+      // Respect any broader hard-coded bounds
+      const curMin = parseInt(this.$lfYear.min || `${minY}`, 10);
+      const curMax = parseInt(this.$lfYear.max || `${maxY}`, 10);
+      this.$lfYear.min = String(Math.min(curMin, minY));
+      this.$lfYear.max = String(Math.max(curMax, maxY));
+    
+      const v = parseInt(this.$lfYear.value || `${minY}`, 10);
+      const clamped = Math.max(minY, Math.min(maxY, v));
+      this.$lfYear.value = String(clamped);
+      if (this.$lfYearLbl) this.$lfYearLbl.textContent = this.$lfYear.value;
+    }
+    
+    // Render dots for the selected year; colour by land-fall intensity/category
+    renderLandfall() {
+      if (!this.landfallEnabled) return;
+    
+      this.landfallLayer.clearLayers();
+    
+      if (this.$lfYearLbl && this.$lfYear) this.$lfYearLbl.textContent = this.$lfYear.value;
+      const Y = this.$lfYear ? parseInt(this.$lfYear.value, 10) : null;
+    
+      const pts = this.getLandfallPoints()
+        .filter(p => !Y || this.yearOf(p.time ?? p.year) === Y);
+    
+      pts.forEach(p => {
+        const marker = L.circleMarker([p.lat, p.lon], {
+          radius: 5,
+          weight: 0.5,
+          color: '#00000066',
+          opacity: 1,
+          fillOpacity: 0.9,
+          fillColor: this.landfallDotColor(p.category)
+        }).bindTooltip(`
+          <div style="min-width:180px">
+            <div><strong>${p.name || p.id || 'Cyclone'}</strong></div>
+            <div>${p.time ? p.time : (p.year ?? '')}</div>
+            <div>Land-fall: Cat ${p.category ?? 0}${p.wind_kts ? ` (${p.wind_kts} kt)` : ''}</div>
+          </div>
+        `, { sticky: true });
+    
+        marker.addTo(this.landfallLayer);
+      });
+    }
+    
+    // Collect land-fall points from your already-loaded cyclones
+    getLandfallPoints() {
+      // Try a few reasonable places for the live cyclone list
+      const cyclones =
+        this.app?.dataManager?.currentCyclones ||
+        this.app?.dataManager?.cyclones ||
+        this.app?.cyclones ||
+        [];
+    
+      const pts = [];
+      for (const c of cyclones) {
+        const lf = c?.landfall;
+        if (!lf) continue;
+
+        const lat  = lf.lat ?? lf.latitude ?? lf.y;
+        const lon  = lf.lon ?? lf.lng ?? lf.longitude ?? lf.x;
+        const time = lf.time ?? lf.date ?? lf.timestamp ?? lf.t;
+        const cat  = lf.category ?? lf.cat ?? null;
+        const wind = lf.intensity_kts ?? lf.max_wind ?? lf.wind_kt ?? lf.windKts ?? null;
+    
+        if (typeof lat !== 'number' || typeof lon !== 'number') continue;
+    
+        pts.push({
+          id: c.id ?? c.sid,
+          name: c.name ?? 'Unnamed',
+          year: c.year,
+          lat, lon, time,
+          category: (cat != null ? Number(cat) : this.windToCategory(wind)),
+          wind_kts: (wind == null ? null : Number(wind))
+        });
+      }
+      return pts;
+    }
+    
+    // Helpers
+    yearOf(ts) {
+      const d = new Date(ts);
+      if (Number.isFinite(d.getTime())) return d.getUTCFullYear();
+      const m = String(ts || '').match(/^(\d{4})/);
+      return m ? parseInt(m[1],10) : NaN;
+    }
+    windToCategory(kts) {
+      const v = Number(kts);
+      if (!Number.isFinite(v)) return 0;
+      if (v < 64)  return 0; // TD/TS
+      if (v < 83)  return 1;
+      if (v < 96)  return 2;
+      if (v < 113) return 3;
+      if (v < 137) return 4;
+      return 5;
+    }
+    landfallDotColor(category) {
+      return this.getTrackColor(category ?? 0);
     }
     
     getScenarioInsight() {
