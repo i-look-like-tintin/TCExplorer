@@ -190,6 +190,31 @@
                 </div>
             </div>
             
+            <!-- Land-fall controls -->
+            <div class="control-group">
+              <label>Land-fall:</label>
+              <div class="toggle-options">
+                <label class="checkbox-label">
+                  <input type="checkbox" id="toggle-landfall" aria-describedby="landfall-desc">
+                  Show Land-fall Locations (dots only)
+                </label>
+                <div id="landfall-controls" style="display:none; margin-top:6px">
+                  <div style="display:flex;justify-content:space-between;align-items:center">
+                    <strong>Year</strong>
+                    <span id="landfall-year-label">2000</span>
+                  </div>
+                  <input id="landfall-year"
+                         type="range"
+                         min="1951" max="2111" value="2000" step="1"
+                         aria-label="Land-fall year" style="width:100%">
+                  <div id="landfall-legend" style="margin-top:8px"></div>
+                </div>
+              </div>
+              <div id="landfall-desc" class="sr-only">
+                Shows only land-fall points coloured by intensity; tracks/genesis are hidden while enabled.
+              </div>
+            </div>
+            
             <!-- Year Range -->
             <div class="control-group">
                 <label>Year Range:</label>
