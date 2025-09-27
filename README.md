@@ -21,17 +21,19 @@ See known issues with this experimental implementation.
 - ~~Map glitches (jumps around) on panning. Investigating - May (Godzilla app.js was beautiful, and we killed him :c ) ((Hmm, it's server side, not a file issue. Doesn't exist in XAMPP) (Also doesn't seem to exist with chromium-based browsers))~~ Fixed. 
 - ~~QUERY: Determine whether experimental heatmap impacts loading of Tc Track data for unseen ensembles, as these use seperate data sources. Initial testing suggests no impact, but query further.~~ Nup, I'm happy with.
 - ~~Mobile app no longer functions correctly. Control toggles not switching between desktop to mobile.~~ Fixed, I fat-fingered lol
-- QUERY: Sweeping changes have been made to the application in version ~~0.13.0~~ 0.14.0, by a tired developer who didn't bother to thoroughly test. Things may go wrong. If things do go wrong, feel free to yell at developer.
+- ~~QUERY: Sweeping changes have been made to the application in version ~~0.13.0~~ 0.14.0, by a tired developer who didn't bother to thoroughly test. Things may go wrong. If things do go wrong, feel free to yell at developer.~~
 - Mobile view does not handle rotation to landscape correctly. As of 0.14.0, mobile view now requires further updates to remain functional with scenario comparison.
 - ~~Intensity colours option is super duper unperformant. I will look at fixing at some point.~~ Fixed.
 -  Certain info boxes are not clearing when views are switched. For example, intensity categories and scenario comparison info both persist when switching to heatmap.
 -  Heatmap option should be greyed out when in comparison view, or some form of heatmap comparison added?
 
 ## Immediate Roadmap
+- Split year range sliders for scenario comparison needed
+- Toggles to hide a scenario in scenario comparison mode
+- Landfall locations (this is a WIP, its harder than it should be)
 - ~~Fix known experimental heatmap issues~~
 - ~~Clean the project tree, seperate out app.js~~
 - ~~Genesis locations - Refine and include a much more accurate genesis location when cyclone speed reaching 34 knots (17m/s). Ignore path prior to genesis. (Markey working on)~~
-- Dissipation data points.
 - ~~Add ability to select year ranges, rather than just all years or single year~~
 - ~~Remove sample data functionality - no longer needed with data curl working~~
 - ~~Fix heatmap display~~
@@ -52,43 +54,10 @@ See known issues with this experimental implementation.
 
 - ~~Historical period to show different member and what does it mean – to produce an overall pattern. Producing average locations.~~  
 
-- Add a button to show ‘ensemble mean’ <-- Yea, still not sure what this one means  
+- Split year range sliders for scenario comparison needed
+- Toggles to hide a scenario in scenario comparison mode
+- Landfall locations (this is a WIP, its harder than it should be)
 
-- Add a button to show land-fall locations. Display purely land-fall spots – no tracks. Be able to select the time. Have different coloured dots for land-fall location to show cyclone intensity upon landfall.  <-- In progress - Olivia
-
-- Intensity – highest intensity, filter by intensity levels.  
-
-- Dissipation data points. 
-
-- Integrate one more layer using the BOM dataset – observations straight from BOM, will be supplied.  
-
-- Export function with longitude/latitude inputs to export a small region of data.  
-
-- ~~Add a historical period with no warming.~~  
-
-- ~~Overall map with heat maps for complete historical data.~~  
-
-- Need to implement longitude and latitude and implement tick boxes to divide the map into regions. Define the categories for each region's individual category classifications.  
-
-## Overview
-Project Aim:
-This project will develop an interactive web-based platform to visualize and compare tropical cyclone tracks across multiple climate model simulations, ensemble members, and global warming levels (e.g., past, no warming, +1.5 K, +2 K, +4 K) based on the d4PDF large-ensemble dataset. The platform aims to:
-- Aid climate research and student learning in climate dynamics and TC risk analysis.
-- Visualize the spatial and temporal response of TC activity to anthropogenic warming.
-- Provide a tool for educators, students, and climate policy analysts to explore model-based TC projections for the Australian region and the Indo-Pacific.
- 
-Expected Deliverables:
-- A web-friendly dashboard.
-- Interactive map layers of:
-    - TC tracks (by model, warming level, ensemble member, and period)
-    - Genesis points, landfall location, and intensity categories
-- Time sliders to animate TC evolution and frequency over time.
-- Clickable TC tracks to show metadata (e.g., date, intensity, pressure, wind speed).
-- Scenario toggle buttons: e.g., Past Climate, Past no warming, +2 K future, +4 K future.
-- Scenario difference toggle buttons: e.g., Past Climate, Past no warming, +2 K future, +4 K future.
-- Data export functionality (e.g., filtered CSV download).
-- A layer management panel (show/hide: genesis density, track density, intensity bins).
-- A complete user guide to outline how to use the project.
 
                         #
                        ###
