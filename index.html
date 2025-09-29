@@ -85,8 +85,14 @@
                 <div class="comparison-scenarios">
                     <!-- Scenario A -->
                     <div class="comparison-scenario" data-scenario="A">
-                        <h4 class="scenario-heading">Scenario A</h4>
-                        
+                        <div class="scenario-header">
+                            <h4 class="scenario-heading">Scenario A</h4>
+                            <label class="scenario-toggle">
+                                <input type="checkbox" id="scenario-a-visible" checked>
+                                <span class="toggle-slider"></span>
+                            </label>
+                        </div>
+
                         <div class="control-group">
                             <label for="scenario-a-select">Climate Scenario:</label>
                             <select id="scenario-a-select" class="scenario-select">
@@ -96,7 +102,7 @@
                                 <option value="4k">+4K Warming (2051-2110)</option>
                             </select>
                         </div>
-                        
+
                         <div class="control-group" id="sst-a-selector" style="display: none;">
                             <label for="sst-a-select">SST Model:</label>
                             <select id="sst-a-select" aria-label="SST Model A">
@@ -108,7 +114,7 @@
                                 <option value="MR">MRI-CGCM3 (MR)</option>
                             </select>
                         </div>
-                        
+
                         <div class="control-group">
                             <label for="ensemble-a-select">Ensemble:</label>
                             <select id="ensemble-a-select" aria-label="Ensemble A">
@@ -120,12 +126,38 @@
                             </select>
                             <span id="ensemble-a-info" class="info-text" aria-live="polite"></span>
                         </div>
+
+                        <!-- Year Range for Scenario A -->
+                        <div class="control-group">
+                            <label>Year Range (A):</label>
+                            <div class="year-range-container">
+                                <div class="range-slider-container">
+                                    <div class="range-slider">
+                                        <input type="range" id="year-slider-a-min" class="year-slider"
+                                               min="1951" max="2111" value="1951" step="1"
+                                               aria-label="Minimum year for Scenario A">
+                                        <input type="range" id="year-slider-a-max" class="year-slider"
+                                               min="1951" max="2111" value="2111" step="1"
+                                               aria-label="Maximum year for Scenario A">
+                                        <div class="slider-track"></div>
+                                        <div class="slider-range" id="slider-range-a"></div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div id="year-display-a" class="year-display" aria-live="polite">All Years</div>
+                        </div>
                     </div>
 
                     <!-- Scenario B -->
                     <div class="comparison-scenario" data-scenario="B">
-                        <h4 class="scenario-heading">Scenario B</h4>
-                        
+                        <div class="scenario-header">
+                            <h4 class="scenario-heading">Scenario B</h4>
+                            <label class="scenario-toggle">
+                                <input type="checkbox" id="scenario-b-visible" checked>
+                                <span class="toggle-slider"></span>
+                            </label>
+                        </div>
+
                         <div class="control-group">
                             <label for="scenario-b-select">Climate Scenario:</label>
                             <select id="scenario-b-select" class="scenario-select">
@@ -135,7 +167,7 @@
                                 <option value="4k">+4K Warming (2051-2110)</option>
                             </select>
                         </div>
-                        
+
                         <div class="control-group" id="sst-b-selector" style="display: flex;">
                             <label for="sst-b-select">SST Model:</label>
                             <select id="sst-b-select" aria-label="SST Model B">
@@ -147,7 +179,7 @@
                                 <option value="MR">MRI-CGCM3 (MR)</option>
                             </select>
                         </div>
-                        
+
                         <div class="control-group">
                             <label for="ensemble-b-select">Ensemble:</label>
                             <select id="ensemble-b-select" aria-label="Ensemble B">
@@ -158,6 +190,26 @@
                                 <option value="5">Ensemble 5</option>
                             </select>
                             <span id="ensemble-b-info" class="info-text" aria-live="polite"></span>
+                        </div>
+
+                        <!-- Year Range for Scenario B -->
+                        <div class="control-group">
+                            <label>Year Range (B):</label>
+                            <div class="year-range-container">
+                                <div class="range-slider-container">
+                                    <div class="range-slider">
+                                        <input type="range" id="year-slider-b-min" class="year-slider"
+                                               min="1951" max="2111" value="1951" step="1"
+                                               aria-label="Minimum year for Scenario B">
+                                        <input type="range" id="year-slider-b-max" class="year-slider"
+                                               min="1951" max="2111" value="2111" step="1"
+                                               aria-label="Maximum year for Scenario B">
+                                        <div class="slider-track"></div>
+                                        <div class="slider-range" id="slider-range-b"></div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div id="year-display-b" class="year-display" aria-live="polite">All Years</div>
                         </div>
                     </div>
                 </div>
