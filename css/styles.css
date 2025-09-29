@@ -2289,3 +2289,239 @@ body.tutorial-active {
         height: 100vh;
     }
 }
+
+/* Team Sharks Footer Styles */
+.team-footer {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%);
+    color: white;
+    z-index: 1000;
+    border-top: 2px solid #3498db;
+    box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.3);
+}
+
+.footer-content {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 15px;
+    font-size: 0.8rem;
+    line-height: 1.2;
+}
+
+.footer-content p {
+    margin: 0;
+}
+
+.footer-content small {
+    color: #bdc3c7;
+    font-style: italic;
+}
+
+.about-btn {
+    background: #3498db;
+    color: white;
+    border: none;
+    padding: 6px 12px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 0.7rem;
+    transition: background-color 0.3s ease;
+}
+
+.about-btn:hover {
+    background: #2980b9;
+}
+
+/* Adjust map container to account for footer */
+#map-container {
+    padding-bottom: 50px;
+}
+
+/* Mobile footer adjustments */
+@media (max-width: 768px) {
+    .footer-content {
+        flex-direction: column;
+        text-align: center;
+        padding: 10px;
+    }
+
+    .about-btn {
+        margin-top: 5px;
+    }
+
+    #map-container {
+        padding-bottom: 70px;
+    }
+}
+
+@media (max-width: 480px) {
+    .footer-content {
+        font-size: 0.7rem;
+    }
+
+    .footer-content small {
+        font-size: 0.6rem;
+    }
+
+    #map-container {
+        padding-bottom: 80px;
+    }
+}
+
+/* Hide footer on mobile landscape for better usability */
+@media (max-width: 768px) and (orientation: landscape) {
+    .team-footer {
+        display: none;
+    }
+
+    #map-container {
+        padding-bottom: 0;
+    }
+}
+
+/* About Modal Styles */
+.modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.8);
+    z-index: 10000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+}
+
+.modal-content {
+    background: white;
+    border-radius: 12px;
+    max-width: 600px;
+    max-height: 80vh;
+    overflow-y: auto;
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+    animation: modalSlideIn 0.3s ease-out;
+}
+
+@keyframes modalSlideIn {
+    from {
+        opacity: 0;
+        transform: scale(0.9) translateY(-20px);
+    }
+    to {
+        opacity: 1;
+        transform: scale(1) translateY(0);
+    }
+}
+
+.modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 20px 24px 0;
+    border-bottom: 1px solid #eee;
+    margin-bottom: 20px;
+}
+
+.modal-header h2 {
+    margin: 0;
+    color: #2c3e50;
+    font-size: 1.5rem;
+}
+
+.modal-close {
+    background: none;
+    border: none;
+    font-size: 2rem;
+    color: #999;
+    cursor: pointer;
+    padding: 0;
+    width: 30px;
+    height: 30px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    transition: all 0.2s ease;
+}
+
+.modal-close:hover {
+    background: #f0f0f0;
+    color: #666;
+}
+
+.modal-body {
+    padding: 0 24px 24px;
+}
+
+.about-section {
+    margin-bottom: 25px;
+}
+
+.about-section h3 {
+    color: #2c3e50;
+    margin: 0 0 12px 0;
+    font-size: 1.1rem;
+    border-bottom: 2px solid #3498db;
+    padding-bottom: 5px;
+}
+
+.team-credits {
+    display: grid;
+    gap: 8px;
+    margin-top: 10px;
+}
+
+.team-member {
+    padding: 8px 12px;
+    background: #f8f9fa;
+    border-radius: 6px;
+    border-left: 4px solid #3498db;
+    font-size: 0.9rem;
+}
+
+.about-section p {
+    line-height: 1.6;
+    color: #555;
+    margin: 0 0 10px 0;
+}
+
+.about-section ul {
+    margin: 10px 0;
+    padding-left: 20px;
+}
+
+.about-section ul li {
+    margin-bottom: 5px;
+    line-height: 1.5;
+    color: #555;
+}
+
+/* Mobile modal adjustments */
+@media (max-width: 768px) {
+    .modal-content {
+        max-width: 95%;
+        margin: 10px;
+    }
+
+    .modal-header {
+        padding: 15px 20px 0;
+    }
+
+    .modal-body {
+        padding: 0 20px 20px;
+    }
+
+    .modal-header h2 {
+        font-size: 1.3rem;
+    }
+
+    .team-member {
+        font-size: 0.85rem;
+    }
+}
