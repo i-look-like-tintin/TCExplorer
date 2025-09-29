@@ -15,7 +15,8 @@ class UIController {
         this.setupTutorialControls();
         this.setupScrollableIndicators();
 
-        console.log('Event listeners initialized');
+        // Update dynamic version information
+        this.updateFooterVersion();
     }
     
     setupComparisonControls() {
@@ -206,7 +207,7 @@ class UIController {
         document.getElementById('export-data').addEventListener('click', () => {
             this.app.exportData();
         });
-        
+
         document.getElementById('refresh-data').addEventListener('click', async () => {
             if (this.app.comparisonMode) {
                 await this.app.loadComparisonData();
@@ -214,6 +215,13 @@ class UIController {
                 await this.app.dataManager.loadData(true);
             }
         });
+
+        const aboutButton = document.getElementById('about-btn');
+        if (aboutButton) {
+            aboutButton.addEventListener('click', () => {
+                this.showAboutDialog();
+            });
+        }
     }
     
     updateComparisonUI(comparisonMode) {
@@ -838,6 +846,83 @@ class UIController {
             }
         });
 
-        console.log('Scrollable indicators setup completed');
+    }
+
+    showAboutDialog() {
+        const aboutModal = document.getElementById('about-modal');
+        if (aboutModal) {
+            // Update version information dynamically from config
+            this.updateAboutVersionInfo();
+
+            aboutModal.style.display = 'flex';
+            document.body.classList.add('modal-open');
+
+            // Set up close functionality
+            const closeButton = aboutModal.querySelector('.modal-close');
+            const modalContent = aboutModal.querySelector('.modal-content');
+
+            const closeModal = () => {
+                this.hideAboutDialog();
+            };
+
+            // Close button
+            if (closeButton) {
+                closeButton.addEventListener('click', closeModal);
+            }
+
+            // Click outside to close
+            aboutModal.addEventListener('click', (e) => {
+                if (e.target === aboutModal) {
+                    closeModal();
+                }
+            });
+
+            // Escape key to close
+            const handleEscape = (e) => {
+                if (e.key === 'Escape') {
+                    closeModal();
+                    document.removeEventListener('keydown', handleEscape);
+                }
+            };
+            document.addEventListener('keydown', handleEscape);
+        }
+    }
+
+    hideAboutDialog() {
+        const aboutModal = document.getElementById('about-modal');
+        if (aboutModal) {
+            aboutModal.style.display = 'none';
+            document.body.classList.remove('modal-open');
+        }
+    }
+
+    updateAboutVersionInfo() {
+        // Get version information from config
+        const version = window.TCConfig?.app?.version || '1.0.0a';
+        const buildDate = window.TCConfig?.app?.buildDate || '2025-09-29';
+
+        // Find the version information section in the About dialog
+        const versionSection = document.querySelector('#about-modal .about-section:last-child p');
+        if (versionSection) {
+            versionSection.innerHTML = `
+                <strong>Version:</strong> ${version}<br>
+                <strong>Build Date:</strong> ${buildDate}<br>
+                <strong>License:</strong> GNU General Public License-3.0
+            `;
+        }
+    }
+
+    updateFooterVersion() {
+        // Get version information from config
+        const version = window.TCConfig?.app?.version || '1.0.0a';
+        const appName = window.TCConfig?.app?.name || 'TC Explorer';
+
+        // Update footer version
+        const versionElement = document.getElementById('app-version');
+        if (versionElement) {
+            // Extract the short name from the full app name
+            const shortName = appName.includes('Tropical Cyclone') ? 'TC Explorer' : appName;
+            versionElement.textContent = `${shortName} v${version}`;
+        }
     }
 }

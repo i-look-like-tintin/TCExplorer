@@ -639,6 +639,5 @@ class TCUtils {
     }
     
     reportError(error, context) {
-        console.log('Error reported:', { error, context, timestamp: new Date().toISOString() });
     }
 }

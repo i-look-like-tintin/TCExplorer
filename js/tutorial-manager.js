@@ -738,7 +738,6 @@ On mobile, we keep the map clear by hiding controls in this menu.
             // Use Screen Orientation API if available
             if (screen.orientation && screen.orientation.lock) {
                 screen.orientation.lock('portrait').catch(err => {
-                    console.log('Could not lock orientation:', err);
                     // Fallback to CSS-based approach already implemented
                     this.showOrientationMessage();
                 });
@@ -753,6 +752,5 @@ On mobile, we keep the map clear by hiding controls in this menu.
         // The CSS already handles showing the orientation message
         // when body.tutorial-active is set and in landscape mode
         // This method exists for potential future enhancements
-        console.log('Tutorial requires portrait orientation - message shown via CSS');
     }
 }

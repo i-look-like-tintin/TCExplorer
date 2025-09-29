@@ -236,7 +236,6 @@ class TCVisualization {
             this.comparisonScenarioB
         );
         
-        console.log(`Comparison: ${cyclonesA.length} vs ${cyclonesB.length} cyclones`);
     }
     
     async updateSingleVisualization() {
@@ -262,7 +261,6 @@ class TCVisualization {
         }
         
         const displayMode = this.showHeatmap ? 'severity heatmap' : 'tracks';
-        console.log(`Showing ${cyclones.length} cyclones in ${displayMode} mode`);
     }
     
     updateYearRange(min, max) {
@@ -301,7 +299,7 @@ class TCVisualization {
         const data = this.cycloneData[cacheKey];
         
         if (!data || !data.cyclones) {
-            alert('No data to export');
+            this.utils.showNotification('No data available to export', 'warning');
             return;
         }
         
@@ -313,7 +311,7 @@ class TCVisualization {
         const dataB = this.dataManager.getComparisonData('B');
         
         if (!dataA?.cyclones || !dataB?.cyclones) {
-            alert('No comparison data to export');
+            this.utils.showNotification('No comparison data available to export', 'warning');
             return;
         }
         

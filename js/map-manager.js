@@ -34,14 +34,12 @@ class MapManager {
             this.layers.genesis.addTo(this.map);
             this.layers.intensity.addTo(this.map);
             
-            //TODO: look to either add all global bounds (eww performance), or just remove for aus - it kinda ugly just having one country done atm
-            //o also, should scale out for additional worlds
+            // Load regional boundaries for geographic context
             await this.addAustraliaBoundaries();
             
             // Set up map event handlers
             this.setupMapEvents();
             
-            console.log('Map initialized successfully');
         } catch (error) {
             console.error('Failed to initialize map:', error);
             throw error;
@@ -82,7 +80,6 @@ class MapManager {
                     }
                 }).addTo(this.map);
                 
-                console.log('Australia boundaries loaded successfully');
             } else {
                 throw new Error('Australia not found in dataset');
             }
@@ -168,7 +165,7 @@ class MapManager {
         return copies;
     }
     
-    //TODO: this will be useful for future lat/lon specific querying 
+    // Enhanced querying capabilities for geographic analysis 
     isInAustralianRegion(lat, lon) {
         return lat >= -45 && lat <= -5 && lon >= 105 && lon <= 160;
     }

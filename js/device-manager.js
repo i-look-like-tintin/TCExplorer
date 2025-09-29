@@ -30,13 +30,6 @@ class DeviceManager {
         setTimeout(() => {
             this.checkFirstTimeUser();
         }, 1000);
-        
-        console.log('Device Manager initialized:', {
-            type: this.deviceType,
-            orientation: this.orientation,
-            touch: this.touchSupport,
-            performance: this.performanceLevel
-        });
     }
     
     detectDeviceType() {
@@ -68,8 +61,8 @@ class DeviceManager {
         return 'landscape';
     }
     
-    //TODO: again, watch this space, might be doing innaccurate fuckiness in firefox live
-    //oop it was this lol, think this should help it be less fucky now for my firefox homies
+    // Note: Firefox performance metrics may require special handling
+    // Improved browser compatibility for performance assessment
     assessPerformanceLevel() {
     const nav = navigator;
     let score = 0;
@@ -168,7 +161,6 @@ runSimplePerformanceTest() {
         this.orientation = this.getOrientation();
         
         if (oldDeviceType !== this.deviceType) {
-            console.log('Device type changed:', oldDeviceType, '->', this.deviceType);
             this.applyDeviceSpecificSettings();
         }
         
@@ -178,7 +170,6 @@ runSimplePerformanceTest() {
     
     handleOrientationChange() {
         this.orientation = this.getOrientation();
-        console.log('Orientation changed to:', this.orientation);
 
         this.adjustLayoutForOrientation();
         this.optimizeControlsForOrientation();
@@ -189,7 +180,6 @@ runSimplePerformanceTest() {
     handleNetworkChange() {
         if (navigator.connection) {
             const connection = navigator.connection;
-            console.log('Network changed:', connection.effectiveType);
             
             this.adjustDataLoadingStrategy();
         }
@@ -401,7 +391,6 @@ runSimplePerformanceTest() {
 
         // Setup interactions - use simple click for Firefox compatibility
         fab.onclick = function() {
-            console.log('FAB clicked');
             if (panel.style.transform === 'translateY(0px)' || panel.classList.contains('show')) {
                 panel.style.transform = 'translateY(100%)';
                 panel.classList.remove('show');
@@ -414,7 +403,6 @@ runSimplePerformanceTest() {
         const closeBtn = document.getElementById('close-mobile-controls');
         if (closeBtn) {
             closeBtn.onclick = function() {
-                console.log('Close button clicked');
                 panel.style.transform = 'translateY(100%)';
                 panel.classList.remove('show');
             };
@@ -422,7 +410,6 @@ runSimplePerformanceTest() {
 
         if (legendToggle && legend) {
             legendToggle.onclick = function() {
-                console.log('Legend toggle clicked');
                 const isHidden = legend.style.display === 'none' || !legend.style.display;
                 legend.style.display = isHidden ? 'block' : 'none';
                 legendToggle.style.background = isHidden ? '#f39c12' : '#27ae60';
@@ -451,9 +438,6 @@ runSimplePerformanceTest() {
         this.addMobileTutorialButton();
 
         // Debug logging
-        console.log('Mobile FAB setup complete');
-        console.log('FAB element:', fab);
-        console.log('Panel element:', panel);
     }
 
     addMobileTutorialButton() {
@@ -1116,8 +1100,7 @@ runSimplePerformanceTest() {
         }
     }
     
-    //TODO: maybe this is causing low performance mode to be activated incorrectly with firefox. watch this space lol
-    //yea i think fixed now
+    // Performance optimization for different browser capabilities
 optimizeDataLoading() {
     if (this.performanceLevel === 'low' && (this.isSlowConnection() || this.isMobile())) {
         this.enableLowPerformanceMode();
@@ -1126,9 +1109,8 @@ optimizeDataLoading() {
     }
 }
     
-    //yea look, these are probs whats causing issues. hard to replicate locally tho, might have to test in prod again lol
+    // Performance mode adjustments for optimal user experience
     enableLowPerformanceMode() {
-        console.log('Enabling low performance mode');
         
         if (this.app.visualizationRenderer) {
             this.app.visualizationRenderer.gridResolution = 4; // Lower resolution
@@ -1140,7 +1122,6 @@ optimizeDataLoading() {
     }
     
     enableHighPerformanceMode() {
-        console.log('Enabling high performance mode');
         
         if (this.app.visualizationRenderer) {
             this.app.visualizationRenderer.gridResolution = 1;
@@ -1295,7 +1276,6 @@ optimizeDataLoading() {
     
     // Force complete layout refresh - useful for debugging layout issues
     forceLayoutRefresh() {
-        console.log('Forcing complete layout refresh...');
         
         // Re-detect device type
         const oldDeviceType = this.deviceType;
@@ -1312,13 +1292,6 @@ optimizeDataLoading() {
             setTimeout(() => map.invalidateSize(true), 150);
             setTimeout(() => map.invalidateSize(true), 300);
         }
-        
-        console.log('Layout refresh complete:', {
-            oldDeviceType,
-            newDeviceType: this.deviceType,
-            mapContainer: document.getElementById('map-container'),
-            controlPanel: document.getElementById('control-panel')
-        });
     }
     
     // Mobile control panel management

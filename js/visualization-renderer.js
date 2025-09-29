@@ -51,7 +51,6 @@ class VisualizationRenderer {
         this.updateComparisonLegend(scenarioA, scenarioB);
         this.showComparisonMetrics(cyclonesA, cyclonesB, scenarioA, scenarioB);
         
-        console.log(`Rendered comparison: ${cyclonesA.length} (${scenarioA}) vs ${cyclonesB.length} (${scenarioB})`);
     }
     
     drawComparisonTrack(cyclone, scenarioType, useIntensity = false) {
@@ -171,7 +170,6 @@ class VisualizationRenderer {
             }
         });
         
-        console.log(`Rendered ${cyclones.length} cyclones in standard mode`);
     }
     
     drawCycloneTrack(cyclone) {
@@ -419,7 +417,6 @@ class VisualizationRenderer {
             
             if (reqId !== this.app.heatmapRequestId || !this.app.showHeatmap) return;
             
-            console.log(`Creating heatmap with ${densityData.length} cells`);
             
             const activeCells = densityData.filter(cell => cell.count > 0);
             const rectangles = this.createPrecomputedHeatmapRectangles(activeCells);
@@ -434,7 +431,6 @@ class VisualizationRenderer {
             const metrics = this.app.dataManager.calculateMetrics(activeCells);
             this.showComparisonPanel(metrics);
             
-            console.log(`Precomputed heatmap created: ${activeCells.length} active cells`);
             
         } finally {
             this.app.showLoading(false);

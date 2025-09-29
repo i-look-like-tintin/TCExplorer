@@ -68,14 +68,12 @@ class DataManager {
             this.loadingQueue.add(cacheKey);
             
             const params = this.buildAPIParams(scenario, ensemble, sstModel);
-            console.log(`Loading ${scenario} data with params:`, params.toString());
-            
+
             const response = await fetch(`php/api.php?${params}`);
             const data = await response.json();
-            
+
             if (data.success) {
                 this.app.cycloneData[cacheKey] = data.data;
-                console.log(`Loaded ${data.data.cyclones.length} cyclones for ${scenario}`);
             } else {
                 throw new Error(data.error || 'Unknown API error');
             }
@@ -96,7 +94,6 @@ class DataManager {
         const cacheKey = this.getCacheKey();
         
         if (this.loadingQueue.has(cacheKey)) {
-            console.log('Data already loading for:', cacheKey);
             return;
         }
         
@@ -105,7 +102,6 @@ class DataManager {
             this.updateDataStatus('Loading data...');
             
             if (!forceRefresh && this.app.cycloneData[cacheKey]) {
-                console.log('Using cached data for:', cacheKey);
                 const cachedData = this.app.cycloneData[cacheKey];
                 this.updateSourceFileDisplay(cachedData);
                 this.showDataInfo(cachedData);
@@ -116,12 +112,8 @@ class DataManager {
             this.loadingQueue.add(cacheKey);
             
             const params = this.buildAPIParams();
-            console.log('Fetching data with params:', params.toString());
-            
             const response = await fetch(`php/api.php?${params}`);
             const data = await response.json();
-            
-            console.log('API Response:', data);
             
             if (data.success) {
                 this.app.cycloneData[cacheKey] = data.data;
@@ -232,8 +224,6 @@ class DataManager {
                     throw new Error(`Unknown scenario: ${scenario}`);
             }
             
-            console.log(`Fetching pre-computed density data from: ${filename}`);
-            
             const response = await fetch(filename);
             
             if (!response.ok) {
@@ -243,7 +233,6 @@ class DataManager {
             const text = await response.text();
             const data = this.parseDensityCSV(text);
             
-            console.log(`Successfully loaded ${data.length} density cells from ${filename}`);
             return data;
             
         } catch (error) {
@@ -279,7 +268,6 @@ class DataManager {
             data.push(row);
         }
         
-        console.log(`Parsed ${data.length} density cells from CSV`);
         return data;
     }
     
@@ -348,9 +336,7 @@ class DataManager {
     
     showDataInfo(data) {
         const metadata = data.metadata;
-        console.log(`Loaded ${data.cyclones.length} cyclones for ${metadata.description}`);
-        console.log(`Period: ${metadata.period}, Ensemble: ${data.ensemble_id}`);
-        
+
         let statusMsg = `Loaded ${data.cyclones.length} cyclones`;
         if (data.total_cyclones && data.total_cyclones > data.cyclones.length) {
             statusMsg += ` (filtered from ${data.total_cyclones})`;
@@ -454,8 +440,6 @@ class DataManager {
         
         this.comparisonDataA = null;
         this.comparisonDataB = null;
-        
-        console.log('Cache cleared for:', scenario || 'all scenarios');
     }
     
     async preloadCommonScenarios() {
