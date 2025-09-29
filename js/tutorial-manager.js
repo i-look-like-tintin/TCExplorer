@@ -115,7 +115,7 @@ class TutorialManager {
 
 <ul>
 <li><strong>Show Tracks:</strong> Storm paths (lines)</li>
-<li><strong>Show Genesis Points:</strong> Where storms begin (green dots)</li>
+<li><strong>Show Genesis Points:</strong> Where storms begin (red dots)</li>
 <li><strong>Show Intensity Colours:</strong> Color-coded by strength</li>
 <li><strong>Show Heatmap:</strong> Density visualization</li>
 <li><strong>Show Pre-Category 1:</strong> Include weaker storms</li>
