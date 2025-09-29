@@ -1,5 +1,5 @@
 # Tropical Cyclone Track Visualization Prototype
-# Version 0.16.0
+# Version 0.17.0
 The app can be found running live in a web-facing environment at: https://tropicalcycloneexplorer.azurewebsites.net/
 
 This is designed to be run through XAMPP, and then launched in the browser as localhost/YOUR_PROJECT_DIRECTORY_INSIDE_HTDOCS/index.html
@@ -16,6 +16,7 @@ See known issues with this experimental implementation.
 - v0.15.0 Added collapsible control panel to desktop mode as well. This allows app to facilitate lower resolution displays much more effectively.
 - v0.15.5 Mobile version of site updated for functionality. Now functions horizontally and vertically, with a hamburger options menu allowing elements to be disabled for visibility and functions to be selected. Additional testing required to ensure full functionality.
 - v0.16.0 Added individual year sliders and visibility toggles to scenario comparison. Investigating a potential issue with mobile display (full header showing in horizontal view).
+- v0.17.0 Add full user tutorial for both desktop and mobile. Tutorial is configured to launch automatically for first-time users, and also be toggleable with a header option. 
 
 ## Known Issues: 
 - ~~Experimental heatmap mode is forcibly cleared on zooming, requires retoggling checkbox to reappear. Will investigate - may~~ Fixed.
