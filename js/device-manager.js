@@ -447,10 +447,46 @@ runSimplePerformanceTest() {
         fab.style.pointerEvents = 'auto';
         fab.style.cursor = 'pointer';
 
+        // Add tutorial restart button to mobile controls
+        this.addMobileTutorialButton();
+
         // Debug logging
         console.log('Mobile FAB setup complete');
         console.log('FAB element:', fab);
         console.log('Panel element:', panel);
+    }
+
+    addMobileTutorialButton() {
+        const mobileControls = document.getElementById('mobile-controls-content');
+        if (mobileControls && this.app && this.app.tutorialManager) {
+            // Check if already added
+            if (document.getElementById('mobile-tutorial-restart')) return;
+
+            // Wait a bit to ensure UI Controller has had a chance to add its button
+            setTimeout(() => {
+                // Check again if UI Controller hasn't added it
+                if (!document.getElementById('mobile-tutorial-restart')) {
+                    const tutorialGroup = document.createElement('div');
+                    tutorialGroup.className = 'control-group';
+                    tutorialGroup.style.marginTop = '10px';
+                    tutorialGroup.innerHTML = `
+                        <button id="mobile-tutorial-restart" class="export-btn" style="width: 100%;">
+                            📚 Restart Tutorial
+                        </button>
+                    `;
+
+                    // Add event listener
+                    const tutorialBtn = tutorialGroup.querySelector('#mobile-tutorial-restart');
+                    tutorialBtn.addEventListener('click', () => {
+                        if (this.app.tutorialManager) {
+                            this.app.tutorialManager.restartTutorial();
+                        }
+                    });
+
+                    mobileControls.appendChild(tutorialGroup);
+                }
+            }, 100);
+        }
     }
 
     // Old FAB system - keeping for reference but not using

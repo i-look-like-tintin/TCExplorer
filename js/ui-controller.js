@@ -12,6 +12,8 @@ class UIController {
         this.setupActionButtons();
         this.setupComparisonControls();
         this.setupDesktopCollapsible();
+        this.setupTutorialControls();
+        this.setupScrollableIndicators();
 
         console.log('Event listeners initialized');
     }
@@ -419,28 +421,6 @@ class UIController {
         }
     }
     
-    updateComparisonYearSlider() {
-        const yearMinSlider = document.getElementById('year-slider-min');
-        const yearMaxSlider = document.getElementById('year-slider-max');
-        
-        const boundsA = this.app.scenarioYearRanges[this.app.comparisonScenarioA];
-        const boundsB = this.app.scenarioYearRanges[this.app.comparisonScenarioB];
-        
-        const minYear = Math.min(boundsA.min, boundsB.min);
-        const maxYear = Math.max(boundsA.max, boundsB.max);
-        
-        yearMinSlider.min = minYear;
-        yearMinSlider.max = maxYear;
-        yearMinSlider.value = minYear;
-        
-        yearMaxSlider.min = minYear;
-        yearMaxSlider.max = maxYear;
-        yearMaxSlider.value = maxYear;
-        
-        this.app.yearRange = null;
-        this.updateSliderRange();
-        this.updateYearDisplay();
-    }
     
     updateEnsembleSelector() {
         const ensembleInfo = document.getElementById('ensemble-info');
@@ -766,5 +746,98 @@ class UIController {
                 this.app.mapManager.map.invalidateSize();
             }, 350);
         }
+    }
+
+    setupTutorialControls() {
+        const restartButton = document.getElementById('restart-tutorial');
+        if (restartButton) {
+            restartButton.addEventListener('click', () => {
+                if (this.app.tutorialManager) {
+                    this.app.tutorialManager.restartTutorial();
+                }
+            });
+        }
+
+        // Add mobile tutorial restart option to FAB menu
+        const isMobile = this.app.deviceManager && this.app.deviceManager.isMobile();
+        if (isMobile) {
+            this.addMobileTutorialOption();
+        }
+    }
+
+    addMobileTutorialOption() {
+        // Add tutorial restart option to mobile controls
+        const mobileControls = document.getElementById('mobile-controls-content');
+        if (mobileControls) {
+            // Check if already added
+            if (document.getElementById('mobile-tutorial-restart')) return;
+
+            const tutorialGroup = document.createElement('div');
+            tutorialGroup.className = 'control-group';
+            tutorialGroup.innerHTML = `
+                <button id="mobile-tutorial-restart" class="export-btn" style="width: 100%; margin-top: 10px;">
+                    📚 Restart Tutorial
+                </button>
+            `;
+
+            // Add event listener
+            const tutorialBtn = tutorialGroup.querySelector('#mobile-tutorial-restart');
+            tutorialBtn.addEventListener('click', () => {
+                if (this.app.tutorialManager) {
+                    this.app.tutorialManager.restartTutorial();
+                }
+            });
+
+            mobileControls.appendChild(tutorialGroup);
+        }
+    }
+
+    setupScrollableIndicators() {
+        // Set up scrollable indicators for toggle options
+        const toggleOptions = document.querySelector('.toggle-options');
+        if (!toggleOptions) return;
+
+        const updateScrollIndicators = () => {
+            const hasScroll = toggleOptions.scrollHeight > toggleOptions.clientHeight;
+            if (hasScroll) {
+                toggleOptions.classList.add('has-scroll');
+            } else {
+                toggleOptions.classList.remove('has-scroll');
+            }
+        };
+
+        // Initial check
+        updateScrollIndicators();
+
+        // Listen for content changes and window resize
+        const observer = new MutationObserver(updateScrollIndicators);
+        observer.observe(toggleOptions, { childList: true, subtree: true });
+
+        window.addEventListener('resize', updateScrollIndicators);
+
+        // Add scroll listener to manage fade effects dynamically
+        toggleOptions.addEventListener('scroll', () => {
+            const { scrollTop, scrollHeight, clientHeight } = toggleOptions;
+            const isAtTop = scrollTop === 0;
+            const isAtBottom = scrollTop + clientHeight >= scrollHeight - 1;
+
+            // Dynamically adjust fade effects based on scroll position
+            const beforeElement = window.getComputedStyle(toggleOptions, '::before');
+            const afterElement = window.getComputedStyle(toggleOptions, '::after');
+
+            if (isAtTop) {
+                toggleOptions.style.setProperty('--top-fade-opacity', '0');
+            } else {
+                toggleOptions.style.setProperty('--top-fade-opacity', '1');
+            }
+
+            if (isAtBottom) {
+                toggleOptions.style.setProperty('--bottom-fade-opacity', '0');
+            } else {
+                toggleOptions.style.setProperty('--bottom-fade-opacity', '1');
+            }
+        });
+
+        console.log('Scrollable indicators setup completed');
     }
 }

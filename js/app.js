@@ -39,7 +39,8 @@ class TCVisualization {
         this.uiController = new UIController(this);
         this.deviceManager = new DeviceManager(this);
         this.utils = new TCUtils();
-        
+        this.tutorialManager = new TutorialManager(this);
+
         this.init();
     }
     
@@ -51,6 +52,9 @@ class TCVisualization {
             this.uiController.updateYearSlider();
             await this.dataManager.loadData();
             this.visualizationRenderer.createComparisonPanel();
+
+            // Initialize tutorial after everything is loaded
+            await this.tutorialManager.checkAndStartTutorial();
         } catch (error) {
             console.error('Failed to initialize application:', error);
             this.utils.showNotification('Failed to initialize application', 'error');
