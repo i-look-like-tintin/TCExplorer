@@ -1,5 +1,5 @@
 # Tropical Cyclone Track Visualization Prototype
-# Version 0.15.0
+# Version 0.15.5
 The app can be found running live in a web-facing environment at: https://tropicalcycloneexplorer.azurewebsites.net/
 
 This is designed to be run through XAMPP, and then launched in the browser as localhost/YOUR_PROJECT_DIRECTORY_INSIDE_HTDOCS/index.html
@@ -13,7 +13,8 @@ See known issues with this experimental implementation.
 - v0.13.0 Added support for the long-awaited 'HPB_NAT' scenario. This is historical data with natural warming still included. Also re-styled control group to allow for extra buttons to be added without display nastiness.
 - v0.14.0 Added scenario comparison functionality. Now different scenarios can be compared in terms of tracks and genesis locations. Also removed old heatmap visualisation, and removed the "Filter to Aus" toggle as I have deemed it no longer necessary lol
 - v0.14.5 Genesis locations modified to first occurence >= Cat 1 (previously just first data point). This can be toggled with the relevant button. Loading text also fixed to correctly display loaded cache data. Assorted styling improved.
-- v0.15.0 Added collapsible control panel to desktop mode as well. This allows app to facilitate lower resolution displays much more effectively. 
+- v0.15.0 Added collapsible control panel to desktop mode as well. This allows app to facilitate lower resolution displays much more effectively.
+- v0.15.5 Mobile version of site updated for functionality. Now functions horizontally and vertically, with a hamburger options menu allowing elements to be disabled for visibility and functions to be selected. Additional testing required to ensure full functionality. 
 
 ## Known Issues: 
 - ~~Experimental heatmap mode is forcibly cleared on zooming, requires retoggling checkbox to reappear. Will investigate - may~~ Fixed.
