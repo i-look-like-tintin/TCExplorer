@@ -69,6 +69,14 @@ header p {
         line-height: 1;
     }
 
+    /* Ensure desktop-only content stays hidden in landscape */
+    .desktop-only,
+    header p,
+    .data-status,
+    .source-info {
+        display: none !important;
+    }
+
     /* Adjust map container to account for fixed header */
     #map-container {
         padding-top: 25px;
@@ -301,13 +309,68 @@ body.controls-collapsed .desktop-toggle-button .toggle-icon {
     background: linear-gradient(135deg, #ffebeb 0%, #f8f9fa 100%);
 }
 
-.scenario-heading {
+.scenario-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
     margin-bottom: 0.75rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 2px solid #e0e0e0;
+}
+
+.scenario-heading {
+    margin: 0;
     font-size: clamp(0.9rem, 1.3vw, 1rem);
     font-weight: 700;
     display: flex;
     align-items: center;
     gap: 0.5rem;
+}
+
+/* Toggle switch for scenario visibility */
+.scenario-toggle {
+    position: relative;
+    display: inline-block;
+    width: 50px;
+    height: 24px;
+}
+
+.scenario-toggle input {
+    opacity: 0;
+    width: 0;
+    height: 0;
+}
+
+.toggle-slider {
+    position: absolute;
+    cursor: pointer;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: #ccc;
+    transition: 0.3s;
+    border-radius: 24px;
+}
+
+.toggle-slider:before {
+    position: absolute;
+    content: "";
+    height: 18px;
+    width: 18px;
+    left: 3px;
+    bottom: 3px;
+    background-color: white;
+    transition: 0.3s;
+    border-radius: 50%;
+}
+
+.scenario-toggle input:checked + .toggle-slider {
+    background-color: #27ae60;
+}
+
+.scenario-toggle input:checked + .toggle-slider:before {
+    transform: translateX(26px);
 }
 
 .comparison-scenario[data-scenario="A"] .scenario-heading {
@@ -1171,9 +1234,28 @@ body.controls-collapsed .desktop-toggle-button .toggle-icon {
         padding: 0.75rem;
     }
 
+    .scenario-header {
+        flex-wrap: wrap;
+        gap: 0.5rem;
+    }
+
     .scenario-heading {
         font-size: 0.9rem;
-        margin-bottom: 0.5rem;
+        margin-bottom: 0;
+    }
+
+    .scenario-toggle {
+        width: 44px;
+        height: 22px;
+    }
+
+    .toggle-slider:before {
+        width: 16px;
+        height: 16px;
+    }
+
+    .scenario-toggle input:checked + .toggle-slider:before {
+        transform: translateX(22px);
     }
 
     /* Legend positioning handled in main legend section */
