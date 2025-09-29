@@ -243,8 +243,8 @@ body.controls-collapsed .desktop-toggle-button .toggle-icon {
 }
 
 .comparison-toggle input[type="checkbox"] {
-    width: 18px;
-    height: 18px;
+    width: 14px;
+    height: 14px;
     cursor: pointer;
     accent-color: white;
 }
@@ -461,6 +461,125 @@ body.controls-collapsed .desktop-toggle-button .toggle-icon {
     gap: 0.3rem;
     max-height: 120px;
     overflow-y: auto;
+    position: relative;
+    background: #f8f9fa;
+    border: 1px solid #e1e5e9;
+    border-radius: 8px;
+    padding: 8px;
+    scrollbar-width: thin;
+    scrollbar-color: #cbd5e0 #f8f9fa;
+}
+
+/* Webkit scrollbar styling for better visibility */
+.toggle-options::-webkit-scrollbar {
+    width: 6px;
+}
+
+.toggle-options::-webkit-scrollbar-track {
+    background: #f8f9fa;
+    border-radius: 3px;
+}
+
+.toggle-options::-webkit-scrollbar-thumb {
+    background: #cbd5e0;
+    border-radius: 3px;
+}
+
+.toggle-options::-webkit-scrollbar-thumb:hover {
+    background: #a0aec0;
+}
+
+/* Fade effects to indicate scrollable content */
+.toggle-options {
+    --top-fade-opacity: 0;
+    --bottom-fade-opacity: 0;
+}
+
+.toggle-options::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 6px; /* Account for scrollbar */
+    height: 12px;
+    background: linear-gradient(to bottom, #f8f9fa 0%, transparent 100%);
+    pointer-events: none;
+    z-index: 1;
+    opacity: var(--top-fade-opacity, 0);
+    transition: opacity 0.3s ease;
+}
+
+.toggle-options::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 6px; /* Account for scrollbar */
+    height: 12px;
+    background: linear-gradient(to top, #f8f9fa 0%, transparent 100%);
+    pointer-events: none;
+    z-index: 1;
+    opacity: var(--bottom-fade-opacity, 0);
+    transition: opacity 0.3s ease;
+}
+
+/* Show fade effects when content is scrolled */
+.toggle-options.has-scroll::before,
+.toggle-options.has-scroll::after {
+    opacity: 1;
+}
+
+/* Scroll indicator text */
+.toggle-options-container {
+    position: relative;
+    margin-bottom: 8px; /* Add space for scroll indicator */
+}
+
+.scroll-indicator {
+    position: absolute;
+    bottom: -18px;
+    right: 0;
+    font-size: 0.65rem;
+    color: #666;
+    font-style: italic;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+    pointer-events: none;
+    z-index: 2;
+    background: rgba(255, 255, 255, 0.8);
+    padding: 2px 4px;
+    border-radius: 3px;
+    white-space: nowrap;
+}
+
+.toggle-options.has-scroll + .scroll-indicator {
+    opacity: 1;
+}
+
+/* Mobile specific fade colors */
+@media (max-width: 768px) {
+    .toggle-options::before {
+        background: linear-gradient(to bottom, #f0f4f8 0%, transparent 100%);
+    }
+
+    .toggle-options::after {
+        background: linear-gradient(to top, #f0f4f8 0%, transparent 100%);
+    }
+}
+
+@media (max-width: 480px) {
+    .toggle-options::before {
+        background: linear-gradient(to bottom, #edf2f7 0%, transparent 100%);
+    }
+
+    .toggle-options::after {
+        background: linear-gradient(to top, #edf2f7 0%, transparent 100%);
+    }
+
+    .scroll-indicator {
+        font-size: 0.6rem;
+        bottom: -16px;
+    }
 }
 
 .checkbox-label {
@@ -476,6 +595,24 @@ body.controls-collapsed .desktop-toggle-button .toggle-icon {
 .checkbox-label input[type="checkbox"] {
     cursor: pointer;
     flex-shrink: 0;
+    width: 16px;
+    height: 16px;
+}
+
+/* Smaller checkboxes specifically for toggle options to improve visual density */
+.toggle-options .checkbox-label input[type="checkbox"] {
+    width: 14px;
+    height: 14px;
+    min-width: 14px;
+    min-height: 14px;
+}
+
+.toggle-options .checkbox-label {
+    padding: 3px 0;
+    margin: 2px 0;
+    gap: 8px;
+    font-size: 0.8rem;
+    line-height: 1.2;
 }
 
 .year-range-container {
@@ -854,6 +991,461 @@ body.controls-collapsed .desktop-toggle-button .toggle-icon {
     pointer-events: all;
 }
 
+/* Tutorial System Styles */
+.tutorial-restart-btn {
+    position: absolute;
+    top: 10px;
+    right: 20px;
+    background: #3498db;
+    color: white;
+    border: none;
+    padding: 0.3rem 0.6rem;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 0.7rem;
+    display: flex;
+    align-items: center;
+    gap: 0.3rem;
+    transition: all 0.3s ease;
+    z-index: 200;
+}
+
+.tutorial-restart-btn:hover {
+    background: #2980b9;
+    transform: scale(1.05);
+}
+
+.tutorial-restart-btn svg {
+    width: 12px;
+    height: 12px;
+}
+
+#tutorial-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 10000;
+    pointer-events: auto;
+    opacity: 1;
+    transition: opacity 0.3s ease;
+}
+
+#tutorial-overlay.tutorial-fade-out {
+    opacity: 0;
+    pointer-events: none;
+}
+
+.tutorial-backdrop {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.5);
+    z-index: 1;
+    cursor: pointer;
+}
+
+.tutorial-backdrop.no-close {
+    cursor: default;
+}
+
+.tutorial-tooltip {
+    position: absolute;
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+    padding: 0;
+    z-index: 10002;
+    max-width: 400px;
+    min-width: 300px;
+    animation: tutorialSlideIn 0.3s ease-out;
+    pointer-events: auto;
+}
+
+@keyframes tutorialSlideIn {
+    from {
+        opacity: 0;
+        transform: scale(0.9) translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: scale(1) translateY(0);
+    }
+}
+
+/* Tooltip positioning */
+.tutorial-tooltip.center {
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+}
+
+.tutorial-tooltip.left {
+    top: 50%;
+    left: 20px;
+    transform: translateY(-50%);
+}
+
+.tutorial-tooltip.right {
+    top: 50%;
+    right: 20px;
+    transform: translateY(-50%);
+}
+
+.tutorial-tooltip.above {
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+}
+
+.tutorial-tooltip.below {
+    top: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+}
+
+/* Mobile bottom sheet style */
+.tutorial-tooltip.mobile-bottom-sheet {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    max-width: none;
+    min-width: none;
+    border-radius: 16px 16px 0 0;
+    max-height: 80vh;
+    overflow-y: auto;
+}
+
+/* FAB accessible mode - leave space for the floating action button */
+.tutorial-tooltip.mobile-bottom-sheet.fab-accessible {
+    bottom: 96px; /* 76px FAB height + 20px margin */
+    max-height: calc(50vh - 96px); /* Smaller to leave room for menu */
+}
+
+/* Menu accessible mode - move to top instead of bottom to avoid blocking menu */
+.tutorial-tooltip.mobile-bottom-sheet.menu-accessible {
+    bottom: auto;
+    top: 0;
+    max-height: 35vh; /* Limit height from top */
+    min-height: auto;
+    border-radius: 0 0 16px 16px; /* Flip border radius for top positioning */
+}
+
+/* Orientation lock during tutorial */
+body.tutorial-active {
+    /* Force portrait orientation during tutorial */
+    transform-origin: center center;
+}
+
+@media screen and (orientation: landscape) and (max-width: 768px) {
+    body.tutorial-active {
+        /* Hide content in landscape during tutorial and show orientation message */
+        overflow: hidden;
+    }
+
+    body.tutorial-active::before {
+        content: "Please rotate your device to portrait mode to continue the tutorial";
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(0, 0, 0, 0.9);
+        color: white;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        text-align: center;
+        font-size: 1.2rem;
+        z-index: 99999;
+        padding: 20px;
+    }
+
+    body.tutorial-active #tutorial-overlay {
+        display: none;
+    }
+}
+
+.tutorial-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1rem 1.5rem;
+    border-bottom: 1px solid #e0e0e0;
+    background: #f8f9fa;
+    border-radius: 12px 12px 0 0;
+}
+
+.tutorial-step-info {
+    font-size: 0.8rem;
+    color: #666;
+    font-weight: 500;
+}
+
+.tutorial-skip {
+    background: #e74c3c;
+    color: white;
+    border: none;
+    padding: 0.4rem 0.8rem;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 0.75rem;
+    font-weight: 500;
+    transition: background 0.3s ease;
+}
+
+.tutorial-skip:hover {
+    background: #c0392b;
+}
+
+.tutorial-content {
+    padding: 1.5rem;
+}
+
+.tutorial-title {
+    margin: 0 0 1rem 0;
+    font-size: 1.2rem;
+    color: #2c3e50;
+    font-weight: 600;
+}
+
+.tutorial-text {
+    color: #34495e;
+    line-height: 1.6;
+    font-size: 0.9rem;
+}
+
+.tutorial-text strong {
+    color: #2c3e50;
+    font-weight: 600;
+}
+
+.tutorial-text em {
+    color: #7f8c8d;
+    font-style: italic;
+}
+
+.tutorial-text ul {
+    margin: 0.8rem 0;
+    padding-left: 1.2rem;
+}
+
+.tutorial-text li {
+    margin-bottom: 0.4rem;
+    line-height: 1.5;
+}
+
+.tutorial-text p {
+    margin: 0.6rem 0;
+}
+
+.tutorial-navigation {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1rem 1.5rem;
+    border-top: 1px solid #e0e0e0;
+    background: #f8f9fa;
+}
+
+.tutorial-prev,
+.tutorial-next {
+    padding: 0.6rem 1.2rem;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 0.85rem;
+    font-weight: 500;
+    transition: all 0.3s ease;
+}
+
+.tutorial-prev {
+    background: #95a5a6;
+    color: white;
+}
+
+.tutorial-prev:hover:not(:disabled) {
+    background: #7f8c8d;
+}
+
+.tutorial-prev:disabled {
+    background: #bdc3c7;
+    cursor: not-allowed;
+    opacity: 0.5;
+}
+
+.tutorial-next {
+    background: #3498db;
+    color: white;
+}
+
+.tutorial-next:hover {
+    background: #2980b9;
+}
+
+.tutorial-progress {
+    display: flex;
+    justify-content: center;
+    gap: 0.5rem;
+    padding: 1rem;
+    background: #f8f9fa;
+    border-radius: 0 0 12px 12px;
+}
+
+.progress-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background: #bdc3c7;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.progress-dot.active {
+    background: #3498db;
+    transform: scale(1.2);
+}
+
+.progress-dot:hover {
+    background: #7f8c8d;
+}
+
+.tutorial-spotlight {
+    position: absolute;
+    z-index: 2;
+    border: 3px solid #3498db;
+    border-radius: 8px;
+    pointer-events: none;
+    transition: all 0.3s ease;
+    box-shadow: 0 0 0 4px rgba(52, 152, 219, 0.2);
+}
+
+.tutorial-spotlight.pulse {
+    animation: tutorialPulse 2s infinite;
+}
+
+@keyframes tutorialPulse {
+    0% {
+        box-shadow: 0 0 0 4px rgba(52, 152, 219, 0.2);
+    }
+    50% {
+        box-shadow: 0 0 0 12px rgba(52, 152, 219, 0.4);
+    }
+    100% {
+        box-shadow: 0 0 0 4px rgba(52, 152, 219, 0.2);
+    }
+}
+
+.tutorial-highlighted {
+    position: relative;
+    z-index: 2500 !important;
+}
+
+/* Make highlighted elements clickable during interactive steps */
+.tutorial-highlighted.interactive {
+    pointer-events: auto !important;
+    z-index: 10001 !important;
+}
+
+/* Mobile-specific tutorial styles */
+@media (max-width: 768px) {
+    .tutorial-restart-btn {
+        display: none !important;
+    }
+
+    .tutorial-tooltip {
+        max-width: calc(100vw - 20px);
+        min-width: calc(100vw - 20px);
+    }
+
+    .tutorial-tooltip.mobile-bottom-sheet {
+        max-height: 85vh;
+    }
+
+    .tutorial-content {
+        padding: 1rem;
+    }
+
+    .tutorial-title {
+        font-size: 1.1rem;
+    }
+
+    .tutorial-text {
+        font-size: 0.85rem;
+    }
+
+    .tutorial-navigation {
+        padding: 0.8rem 1rem;
+    }
+
+    .tutorial-prev,
+    .tutorial-next {
+        padding: 0.5rem 1rem;
+        font-size: 0.8rem;
+    }
+
+    .tutorial-progress {
+        padding: 0.8rem;
+    }
+}
+
+/* Landscape mobile adjustments */
+@media (max-width: 768px) and (orientation: landscape) {
+    .tutorial-tooltip.mobile-bottom-sheet {
+        max-height: 90vh;
+    }
+
+    .tutorial-content {
+        padding: 0.8rem;
+    }
+
+    .tutorial-title {
+        font-size: 1rem;
+        margin-bottom: 0.8rem;
+    }
+
+    .tutorial-text {
+        font-size: 0.8rem;
+        line-height: 1.5;
+    }
+
+    .tutorial-navigation {
+        padding: 0.6rem 1rem;
+    }
+
+    .tutorial-progress {
+        padding: 0.6rem;
+    }
+
+    .progress-dot {
+        width: 8px;
+        height: 8px;
+    }
+}
+
+/* Tutorial integration with existing mobile controls */
+@media (max-width: 768px) {
+    #mobile-controls-wrapper.tutorial-highlighted {
+        z-index: 10001 !important; /* Above tutorial backdrop but below tooltip */
+    }
+
+    #mobile-controls-wrapper.tutorial-highlighted .comparison-toggle,
+    #mobile-controls-wrapper.tutorial-highlighted .year-range-container,
+    #mobile-controls-wrapper.tutorial-highlighted select,
+    #mobile-controls-wrapper.tutorial-highlighted input,
+    #mobile-controls-wrapper.tutorial-highlighted button {
+        z-index: 10002 !important; /* Same level as tutorial tooltip for interaction */
+    }
+
+    #simple-mobile-fab.tutorial-highlighted {
+        z-index: 10003 !important; /* Above tutorial overlay (10000) and tooltip (10002) */
+    }
+}
+
 .scenario-comparison h4 {
     margin: 0 0 10px 0;
     font-size: clamp(0.85rem, 1.2vw, 0.95rem);
@@ -1226,8 +1818,8 @@ body.controls-collapsed .desktop-toggle-button .toggle-icon {
     }
 
     .comparison-toggle input[type="checkbox"] {
-        width: 16px;
-        height: 16px;
+        width: 12px;
+        height: 12px;
     }
 
     .comparison-scenario {
@@ -1301,6 +1893,8 @@ body.controls-collapsed .desktop-toggle-button .toggle-icon {
     
     .toggle-options {
         max-height: 80px;
+        background: #f0f4f8;
+        border-color: #d1dae6;
     }
 }
 
@@ -1409,11 +2003,39 @@ body.controls-collapsed .desktop-toggle-button .toggle-icon {
         max-height: 60px;
         flex-direction: row;
         flex-wrap: wrap;
+        background: #edf2f7;
+        border-color: #cbd5e0;
     }
 
     .checkbox-label {
         font-size: 0.65rem;
         margin-right: 1rem;
+    }
+
+    /* Even smaller checkboxes for tiny screens to fit more content */
+    .toggle-options .checkbox-label input[type="checkbox"] {
+        width: 10px !important;
+        height: 10px !important;
+        min-width: 10px !important;
+        min-height: 10px !important;
+    }
+
+    .toggle-options .checkbox-label {
+        padding: 2px 4px !important;
+        margin: 1px 8px 1px 0 !important;
+        gap: 4px !important;
+        font-size: 0.65rem !important;
+        line-height: 1.0 !important;
+        min-height: 24px !important;
+        flex-shrink: 0;
+    }
+
+    /* Smallest comparison toggle for tiny screens */
+    .comparison-toggle input[type="checkbox"] {
+        width: 10px !important;
+        height: 10px !important;
+        min-width: 10px !important;
+        min-height: 10px !important;
     }
 
     /* Legend and info-panel styles now handled above in their main sections */
@@ -1495,6 +2117,33 @@ body.controls-collapsed .desktop-toggle-button .toggle-icon {
     .checkbox-label {
         padding: 8px 4px;
         margin: 4px 0;
+    }
+
+    /* Override for toggle options - keep them smaller for better visual density */
+    .toggle-options .checkbox-label input[type="checkbox"] {
+        width: 12px !important;
+        height: 12px !important;
+        min-width: 12px !important;
+        min-height: 12px !important;
+    }
+
+    .toggle-options .checkbox-label {
+        padding: 4px 0 !important;
+        margin: 1px 0 !important;
+        gap: 6px !important;
+        font-size: 0.75rem !important;
+        line-height: 1.1 !important;
+        /* Maintain touch target by expanding the label itself */
+        min-height: 28px;
+        align-items: center;
+    }
+
+    /* Also reduce comparison toggle checkbox size for consistency */
+    .comparison-toggle input[type="checkbox"] {
+        width: 12px !important;
+        height: 12px !important;
+        min-width: 12px !important;
+        min-height: 12px !important;
     }
 
     /* Ensure compare button is always accessible */
