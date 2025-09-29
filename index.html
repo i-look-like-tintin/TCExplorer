@@ -27,6 +27,12 @@
                 <strong>Source file:</strong>
                 <span id="source-file" class="source-file">—</span>
             </div>
+            <button id="restart-tutorial" class="tutorial-restart-btn desktop-only" aria-label="Restart tutorial" title="Restart Tutorial">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
+                </svg>
+                Tutorial
+            </button>
         </header>
         
         <div id="control-panel">
@@ -218,27 +224,30 @@
             <!-- Display Options -->
             <div class="control-group">
                 <label>Display Options:</label>
-                <div class="toggle-options">
-                    <label class="checkbox-label">
-                        <input type="checkbox" id="show-heatmap" aria-describedby="heatmap-desc"> 
-                        Show Heatmap
-                    </label>
-                    <label class="checkbox-label">
-                        <input type="checkbox" id="show-tracks" checked aria-describedby="tracks-desc"> 
-                        Show Tracks
-                    </label>
-                    <label class="checkbox-label">
-                        <input type="checkbox" id="show-genesis" checked aria-describedby="genesis-desc"> 
-                        Show Genesis Points
-                    </label>
-                    <label class="checkbox-label">
-                        <input type="checkbox" id="show-intensity" aria-describedby="intensity-desc">
-                        Show Intensity Colours
-                    </label>
-                    <label class="checkbox-label">
-                        <input type="checkbox" id="show-pre-cat1" aria-describedby="pre-cat1-desc">
-                        Show Pre-Category 1 Track
-                    </label>
+                <div class="toggle-options-container">
+                    <div class="toggle-options">
+                        <label class="checkbox-label">
+                            <input type="checkbox" id="show-heatmap" aria-describedby="heatmap-desc">
+                            Show Heatmap
+                        </label>
+                        <label class="checkbox-label">
+                            <input type="checkbox" id="show-tracks" checked aria-describedby="tracks-desc">
+                            Show Tracks
+                        </label>
+                        <label class="checkbox-label">
+                            <input type="checkbox" id="show-genesis" checked aria-describedby="genesis-desc">
+                            Show Genesis Points
+                        </label>
+                        <label class="checkbox-label">
+                            <input type="checkbox" id="show-intensity" aria-describedby="intensity-desc">
+                            Show Intensity Colours
+                        </label>
+                        <label class="checkbox-label">
+                            <input type="checkbox" id="show-pre-cat1" aria-describedby="pre-cat1-desc">
+                            Show Pre-Category 1 Track
+                        </label>
+                    </div>
+                    <div class="scroll-indicator">↕ Scroll for more</div>
                 </div>
             </div>
             
@@ -335,6 +344,7 @@
     <script src="./js/visualization-renderer.js"></script>
     <script src="./js/ui-controller.js"></script>
     <script src="./js/device-manager.js"></script>
+    <script src="./js/tutorial-manager.js"></script>
     <script src="./js/app.js"></script>
     
     <script>
