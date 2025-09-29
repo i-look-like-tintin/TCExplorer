@@ -21,6 +21,14 @@ class TCVisualization {
         this.comparisonScenarioB = '2k';
         this.comparisonEnsembleB = 1;
         this.comparisonSSTModelB = 'CC';
+
+        // Separate year ranges for comparison scenarios
+        this.comparisonYearRangeA = null;
+        this.comparisonYearRangeB = null;
+
+        // Visibility toggles for scenarios
+        this.scenarioAVisible = true;
+        this.scenarioBVisible = true;
         
         this.showHeatmap = false;
         this.heatmapRequestId = 0;
@@ -188,21 +196,33 @@ class TCVisualization {
         let cyclonesA = this.dataManager.filterTrackFromCategory1(dataA.cyclones, showPreCat1);
         let cyclonesB = this.dataManager.filterTrackFromCategory1(dataB.cyclones, showPreCat1);
         
-        if (this.yearRange) {
+        // Apply separate year ranges for each scenario
+        if (this.comparisonYearRangeA) {
+            cyclonesA = cyclonesA.filter(c =>
+                c.year >= this.comparisonYearRangeA.min && c.year <= this.comparisonYearRangeA.max
+            );
+        } else {
+            // Use full range if not set
             const boundsA = this.scenarioYearRanges[this.comparisonScenarioA];
+            this.comparisonYearRangeA = { min: boundsA.min, max: boundsA.max };
+        }
+
+        if (this.comparisonYearRangeB) {
+            cyclonesB = cyclonesB.filter(c =>
+                c.year >= this.comparisonYearRangeB.min && c.year <= this.comparisonYearRangeB.max
+            );
+        } else {
+            // Use full range if not set
             const boundsB = this.scenarioYearRanges[this.comparisonScenarioB];
-            
-            if (this.yearRange.min >= boundsA.min && this.yearRange.max <= boundsA.max) {
-                cyclonesA = cyclonesA.filter(c => 
-                    c.year >= this.yearRange.min && c.year <= this.yearRange.max
-                );
-            }
-            
-            if (this.yearRange.min >= boundsB.min && this.yearRange.max <= boundsB.max) {
-                cyclonesB = cyclonesB.filter(c => 
-                    c.year >= this.yearRange.min && c.year <= this.yearRange.max
-                );
-            }
+            this.comparisonYearRangeB = { min: boundsB.min, max: boundsB.max };
+        }
+
+        // Apply visibility toggles - set to empty array if not visible
+        if (!this.scenarioAVisible) {
+            cyclonesA = [];
+        }
+        if (!this.scenarioBVisible) {
+            cyclonesB = [];
         }
         
         await this.visualizationRenderer.renderComparisonVisualization(

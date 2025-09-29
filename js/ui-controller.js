@@ -44,6 +44,25 @@ class UIController {
         document.getElementById('sst-b-select').addEventListener('change', async (e) => {
             await this.app.changeComparisonSST('B', e.target.value);
         });
+
+        // Setup visibility toggles
+        const visA = document.getElementById('scenario-a-visible');
+        const visB = document.getElementById('scenario-b-visible');
+
+        if (visA) {
+            visA.addEventListener('change', async (e) => {
+                await this.toggleScenarioVisibility('A', e.target.checked);
+            });
+        }
+
+        if (visB) {
+            visB.addEventListener('change', async (e) => {
+                await this.toggleScenarioVisibility('B', e.target.checked);
+            });
+        }
+
+        // Setup separate year sliders for comparison mode
+        this.setupComparisonYearControls();
     }
     
     setupScenarioDropdown() {
@@ -198,18 +217,153 @@ class UIController {
     updateComparisonUI(comparisonMode) {
         const singleModeControls = document.getElementById('single-mode-controls');
         const comparisonModeControls = document.getElementById('comparison-mode-controls');
-        
+
         if (comparisonMode) {
             singleModeControls.style.display = 'none';
             comparisonModeControls.style.display = 'flex';
             this.updateComparisonEnsembleSelectors();
-            this.updateComparisonYearSlider();
+            this.updateComparisonYearSliders();
         } else {
             singleModeControls.style.display = 'flex';
             comparisonModeControls.style.display = 'none';
             this.updateEnsembleSelector();
             this.updateYearSlider();
         }
+    }
+
+    // Setup comparison-specific year controls
+    setupComparisonYearControls() {
+        // Setup year sliders for Scenario A
+        const yearMinSliderA = document.getElementById('year-slider-a-min');
+        const yearMaxSliderA = document.getElementById('year-slider-a-max');
+
+        if (yearMinSliderA && yearMaxSliderA) {
+            yearMinSliderA.addEventListener('input', () => {
+                this.updateScenarioYearRange('A');
+            });
+
+            yearMaxSliderA.addEventListener('input', () => {
+                this.updateScenarioYearRange('A');
+            });
+        }
+
+        // Setup year sliders for Scenario B
+        const yearMinSliderB = document.getElementById('year-slider-b-min');
+        const yearMaxSliderB = document.getElementById('year-slider-b-max');
+
+        if (yearMinSliderB && yearMaxSliderB) {
+            yearMinSliderB.addEventListener('input', () => {
+                this.updateScenarioYearRange('B');
+            });
+
+            yearMaxSliderB.addEventListener('input', () => {
+                this.updateScenarioYearRange('B');
+            });
+        }
+    }
+
+    // Update year range for specific scenario
+    updateScenarioYearRange(scenario) {
+        const minSlider = document.getElementById(`year-slider-${scenario.toLowerCase()}-min`);
+        const maxSlider = document.getElementById(`year-slider-${scenario.toLowerCase()}-max`);
+        const yearDisplay = document.getElementById(`year-display-${scenario.toLowerCase()}`);
+        const sliderRange = document.getElementById(`slider-range-${scenario.toLowerCase()}`);
+
+        if (!minSlider || !maxSlider) return;
+
+        let min = parseInt(minSlider.value);
+        let max = parseInt(maxSlider.value);
+
+        // Prevent sliders from crossing
+        if (min > max) {
+            [min, max] = [max, min];
+            minSlider.value = min;
+            maxSlider.value = max;
+        }
+
+        // Update display
+        yearDisplay.textContent = min === max ? `Year: ${min}` : `Years: ${min} - ${max}`;
+
+        // Update slider range visual
+        if (sliderRange) {
+            const minPercent = ((min - minSlider.min) / (minSlider.max - minSlider.min)) * 100;
+            const maxPercent = ((max - minSlider.min) / (minSlider.max - minSlider.min)) * 100;
+            sliderRange.style.left = `${minPercent}%`;
+            sliderRange.style.width = `${maxPercent - minPercent}%`;
+        }
+
+        // Update app year range for this scenario
+        if (scenario === 'A') {
+            this.app.comparisonYearRangeA = { min, max };
+        } else {
+            this.app.comparisonYearRangeB = { min, max };
+        }
+
+        // Apply filter if in comparison mode
+        if (this.app.comparisonMode) {
+            clearTimeout(this.yearUpdateTimeout);
+            this.yearUpdateTimeout = setTimeout(async () => {
+                await this.app.updateVisualization();
+            }, 300);
+        }
+    }
+
+    // Toggle visibility of a scenario
+    async toggleScenarioVisibility(scenario, visible) {
+        if (scenario === 'A') {
+            this.app.scenarioAVisible = visible;
+        } else {
+            this.app.scenarioBVisible = visible;
+        }
+
+        // Update UI to show/hide scenario
+        const scenarioElement = document.querySelector(`.comparison-scenario[data-scenario="${scenario}"]`);
+        if (scenarioElement) {
+            scenarioElement.classList.toggle('scenario-disabled', !visible);
+        }
+
+        // Update visualization
+        if (this.app.comparisonMode) {
+            await this.app.updateVisualization();
+        }
+    }
+
+    // Update year sliders when scenarios change
+    updateComparisonYearSliders() {
+        // Update Scenario A year sliders
+        this.updateScenarioYearSlider('A', this.app.comparisonScenarioA);
+
+        // Update Scenario B year sliders
+        this.updateScenarioYearSlider('B', this.app.comparisonScenarioB);
+    }
+
+    // Update individual scenario year slider bounds
+    updateScenarioYearSlider(scenario, scenarioKey) {
+        const minSlider = document.getElementById(`year-slider-${scenario.toLowerCase()}-min`);
+        const maxSlider = document.getElementById(`year-slider-${scenario.toLowerCase()}-max`);
+
+        if (!minSlider || !maxSlider) return;
+
+        const bounds = this.app.scenarioYearRanges[scenarioKey];
+        if (!bounds) return;
+
+        minSlider.min = bounds.min;
+        minSlider.max = bounds.max;
+        maxSlider.min = bounds.min;
+        maxSlider.max = bounds.max;
+
+        // Keep existing values if within bounds, otherwise reset
+        const currentMin = parseInt(minSlider.value);
+        const currentMax = parseInt(maxSlider.value);
+
+        if (currentMin < bounds.min || currentMin > bounds.max) {
+            minSlider.value = bounds.min;
+        }
+        if (currentMax < bounds.min || currentMax > bounds.max) {
+            maxSlider.value = bounds.max;
+        }
+
+        this.updateScenarioYearRange(scenario);
     }
     
     updateComparisonEnsembleSelectors() {
