@@ -4,7 +4,7 @@ const TCConfig = {
         version: '1.0.3a',
         description: 'd4PDF Climate Model Projections for Australia',
         author: 'Team 7 Sharks',
-        buildDate: '2025-09-30'
+        buildDate: '2025-10-01'
     },
     
     api: {
