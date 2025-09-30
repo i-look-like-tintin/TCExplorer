@@ -788,13 +788,19 @@ body.controls-collapsed .desktop-toggle-button .toggle-icon {
     flex: 1;
     position: relative;
     overflow: hidden;
-    min-height: 400px; 
+    min-height: 400px;
+    /* iOS Safari height fixes */
+    height: 100%;
+    height: -webkit-fill-available;
 }
 
 #map {
     width: 100%;
     height: 100%;
     background-color: #f0f0f0;
+    /* iOS Safari fix for map height */
+    min-height: 100%;
+    min-height: -webkit-fill-available;
 }
 
 #legend {
@@ -2500,6 +2506,60 @@ body.tutorial-active {
     margin-bottom: 5px;
     line-height: 1.5;
     color: #555;
+}
+
+/* iOS-specific fixes for map display issues */
+@supports (-webkit-touch-callout: none) {
+    /* iOS Safari specific styles */
+    html, body {
+        height: 100%;
+        height: -webkit-fill-available;
+        overflow: hidden;
+    }
+
+    #app-container {
+        height: 100vh;
+        height: -webkit-fill-available;
+    }
+
+    #map-container {
+        height: calc(100vh - 200px);
+        height: calc(-webkit-fill-available - 200px);
+    }
+
+    #map {
+        position: relative;
+        z-index: 1;
+        /* Force hardware acceleration */
+        -webkit-transform: translateZ(0);
+        transform: translateZ(0);
+        /* Prevent iOS zoom on double tap */
+        touch-action: pan-x pan-y;
+    }
+
+    /* Fix for iOS Safari address bar changes */
+    @media (max-width: 768px) {
+        #map-container {
+            height: calc(100vh - 150px);
+            height: calc(-webkit-fill-available - 150px);
+        }
+    }
+
+    /* Prevent iOS elastic scrolling on map */
+    .leaflet-container {
+        touch-action: pan-x pan-y;
+        -webkit-user-select: none;
+        -webkit-touch-callout: none;
+    }
+
+    /* Fix Leaflet controls on iOS */
+    .leaflet-control-container {
+        pointer-events: auto !important;
+    }
+
+    .leaflet-control {
+        touch-action: manipulation;
+    }
 }
 
 /* Mobile modal adjustments */
