@@ -89,7 +89,8 @@ class MapManager {
                 }, 100);
             });
         }
-    
+    }
+
     setupMapEvents() {
         // Handle zoom events for heatmap optimization
         this.map.on('zoomstart', () => {
