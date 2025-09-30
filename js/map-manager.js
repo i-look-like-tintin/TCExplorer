@@ -20,7 +20,14 @@ class MapManager {
         try {
             this.map = L.map('map', {
                 worldCopyJump: false,
-                maxBoundsViscosity: 0
+                maxBoundsViscosity: 0,
+                // iOS-specific fixes
+                tap: true,
+                tapTolerance: 15,
+                touchZoom: true,
+                preferCanvas: true,
+                // Force redraw on iOS
+                renderer: L.canvas({ padding: 0.5 })
             }).setView([-25.2744, 133.7751], 4);
             
             // Add base tile layer
@@ -39,12 +46,49 @@ class MapManager {
             
             // Set up map event handlers
             this.setupMapEvents();
-            
+
+            // iOS-specific fixes
+            this.applyIOSFixes();
+
         } catch (error) {
             console.error('Failed to initialize map:', error);
             throw error;
         }
     }
+
+    applyIOSFixes() {
+        // Fix for iOS Safari map rendering issues
+        const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+        const isSafari = /Safari/.test(navigator.userAgent) && !/Chrome/.test(navigator.userAgent);
+
+        if (isIOS || isSafari) {
+            // Force map invalidate after a short delay
+            setTimeout(() => {
+                if (this.map) {
+                    this.map.invalidateSize(true);
+                    // Additional redraw
+                    this.map.getContainer().style.height = this.map.getContainer().style.height;
+                }
+            }, 100);
+
+            // Handle orientation changes
+            window.addEventListener('orientationchange', () => {
+                setTimeout(() => {
+                    if (this.map) {
+                        this.map.invalidateSize(true);
+                    }
+                }, 500);
+            });
+
+            // Handle window resize for iOS Safari
+            window.addEventListener('resize', () => {
+                setTimeout(() => {
+                    if (this.map) {
+                        this.map.invalidateSize(true);
+                    }
+                }, 100);
+            });
+        }
     
     setupMapEvents() {
         // Handle zoom events for heatmap optimization

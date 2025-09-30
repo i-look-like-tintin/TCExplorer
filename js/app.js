@@ -46,6 +46,9 @@ class TCVisualization {
     
     async init() {
         try {
+            // Apply iOS fixes before map initialization
+            this.applyIOSGlobalFixes();
+
             await this.mapManager.initializeMap();
             this.uiController.initializeEventListeners();
             this.uiController.updateEnsembleSelector();
@@ -58,6 +61,36 @@ class TCVisualization {
         } catch (error) {
             console.error('Failed to initialize application:', error);
             this.utils.showNotification('Failed to initialize application', 'error');
+        }
+    }
+
+    applyIOSGlobalFixes() {
+        const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+        const isSafari = /Safari/.test(navigator.userAgent) && !/Chrome/.test(navigator.userAgent);
+
+        if (isIOS || isSafari) {
+            // Prevent zoom on iOS
+            document.addEventListener('gesturestart', function (e) {
+                e.preventDefault();
+            });
+
+            // Handle iOS viewport changes
+            const setVH = () => {
+                const vh = window.innerHeight * 0.01;
+                document.documentElement.style.setProperty('--vh', `${vh}px`);
+            };
+
+            setVH();
+            window.addEventListener('resize', setVH);
+            window.addEventListener('orientationchange', () => {
+                setTimeout(setVH, 500);
+            });
+
+            // Force reflow for iOS Safari
+            setTimeout(() => {
+                document.body.style.height = '100vh';
+                document.body.style.height = '100%';
+            }, 100);
         }
     }
     
