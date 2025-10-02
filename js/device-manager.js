@@ -16,7 +16,7 @@ class DeviceManager {
         this.deviceType = this.detectDeviceType();
         this.orientation = this.getOrientation();
         this.touchSupport = this.detectTouchSupport();
-        this.performanceLevel = this.assessPerformanceLevel(); //'high' 
+        this.performanceLevel = 'high'; //this.assessPerformanceLevel();
         this.controlPanelExpanded = false;
         
         this.init();
