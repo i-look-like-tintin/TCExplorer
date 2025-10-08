@@ -890,7 +890,7 @@ runSimplePerformanceTest() {
         }
         
         if (legend) {
-            legend.style.bottom = '20px';
+            legend.style.bottom = '70px';
             legend.style.right = '20px';
             legend.style.maxWidth = '200px';
         }
@@ -912,7 +912,7 @@ runSimplePerformanceTest() {
         }
         
         if (legend) {
-            legend.style.bottom = '20px';
+            legend.style.bottom = '70px';
             legend.style.right = '20px';
             legend.style.maxWidth = '300px';
             legend.style.fontSize = '14px';

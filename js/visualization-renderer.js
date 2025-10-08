@@ -268,6 +268,10 @@ class VisualizationRenderer {
             <div style="margin-top: 1rem; padding-top: 0.5rem; border-top: 1px solid #ddd;">
                 <h4>Intensity Categories</h4>
                 <div class="legend-item">
+                    <span class="legend-color" style="background: #636668ff;"></span>
+                    <span>Below Category 1</span>
+                </div>
+                <div class="legend-item">
                     <span class="legend-color" style="background: #1f78b4;"></span>
                     <span>Category 1</span>
                 </div>
