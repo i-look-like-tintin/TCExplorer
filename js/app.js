@@ -140,8 +140,9 @@ class TCVisualization {
             if (this.comparisonScenarioB === newScenario) return;
             this.comparisonScenarioB = newScenario;
         }
-        
+
         this.uiController.updateComparisonEnsembleSelectors();
+        this.uiController.updateComparisonYearSliders();
         await this.loadComparisonData();
     }
     

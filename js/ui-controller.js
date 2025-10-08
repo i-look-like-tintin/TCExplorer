@@ -357,21 +357,14 @@ class UIController {
         const bounds = this.app.scenarioYearRanges[scenarioKey];
         if (!bounds) return;
 
+        // Always reset to full range when scenario changes
         minSlider.min = bounds.min;
         minSlider.max = bounds.max;
+        minSlider.value = bounds.min;
+
         maxSlider.min = bounds.min;
         maxSlider.max = bounds.max;
-
-        // Keep existing values if within bounds, otherwise reset
-        const currentMin = parseInt(minSlider.value);
-        const currentMax = parseInt(maxSlider.value);
-
-        if (currentMin < bounds.min || currentMin > bounds.max) {
-            minSlider.value = bounds.min;
-        }
-        if (currentMax < bounds.min || currentMax > bounds.max) {
-            maxSlider.value = bounds.max;
-        }
+        maxSlider.value = bounds.max;
 
         this.updateScenarioYearRange(scenario);
     }
