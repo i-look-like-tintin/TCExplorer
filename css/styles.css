@@ -805,7 +805,7 @@ body.controls-collapsed .desktop-toggle-button .toggle-icon {
 
 #legend {
     position: absolute;
-    bottom: 20px;
+    bottom: 70px;
     right: 20px;
     background-color: rgba(255, 255, 255, 0.95);
     padding: 1rem;
