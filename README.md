@@ -1,5 +1,5 @@
 # TC Explorer - Tropical Cyclone Visualization Tool
-**Version 1.0.4a**
+**Version 1.0.5**
 
 *Developed by Team Sharks: May, Markey, Scott, Jackson, and Wheeler*
 
