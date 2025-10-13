@@ -1,0 +1,516 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>TC Explorer</title>
+    
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <link rel="stylesheet" href="css/styles.css">
+    
+    <meta name="description" content="Interactive visualization of tropical cyclone tracks using d4PDF climate model projections">
+    <meta name="keywords" content="tropical cyclone, climate change, d4PDF, Australia, visualization">
+    <meta name="author" content="Team 7 Sharks">
+    
+    <meta name="theme-color" content="#2c3e50">
+    
+    <link rel="preload" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" as="script">
+    <link rel="preload" href="https://unpkg.com/leaflet.heat@0.2.0/dist/leaflet-heat.js" as="script">
+</head>
+<body>
+    <div id="app-container">
+        <header>
+            <h1>Tropical Cyclone Track Visualization</h1>
+            <p class="desktop-only">d4PDF Climate Model Projections for Australia</p>
+            <div id="data-status" class="data-status desktop-only" aria-live="polite"></div>
+            <div class="source-info desktop-only">
+                <strong>Source file:</strong>
+                <span id="source-file" class="source-file">—</span>
+            </div>
+            <button id="restart-tutorial" class="tutorial-restart-btn desktop-only" aria-label="Restart tutorial" title="Restart Tutorial">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
+                </svg>
+                Tutorial
+            </button>
+        </header>
+        
+        <div id="control-panel">
+            <!-- Data Source Selector -->
+            <div class="control-group data-source-group">
+                <label for="data-source-select">Data Source:</label>
+                <select id="data-source-select" class="scenario-select data-source-select" aria-describedby="data-source-desc">
+                    <option value="simulated">Simulated (d4PDF Climate Models)</option>
+                    <option value="real">Real Historical (BoM/IBTrACS)</option>
+                </select>
+                <div id="data-source-desc" class="sr-only">Choose between simulated climate model data or real historical observations</div>
+                <div id="data-source-info" class="info-text" style="display: none;" aria-live="polite"></div>
+            </div>
+
+            <!-- Region Selector (for Real Data) -->
+            <div class="control-group region-selector-group" id="region-selector-group" style="display: none;">
+                <label for="region-select">Region:</label>
+                <select id="region-select" class="scenario-select" aria-describedby="region-desc">
+                    <option value="australian">Australian Region</option>
+                    <option value="global">Global (All Regions)</option>
+                    <option value="north_atlantic">North Atlantic</option>
+                    <option value="western_pacific">Western Pacific</option>
+                    <option value="eastern_pacific">Eastern Pacific</option>
+                    <option value="north_indian">North Indian</option>
+                    <option value="south_indian">South Indian</option>
+                    <option value="south_pacific">South Pacific</option>
+                </select>
+                <div id="region-desc" class="sr-only">Select the geographical region for cyclone data</div>
+                <div id="region-info" class="info-text" style="display: none;" aria-live="polite"></div>
+            </div>
+
+            <!-- Comparison Mode Toggle -->
+            <div class="control-group comparison-toggle-group">
+                <label class="checkbox-label comparison-toggle">
+                    <input type="checkbox" id="comparison-mode" aria-describedby="comparison-desc">
+                    <span class="comparison-toggle-text">Compare Scenarios</span>
+                </label>
+                <div id="comparison-desc" class="sr-only">Enable to compare two different climate scenarios side by side</div>
+            </div>
+
+            <!-- Single Mode Controls -->
+            <div id="single-mode-controls" class="mode-controls">
+                <div class="control-group">
+                    <label for="scenario-select">Climate Scenario:</label>
+                    <select id="scenario-select" class="scenario-select">
+                        <option value="current">Historical (1951-2011)</option>
+                        <option value="nat">Natural Climate (1951-2010)</option>
+                        <option value="2k">+2K Warming (2031-2090)</option>
+                        <option value="4k">+4K Warming (2051-2110)</option>
+                    </select>
+                </div>
+                
+                <div class="control-group" id="sst-selector" style="display: none;">
+                    <label for="sst-select">SST Model:</label>
+                    <select id="sst-select" aria-label="Sea Surface Temperature Model">
+                        <option value="CC">CCSM4 (CC)</option>
+                        <option value="GF">GFDL-CM3 (GF)</option>
+                        <option value="HA">HadGEM-AO2 (HA)</option>
+                        <option value="MI">MIROC5 (MI)</option>
+                        <option value="MP">MPI-ESM-MR (MP)</option>
+                        <option value="MR">MRI-CGCM3 (MR)</option>
+                    </select>
+                </div>
+                
+                <div class="control-group">
+                    <label for="ensemble-select">Ensemble Member:</label>
+                    <select id="ensemble-select" aria-label="Ensemble Member">
+                        <option value="1">Ensemble 1</option>
+                        <option value="2">Ensemble 2</option>
+                        <option value="3">Ensemble 3</option>
+                        <option value="4">Ensemble 4</option>
+                        <option value="5">Ensemble 5</option>
+                        <option value="6">Ensemble 6</option>
+                        <option value="7">Ensemble 7</option>
+                        <option value="8">Ensemble 8</option>
+                        <option value="9">Ensemble 9</option>
+                    </select>
+                    <span id="ensemble-info" class="info-text" aria-live="polite"></span>
+                </div>
+            </div>
+
+            <!-- Comparison Mode Controls -->
+            <div id="comparison-mode-controls" class="mode-controls" style="display: none;">
+                <div class="comparison-scenarios">
+                    <!-- Scenario A -->
+                    <div class="comparison-scenario" data-scenario="A">
+                        <div class="scenario-header">
+                            <h4 class="scenario-heading">Scenario A</h4>
+                            <label class="scenario-toggle">
+                                <input type="checkbox" id="scenario-a-visible" checked>
+                                <span class="toggle-slider"></span>
+                            </label>
+                        </div>
+
+                        <div class="control-group">
+                            <label for="scenario-a-select">Climate Scenario:</label>
+                            <select id="scenario-a-select" class="scenario-select">
+                                <option value="current">Historical (1951-2011)</option>
+                                <option value="nat">Natural Climate (1951-2010)</option>
+                                <option value="2k">+2K Warming (2031-2090)</option>
+                                <option value="4k">+4K Warming (2051-2110)</option>
+                            </select>
+                        </div>
+
+                        <div class="control-group" id="sst-a-selector" style="display: none;">
+                            <label for="sst-a-select">SST Model:</label>
+                            <select id="sst-a-select" aria-label="SST Model A">
+                                <option value="CC">CCSM4 (CC)</option>
+                                <option value="GF">GFDL-CM3 (GF)</option>
+                                <option value="HA">HadGEM-AO2 (HA)</option>
+                                <option value="MI">MIROC5 (MI)</option>
+                                <option value="MP">MPI-ESM-MR (MP)</option>
+                                <option value="MR">MRI-CGCM3 (MR)</option>
+                            </select>
+                        </div>
+
+                        <div class="control-group">
+                            <label for="ensemble-a-select">Ensemble:</label>
+                            <select id="ensemble-a-select" aria-label="Ensemble A">
+                                <option value="1">Ensemble 1</option>
+                                <option value="2">Ensemble 2</option>
+                                <option value="3">Ensemble 3</option>
+                                <option value="4">Ensemble 4</option>
+                                <option value="5">Ensemble 5</option>
+                            </select>
+                            <span id="ensemble-a-info" class="info-text" aria-live="polite"></span>
+                        </div>
+
+                        <!-- Year Range for Scenario A -->
+                        <div class="control-group">
+                            <label>Year Range (A):</label>
+                            <div class="year-range-container">
+                                <div class="range-slider-container">
+                                    <div class="range-slider">
+                                        <input type="range" id="year-slider-a-min" class="year-slider"
+                                               min="1951" max="2111" value="1951" step="1"
+                                               aria-label="Minimum year for Scenario A">
+                                        <input type="range" id="year-slider-a-max" class="year-slider"
+                                               min="1951" max="2111" value="2111" step="1"
+                                               aria-label="Maximum year for Scenario A">
+                                        <div class="slider-track"></div>
+                                        <div class="slider-range" id="slider-range-a"></div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div id="year-display-a" class="year-display" aria-live="polite">All Years</div>
+                        </div>
+                    </div>
+
+                    <!-- Scenario B -->
+                    <div class="comparison-scenario" data-scenario="B">
+                        <div class="scenario-header">
+                            <h4 class="scenario-heading">Scenario B</h4>
+                            <label class="scenario-toggle">
+                                <input type="checkbox" id="scenario-b-visible" checked>
+                                <span class="toggle-slider"></span>
+                            </label>
+                        </div>
+
+                        <div class="control-group">
+                            <label for="scenario-b-select">Climate Scenario:</label>
+                            <select id="scenario-b-select" class="scenario-select">
+                                <option value="current">Historical (1951-2011)</option>
+                                <option value="nat">Natural Climate (1951-2010)</option>
+                                <option value="2k" selected>+2K Warming (2031-2090)</option>
+                                <option value="4k">+4K Warming (2051-2110)</option>
+                            </select>
+                        </div>
+
+                        <div class="control-group" id="sst-b-selector" style="display: flex;">
+                            <label for="sst-b-select">SST Model:</label>
+                            <select id="sst-b-select" aria-label="SST Model B">
+                                <option value="CC">CCSM4 (CC)</option>
+                                <option value="GF">GFDL-CM3 (GF)</option>
+                                <option value="HA">HadGEM-AO2 (HA)</option>
+                                <option value="MI">MIROC5 (MI)</option>
+                                <option value="MP">MPI-ESM-MR (MP)</option>
+                                <option value="MR">MRI-CGCM3 (MR)</option>
+                            </select>
+                        </div>
+
+                        <div class="control-group">
+                            <label for="ensemble-b-select">Ensemble:</label>
+                            <select id="ensemble-b-select" aria-label="Ensemble B">
+                                <option value="1">Ensemble 1</option>
+                                <option value="2">Ensemble 2</option>
+                                <option value="3">Ensemble 3</option>
+                                <option value="4">Ensemble 4</option>
+                                <option value="5">Ensemble 5</option>
+                            </select>
+                            <span id="ensemble-b-info" class="info-text" aria-live="polite"></span>
+                        </div>
+
+                        <!-- Year Range for Scenario B -->
+                        <div class="control-group">
+                            <label>Year Range (B):</label>
+                            <div class="year-range-container">
+                                <div class="range-slider-container">
+                                    <div class="range-slider">
+                                        <input type="range" id="year-slider-b-min" class="year-slider"
+                                               min="1951" max="2111" value="1951" step="1"
+                                               aria-label="Minimum year for Scenario B">
+                                        <input type="range" id="year-slider-b-max" class="year-slider"
+                                               min="1951" max="2111" value="2111" step="1"
+                                               aria-label="Maximum year for Scenario B">
+                                        <div class="slider-track"></div>
+                                        <div class="slider-range" id="slider-range-b"></div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div id="year-display-b" class="year-display" aria-live="polite">All Years</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Display Options -->
+            <div class="control-group">
+                <label>Display Options:</label>
+                <div class="toggle-options-container">
+                    <div class="toggle-options">
+                        <label class="checkbox-label">
+                            <input type="checkbox" id="show-heatmap" aria-describedby="heatmap-desc">
+                            Show Heatmap
+                        </label>
+                        <label class="checkbox-label">
+                            <input type="checkbox" id="show-tracks" checked aria-describedby="tracks-desc">
+                            Show Tracks
+                        </label>
+                        <label class="checkbox-label">
+                            <input type="checkbox" id="show-genesis" checked aria-describedby="genesis-desc">
+                            Show Genesis Points
+                        </label>
+                        <label class="checkbox-label">
+                            <input type="checkbox" id="show-intensity" aria-describedby="intensity-desc">
+                            Show Intensity Colours
+                        </label>
+                        <label class="checkbox-label">
+                            <input type="checkbox" id="show-pre-cat1" aria-describedby="pre-cat1-desc">
+                            Show Pre-Category 1 Track
+                        </label>
+                        <label class="checkbox-label">
+                            <input type="checkbox" id="colorblind-mode" aria-describedby="colorblind-desc">
+                            Colorblind Mode
+                        </label>
+                    </div>
+                    <div class="scroll-indicator">↕ Scroll for more</div>
+                </div>
+                <div id="colorblind-desc" class="sr-only">Enable colorblind-friendly colors for better accessibility</div>
+            </div>
+            
+            <!-- Year Range -->
+            <div class="control-group">
+                <label>Year Range:</label>
+                <div class="year-range-container">
+                    <div class="range-slider-container">
+                        <div class="range-slider">
+                            <input type="range" id="year-slider-min" class="year-slider" 
+                                   min="1951" max="2111" value="1951" step="1"
+                                   aria-label="Minimum year" aria-describedby="year-display">
+                            <input type="range" id="year-slider-max" class="year-slider" 
+                                   min="1951" max="2111" value="2111" step="1"
+                                   aria-label="Maximum year" aria-describedby="year-display">
+                            <div class="slider-track"></div>
+                            <div class="slider-range"></div>
+                        </div>
+                    </div>
+                </div>
+                <div id="year-display" class="year-display" aria-live="polite">All Years</div>
+            </div>
+            
+            <!-- Action Buttons -->
+            <div class="control-group">
+                <button id="export-data" class="export-btn" aria-describedby="export-desc">
+                    Export Data (CSV)
+                </button>
+                <button id="refresh-data" class="export-btn secondary" aria-describedby="refresh-desc">
+                    Refresh Data
+                </button>
+            </div>
+        </div>
+        
+        <div id="map-container">
+            <div id="map" role="application" aria-label="Interactive cyclone track map"></div>
+            
+            <div id="legend" class="map-overlay" role="region" aria-label="Map legend">
+                <h4>Intensity Categories</h4>
+                <div class="legend-item">
+                    <span class="legend-color" style="background: #636668ff;"></span>
+                    <span>Below Category 1</span>
+                </div>
+                <div class="legend-item">
+                    <span class="legend-color" style="background: #1f78b4;" aria-hidden="true"></span>
+                    <span>Category 1</span>
+                </div>
+                <div class="legend-item">
+                    <span class="legend-color" style="background: #33a02c;" aria-hidden="true"></span>
+                    <span>Category 2</span>
+                </div>
+                <div class="legend-item">
+                    <span class="legend-color" style="background: #ff7f00;" aria-hidden="true"></span>
+                    <span>Category 3</span>
+                </div>
+                <div class="legend-item">
+                    <span class="legend-color" style="background: #e31a1c;" aria-hidden="true"></span>
+                    <span>Category 4</span>
+                </div>
+                <div class="legend-item">
+                    <span class="legend-color" style="background: #6a3d9a;" aria-hidden="true"></span>
+                    <span>Category 5</span>
+                </div>
+            </div>
+            
+            <div id="info-panel" class="map-overlay hidden" role="dialog" aria-labelledby="cyclone-info-title">
+                <h3 id="cyclone-info-title">Cyclone Information</h3>
+                <div id="cyclone-details" aria-live="polite"></div>
+                <button id="close-info" class="close-btn" aria-label="Close information panel">×</button>
+            </div>
+        </div>
+    </div>
+    
+    <div id="loading-overlay" role="status" aria-live="polite">
+        <div class="loader" aria-hidden="true"></div>
+        <p id="loading-message">Loading cyclone data...</p>
+        <div id="loading-progress" class="loading-progress" style="display: none;">
+            <div class="progress-step" id="progress-step-1">
+                <span class="progress-icon">⏳</span>
+                <span class="progress-text">Checking cache...</span>
+            </div>
+            <div class="progress-step" id="progress-step-2">
+                <span class="progress-icon">⏳</span>
+                <span class="progress-text">Downloading data...</span>
+            </div>
+            <div class="progress-step" id="progress-step-3">
+                <span class="progress-icon">⏳</span>
+                <span class="progress-text">Processing cyclones...</span>
+            </div>
+        </div>
+    </div>
+    
+    <div id="notification-container" aria-live="assertive" aria-atomic="true"></div>
+
+    <div id="validation-error" class="validation-error hidden" role="alert" aria-live="assertive"></div>
+
+    <!-- About Dialog Modal -->
+    <div id="about-modal" class="modal-overlay" style="display: none;">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>About TC Explorer</h2>
+                <button class="modal-close" aria-label="Close dialog">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="about-section">
+                    <h3>🦈 Developed by Team Sharks</h3>
+                    <div class="team-credits">
+                        <div class="team-member">
+                            <strong>Mackenzie May</strong> - Front End Lead
+                        </div>
+                        <div class="team-member">
+                            <strong>Maddison Markey</strong> - Quality Assurance and Testing
+                        </div>
+                        <div class="team-member">
+                            <strong>Ruby Scott</strong> - Data Specialist and Documentation
+                        </div>
+                        <div class="team-member">
+                            <strong>Brady Jackson</strong> - Back End Development
+                        </div>
+                        <div class="team-member">
+                            <strong>Olivia Wheeler</strong> - Project Manager and Documentation
+                        </div>
+                    </div>
+                </div>
+
+                <div class="about-section">
+                    <h3>📊 Application Purpose</h3>
+                    <p>TC Explorer is an interactive visualization tool for exploring tropical cyclone tracks and climate projections around Australia. It uses advanced d4PDF climate model data to help researchers and educators understand how tropical cyclones may change under different warming scenarios.</p>
+                </div>
+
+                <div class="about-section">
+                    <h3>🔬 Data Sources</h3>
+                    <ul>
+                        <li><strong>d4PDF Climate Model:</strong> Database for Policy Decision Making for Future Climate Change - Simulated climate projections for historical and future warming scenarios</li>
+                        <li><strong>IBTrACS (International Best Track Archive for Climate Stewardship):</strong> NOAA's comprehensive global historical cyclone database (1842-present) with 8 regional filters including Australian, Global, North Atlantic, Western Pacific, Eastern Pacific, North Indian, South Indian, and South Pacific regions</li>
+                    </ul>
+                </div>
+
+                <div class="about-section">
+                    <h3>ℹ️ Version Information</h3>
+                    <p><strong>Version:</strong> 2.0.0<br>
+                    <strong>Release Date:</strong> 2025<br>
+                    <strong>License:</strong> GNU General Public License-3.0</p>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="sr-only">
+        <h2>Application Instructions</h2>
+        <p>This application displays tropical cyclone tracks for different climate scenarios. 
+           Use the controls above the map to select scenarios, ensemble members, and display options. 
+           The map shows cyclone tracks, and you can click on tracks for more information.
+           Enable "Compare Scenarios" to view two scenarios simultaneously with different colours.</p>
+    </div>
+
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="https://unpkg.com/leaflet.heat@0.2.0/dist/leaflet-heat.js"></script>
+    
+    <script src="./js/config-constants.js"></script>
+    <script src="./js/utils.js"></script>
+    <script src="./js/cache-manager.js"></script>
+    <script src="./js/map-manager.js"></script>
+    <script src="./js/data-manager.js"></script>
+    <script src="./js/visualization-renderer.js"></script>
+    <script src="./js/ui-controller.js"></script>
+    <script src="./js/device-manager.js"></script>
+    <script src="./js/tutorial-manager.js"></script>
+    <script src="./js/app.js"></script>
+    
+    <script>
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('./js/sw.js')
+                    .then(registration => {
+                        // Service worker registered successfully
+                    })
+                    .catch(registrationError => {
+                        // Service worker registration failed
+                    });
+            });
+        }
+        
+        window.addEventListener('load', () => {
+            if (performance.mark) {
+                performance.mark('app-loaded');
+                
+                setTimeout(() => {
+                    const navigation = performance.getEntriesByType('navigation')[0];
+                    // Performance metrics available for debugging if needed
+                }, 0);
+            }
+        });
+        
+        window.addEventListener('error', (event) => {
+            console.error('Global error:', event.error);
+            if (window.tcApp && window.tcApp.utils) {
+                window.tcApp.utils.handleError(event.error, 'Global');
+            }
+        });
+        
+        window.addEventListener('unhandledrejection', (event) => {
+            console.error('Unhandled promise rejection:', event.reason);
+            if (window.tcApp && window.tcApp.utils) {
+                window.tcApp.utils.handleError(event.reason, 'Promise');
+            }
+        });
+        
+        document.addEventListener('keydown', (event) => {
+            if ((event.ctrlKey || event.metaKey) && event.key === 'm') {
+                event.preventDefault();
+                if (window.tcApp && window.tcApp.deviceManager && window.tcApp.deviceManager.isMobile()) {
+                    window.tcApp.toggleMobileControls();
+                }
+            }
+        });
+    </script>
+
+    <!-- Team Sharks Footer -->
+    <footer id="team-footer" class="team-footer">
+        <div class="footer-content">
+            <p>
+                <strong id="app-version">TC Explorer v2.0.0</strong> |
+                Developed by <strong>Team Sharks</strong>: May, Markey, Scott, Jackson, and Wheeler
+            </p>
+            <p>
+                <small>Interactive visualization of tropical cyclone tracks using d4PDF climate model projections and historic IBTrACS data</small>
+            </p>
+            <button id="about-btn" class="about-btn" aria-label="About this application">About</button>
+        </div>
+    </footer>
+</body>
+</html>

@@ -1,0 +1,688 @@
+const TCConfig = {
+    app: {
+        name: 'Tropical Cyclone Track Visualization',
+        version: '2.0.0',
+        description: 'd4PDF Climate Model Projections for Australia',
+        author: 'Team 7 Sharks',
+        buildDate: '2025-10-13'
+    },
+    
+    api: {
+        baseUrl: 'php/api.php',
+        timeout: 60000,
+        retryAttempts: 3,
+        retryDelay: 1000,
+        cacheLifetime: 3600000,
+        debugMode: false
+    },
+    
+    map: {
+        defaultCenter: [-25.2744, 133.7751],
+        defaultZoom: 4,
+        minZoom: 3,
+        maxZoom: 10,
+        defaultBaseLayer: 'street',
+        tileLayer: {
+            url: 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
+            attribution: 'TC Explorer created by Team 7 Sharks',
+            options: {
+                noWrap: false,
+                maxZoom: 18
+            }
+        },
+        tileLayers: {
+            street: {
+                name: 'Street Map',
+                url: 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
+                attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> | TC Explorer by Team 7 Sharks',
+                options: {
+                    noWrap: false,
+                    maxZoom: 19
+                }
+            },
+            satellite: {
+                name: 'Satellite',
+                url: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
+                attribution: '&copy; <a href="https://www.esri.com/">Esri</a> | TC Explorer by Team 7 Sharks',
+                options: {
+                    noWrap: false,
+                    maxZoom: 19
+                }
+            }
+        },
+        australiaBounds: {
+            north: -5,
+            south: -45,
+            east: 160,
+            west: 105
+        }
+    },
+
+    regions: {
+        australian: {
+            id: 'australian',
+            name: 'Australian Region',
+            description: 'Australian Region (105°E-160°E, 45°S-5°S)',
+            bounds: {
+                north: -5,
+                south: -45,
+                east: 160,
+                west: 105
+            },
+            defaultCenter: [-25, 132.5],
+            defaultZoom: 4
+        },
+        global: {
+            id: 'global',
+            name: 'Global (All Regions)',
+            description: 'All cyclone basins worldwide',
+            bounds: {
+                north: 90,
+                south: -90,
+                east: 180,
+                west: -180
+            },
+            defaultCenter: [0, 0],
+            defaultZoom: 2
+        },
+        north_atlantic: {
+            id: 'north_atlantic',
+            name: 'North Atlantic',
+            description: 'North Atlantic Basin (100°W-0°E, 0°N-60°N)',
+            bounds: {
+                north: 60,
+                south: 0,
+                east: 0,
+                west: -100
+            },
+            defaultCenter: [25, -50],
+            defaultZoom: 3
+        },
+        western_pacific: {
+            id: 'western_pacific',
+            name: 'Western Pacific',
+            description: 'Western Pacific Basin (100°E-180°E, 0°N-60°N)',
+            bounds: {
+                north: 60,
+                south: 0,
+                east: 180,
+                west: 100
+            },
+            defaultCenter: [20, 140],
+            defaultZoom: 3
+        },
+        eastern_pacific: {
+            id: 'eastern_pacific',
+            name: 'Eastern Pacific',
+            description: 'Eastern Pacific Basin (180°W-75°W, 0°N-60°N)',
+            bounds: {
+                north: 60,
+                south: 0,
+                east: -75,
+                west: -180
+            },
+            defaultCenter: [15, -125],
+            defaultZoom: 3
+        },
+        north_indian: {
+            id: 'north_indian',
+            name: 'North Indian',
+            description: 'North Indian Ocean Basin (30°E-100°E, 0°N-40°N)',
+            bounds: {
+                north: 40,
+                south: 0,
+                east: 100,
+                west: 30
+            },
+            defaultCenter: [15, 65],
+            defaultZoom: 3
+        },
+        south_indian: {
+            id: 'south_indian',
+            name: 'South Indian',
+            description: 'South Indian Ocean Basin (20°E-115°E, 40°S-0°)',
+            bounds: {
+                north: 0,
+                south: -40,
+                east: 115,
+                west: 20
+            },
+            defaultCenter: [-20, 67.5],
+            defaultZoom: 3
+        },
+        south_pacific: {
+            id: 'south_pacific',
+            name: 'South Pacific',
+            description: 'South Pacific Basin (135°E-120°W, 40°S-0°)',
+            bounds: {
+                north: 0,
+                south: -40,
+                east: -120,
+                west: 135
+            },
+            defaultCenter: [-20, 172.5],
+            defaultZoom: 3
+        }
+    },
+
+    dataSources: {
+        simulated: {
+            id: 'simulated',
+            name: 'Simulated (d4PDF Climate Models)',
+            description: 'Climate model projections from d4PDF dataset',
+            shortName: 'Simulated',
+            features: {
+                scenarios: true,
+                ensembles: true,
+                sstModels: true,
+                comparison: true
+            }
+        },
+        real: {
+            id: 'real',
+            name: 'Real Historical (BoM/IBTrACS)',
+            description: 'Observed tropical cyclone tracks from Bureau of Meteorology and International Best Track Archive',
+            shortName: 'Real Historical',
+            yearRange: { min: 1842, max: new Date().getFullYear() },
+            features: {
+                scenarios: false,
+                ensembles: false,
+                sstModels: false,
+                comparison: false  // Can compare real vs real, but not real vs simulated
+            },
+            source: 'IBTrACS v04r01 (includes BoM data)',
+            sourceUrl: 'https://www.ncei.noaa.gov/products/international-best-track-archive'
+        }
+    },
+
+    scenarios: {
+        current: {
+            id: 'current',
+            name: 'Historical (1951-2011)',
+            description: 'Historical Climate (Past Experiments)',
+            yearRange: { min: 1951, max: 2011 },
+            ensembleRange: { min: 1, max: 100 },
+            warming: '0K',
+            model: 'd4PDF HPB',
+            color: '#2c3e50',
+            requiresSST: false,
+            dataSource: 'simulated'
+        },
+        nat: {
+            id: 'nat',
+            name: 'Natural (1951-2010)',
+            description: 'Natural Climate (No Anthropogenic Warming)',
+            yearRange: { min: 1951, max: 2010 },
+            ensembleRange: { min: 1, max: 100 },
+            warming: 'Natural Only',
+            model: 'd4PDF HPB NAT',
+            color: '#27ae60',
+            requiresSST: false,
+            dataSource: 'simulated'
+        },
+        '2k': {
+            id: '2k',
+            name: '+2K Warming (2031-2090)',
+            description: '+2K Global Warming Scenario',
+            yearRange: { min: 2031, max: 2090 },
+            ensembleRange: { min: 1, max: 9 },
+            actualEnsembleRange: { min: 101, max: 109 },
+            warming: '+2K',
+            model: 'd4PDF HFB_2K',
+            color: '#e67e22',
+            requiresSST: true,
+            sstModels: ['CC', 'GF', 'HA', 'MI', 'MP', 'MR'],
+            dataSource: 'simulated'
+        },
+        '4k': {
+            id: '4k',
+            name: '+4K Warming (2051-2110)',
+            description: '+4K Global Warming Scenario',
+            yearRange: { min: 2051, max: 2110 },
+            ensembleRange: { min: 1, max: 15 },
+            actualEnsembleRange: { min: 101, max: 115 },
+            warming: '+4K',
+            model: 'd4PDF HFB_4K',
+            color: '#c0392b',
+            requiresSST: true,
+            sstModels: ['CC', 'GF', 'HA', 'MI', 'MP', 'MR'],
+            dataSource: 'simulated'
+        }
+    },
+    
+    sstModels: {
+        CC: {
+            id: 'CC',
+            name: 'CCSM4',
+            fullName: 'Community Climate System Model 4',
+            description: 'NCAR Community Climate System Model'
+        },
+        GF: {
+            id: 'GF',
+            name: 'GFDL-CM3',
+            fullName: 'Geophysical Fluid Dynamics Laboratory Climate Model 3',
+            description: 'NOAA/GFDL Climate Model'
+        },
+        HA: {
+            id: 'HA',
+            name: 'HadGEM-AO2',
+            fullName: 'Hadley Centre Global Environmental Model',
+            description: 'UK Met Office Climate Model'
+        },
+        MI: {
+            id: 'MI',
+            name: 'MIROC5',
+            fullName: 'Model for Interdisciplinary Research on Climate 5',
+            description: 'Japanese Climate Model'
+        },
+        MP: {
+            id: 'MP',
+            name: 'MPI-ESM-MR',
+            fullName: 'Max Planck Institute Earth System Model',
+            description: 'German Climate Model'
+        },
+        MR: {
+            id: 'MR',
+            name: 'MRI-CGCM3',
+            fullName: 'Meteorological Research Institute Climate Model 3',
+            description: 'Japanese Meteorological Agency Model'
+        }
+    },
+    
+    intensityCategories: {
+        0: {
+            name: 'Tropical Depression',
+            minWind: 0,
+            maxWind: 62,
+            color: '#999999',
+            colorBlindSafe: '#7f7f7f',
+            description: 'Below tropical cyclone intensity'
+        },
+        1: {
+            name: 'Category 1',
+            minWind: 63,
+            maxWind: 88,
+            color: '#1f78b4',
+            colorBlindSafe: '#0072B2',
+            description: 'Typical house roofing damage'
+        },
+        2: {
+            name: 'Category 2',
+            minWind: 89,
+            maxWind: 117,
+            color: '#33a02c',
+            colorBlindSafe: '#56B4E9',
+            description: 'Minor structural damage'
+        },
+        3: {
+            name: 'Category 3',
+            minWind: 118,
+            maxWind: 159,
+            color: '#ff7f00',
+            colorBlindSafe: '#E69F00',
+            description: 'Some structural damage'
+        },
+        4: {
+            name: 'Category 4',
+            minWind: 160,
+            maxWind: 199,
+            color: '#e31a1c',
+            colorBlindSafe: '#D55E00',
+            description: 'Significant structural damage'
+        },
+        5: {
+            name: 'Category 5',
+            minWind: 200,
+            maxWind: 999,
+            color: '#6a3d9a',
+            colorBlindSafe: '#CC79A7',
+            description: 'Extremely dangerous, widespread destruction'
+        }
+    },
+
+    comparisonColors: {
+        standard: {
+            A: {
+                track: '#3498db',
+                genesis: '#2980b9',
+                name: 'Scenario A'
+            },
+            B: {
+                track: '#e74c3c',
+                genesis: '#c0392b',
+                name: 'Scenario B'
+            }
+        },
+        colorBlindSafe: {
+            A: {
+                track: '#0072B2',
+                genesis: '#005A8C',
+                name: 'Scenario A'
+            },
+            B: {
+                track: '#E69F00',
+                genesis: '#CC8800',
+                name: 'Scenario B'
+            }
+        }
+    },
+
+    genesisColors: {
+        standard: '#e74c3c',
+        colorBlindSafe: '#E69F00'
+    },
+    
+    heatmap: {
+        density: {
+            levels: [0, 1, 2, 3, 4, 5, 7, 10, 15, 20, 30, 50, 75, 100],
+            colors: [
+                'rgba(255, 255, 255, 0)',
+                'rgba(254, 254, 217, 0.7)',
+                'rgba(254, 248, 195, 0.75)',
+                'rgba(254, 235, 162, 0.8)',
+                'rgba(254, 217, 118, 0.85)',
+                'rgba(254, 196, 79, 0.85)',
+                'rgba(254, 173, 67, 0.9)',
+                'rgba(252, 141, 60, 0.9)',
+                'rgba(248, 105, 51, 0.9)',
+                'rgba(238, 75, 43, 0.95)',
+                'rgba(220, 50, 32, 0.95)',
+                'rgba(187, 21, 26, 0.95)',
+                'rgba(145, 0, 13, 1)',
+                'rgba(103, 0, 13, 1)'
+            ],
+            colorsColorBlindSafe: [
+                'rgba(255, 255, 255, 0)',
+                'rgba(237, 248, 251, 0.7)',
+                'rgba(204, 236, 245, 0.75)',
+                'rgba(153, 216, 238, 0.8)',
+                'rgba(102, 194, 230, 0.85)',
+                'rgba(65, 174, 218, 0.85)',
+                'rgba(33, 144, 204, 0.9)',
+                'rgba(8, 104, 172, 0.9)',
+                'rgba(8, 81, 156, 0.9)',
+                'rgba(240, 228, 66, 0.95)',
+                'rgba(230, 180, 40, 0.95)',
+                'rgba(230, 159, 0, 0.95)',
+                'rgba(213, 94, 0, 1)',
+                'rgba(158, 1, 66, 1)'
+            ],
+            gridResolution: 2
+        },
+        precomputed: {
+            levels: [0, 1, 2, 5, 10, 20, 40, 80, 120, 160],
+            colors: [
+                'rgba(255, 255, 255, 0)',
+                'rgba(255, 255, 220, 0.6)',
+                'rgba(255, 255, 178, 0.7)',
+                'rgba(255, 237, 160, 0.75)',
+                'rgba(255, 200, 100, 0.8)',
+                'rgba(255, 150, 50, 0.85)',
+                'rgba(255, 100, 0, 0.9)',
+                'rgba(255, 50, 0, 0.95)',
+                'rgba(200, 0, 0, 0.95)',
+                'rgba(139, 0, 0, 1)'
+            ],
+            colorsColorBlindSafe: [
+                'rgba(255, 255, 255, 0)',
+                'rgba(237, 248, 251, 0.6)',
+                'rgba(204, 236, 245, 0.7)',
+                'rgba(153, 216, 238, 0.75)',
+                'rgba(102, 194, 230, 0.8)',
+                'rgba(33, 144, 204, 0.85)',
+                'rgba(8, 104, 172, 0.9)',
+                'rgba(240, 228, 66, 0.95)',
+                'rgba(230, 159, 0, 0.95)',
+                'rgba(213, 94, 0, 1)'
+            ]
+        }
+    },
+    
+    dataProcessing: {
+        maxCyclonesToDisplay: {
+            desktop: 1000,
+            tablet: 500,
+            mobile: 200
+        },
+        trackSimplification: {
+            tolerance: 0.01,
+            minPoints: 3,
+            maxPoints: 20
+        },
+        filterDefaults: {
+            minCategory: 1,
+            australiaRegion: true,
+            landfallBuffer: 50
+        }
+    },
+    
+    performance: {
+        animationDuration: {
+            high: 300,
+            medium: 150,
+            low: 50
+        },
+        debounceDelay: {
+            resize: 250,
+            search: 300,
+            slider: 100
+        },
+        cacheSize: {
+            maxEntries: 50,
+            maxAge: 3600000
+        }
+    },
+    
+    ui: {
+        breakpoints: {
+            mobile: 480,
+            tablet: 768,
+            desktop: 1024,
+            largeDesktop: 1440
+        },
+        notifications: {
+            defaultDuration: 5000,
+            positions: ['top-right', 'top-left', 'bottom-right', 'bottom-left'],
+            defaultPosition: 'top-right'
+        },
+        panels: {
+            autoHideDelay: 10000,
+            animationDuration: 300
+        }
+    },
+    
+    export: {
+        formats: ['csv', 'json', 'geojson'],
+        maxRecords: 10000,
+        dateFormat: 'YYYY-MM-DD',
+        csvDelimiter: ',',
+        filenameTemplate: 'cyclone_data_{scenario}_ensemble{ensemble}_{date}'
+    },
+    
+    features: {
+        ensembleSelection: true,
+        trackAnimation: true,
+        densityMaps: true,
+        precomputedHeatmaps: true,
+        statisticalAnalysis: true,
+        userAuthentication: false,
+        advancedFiltering: true,
+        dataExport: true,
+        responsiveDesign: true,
+        touchOptimization: true,
+        performanceMonitoring: true,
+        errorReporting: false
+    },
+    
+    external: {
+        australiaBoundaries: {
+            url: 'https://raw.githubusercontent.com/nvkelso/natural-earth-vector/master/geojson/ne_50m_admin_0_countries.geojson',
+            cache: true,
+            fallback: true
+        },
+        densityData: {
+            basePath: 'density_data/',
+            filePattern: {
+                current: 'density_HPB_m{ensemble}_1951-2011.txt',
+                nat: 'density_HPB_NAT_m{ensemble}_1951-2010.txt',
+                '2k': 'density_HFB_2K_{sst}_m{ensemble}_2031-2090.txt',
+                '4k': 'density_HFB_4K_{sst}_m{ensemble}_2051-2110.txt'
+            }
+        }
+    },
+    
+    errors: {
+        maxRetries: 3,
+        retryDelay: 1000,
+        showUserFriendlyMessages: true,
+        logToConsole: true,
+        reportToService: false,
+        fallbackBehavior: 'graceful'
+    },
+    
+    development: {
+        debugMode: false,
+        verboseLogging: false,
+        showPerformanceMetrics: false,
+        enableDevTools: false,
+        mockData: false
+    }
+};
+
+const TCConfigUtils = {
+    getDataSource(dataSourceId) {
+        return TCConfig.dataSources[dataSourceId] || null;
+    },
+
+    getScenario(scenarioId) {
+        return TCConfig.scenarios[scenarioId] || null;
+    },
+
+    getRegion(regionId) {
+        return TCConfig.regions[regionId] || null;
+    },
+
+    getSST(sstId) {
+        return TCConfig.sstModels[sstId] || null;
+    },
+
+    getIntensityCategory(category) {
+        return TCConfig.intensityCategories[category] || TCConfig.intensityCategories[0];
+    },
+
+    isFeatureEnabled(featureName) {
+        return TCConfig.features[featureName] === true;
+    },
+
+    isDataSourceFeatureEnabled(dataSourceId, featureName) {
+        const dataSource = this.getDataSource(dataSourceId);
+        if (!dataSource || !dataSource.features) return false;
+        return dataSource.features[featureName] === true;
+    },
+    
+    getDeviceConfig(deviceType) {
+        const configs = {
+            mobile: {
+                maxCyclones: TCConfig.dataProcessing.maxCyclonesToDisplay.mobile,
+                animationDuration: TCConfig.performance.animationDuration.low,
+                gridResolution: 4
+            },
+            tablet: {
+                maxCyclones: TCConfig.dataProcessing.maxCyclonesToDisplay.tablet,
+                animationDuration: TCConfig.performance.animationDuration.medium,
+                gridResolution: 3
+            },
+            desktop: {
+                maxCyclones: TCConfig.dataProcessing.maxCyclonesToDisplay.desktop,
+                animationDuration: TCConfig.performance.animationDuration.high,
+                gridResolution: 2
+            }
+        };
+        
+        return configs[deviceType] || configs.desktop;
+    },
+    
+    getCategoryColor(category, useColorBlindSafe = false) {
+        const cat = this.getIntensityCategory(category);
+        if (!cat) return useColorBlindSafe ? '#7f7f7f' : '#999999';
+        return useColorBlindSafe ? cat.colorBlindSafe : cat.color;
+    },
+
+    getComparisonColors(useColorBlindSafe = false) {
+        return useColorBlindSafe ?
+            TCConfig.comparisonColors.colorBlindSafe :
+            TCConfig.comparisonColors.standard;
+    },
+
+    getGenesisColor(useColorBlindSafe = false) {
+        return useColorBlindSafe ?
+            TCConfig.genesisColors.colorBlindSafe :
+            TCConfig.genesisColors.standard;
+    },
+    
+    getHeatmapColor(value, type = 'density') {
+        const config = TCConfig.heatmap[type];
+        if (!config) return 'rgba(255, 255, 255, 0)';
+        
+        for (let i = config.levels.length - 1; i >= 0; i--) {
+            if (value >= config.levels[i]) {
+                return config.colors[i];
+            }
+        }
+        return config.colors[0];
+    },
+    
+    validateScenario(scenarioId) {
+        const scenario = this.getScenario(scenarioId);
+        if (!scenario) return false;
+        
+        return scenario.yearRange && 
+               scenario.ensembleRange && 
+               scenario.name && 
+               scenario.description;
+    },
+    
+    getAPIEndpoint(action = '') {
+        return action ? `${TCConfig.api.baseUrl}?action=${action}` : TCConfig.api.baseUrl;
+    },
+    
+    getExportFilename(scenario, ensemble, sstModel = null, format = 'csv') {
+        let filename = TCConfig.export.filenameTemplate
+            .replace('{scenario}', scenario)
+            .replace('{ensemble}', ensemble)
+            .replace('{date}', new Date().toISOString().split('T')[0]);
+        
+        if (sstModel && (scenario === '2k' || scenario === '4k')) {
+            filename += `_${sstModel}`;
+        }
+        
+        return `${filename}.${format}`;
+    },
+    
+    mergeConfig(userConfig) {
+        return this.deepMerge(TCConfig, userConfig);
+    },
+    
+    deepMerge(target, source) {
+        const result = { ...target };
+        
+        for (const key in source) {
+            if (source[key] && typeof source[key] === 'object' && !Array.isArray(source[key])) {
+                result[key] = this.deepMerge(target[key] || {}, source[key]);
+            } else {
+                result[key] = source[key];
+            }
+        }
+        
+        return result;
+    }
+};
+
+if (typeof window !== 'undefined') {
+    window.TCConfig = TCConfig;
+    window.TCConfigUtils = TCConfigUtils;
+}
+
+if (typeof module !== 'undefined' && module.exports) {
+    module.exports = { TCConfig, TCConfigUtils };
+}
