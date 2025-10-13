@@ -377,7 +377,8 @@ class VisualizationRenderer {
             'current': 'Historical',
             'nat': 'Natural',
             '2k': '+2K Warming',
-            '4k': '+4K Warming'
+            '4k': '+4K Warming',
+            'real-historical': 'Real Historical (IBTrACS)'
         };
         return names[scenario] || scenario;
     }
@@ -585,6 +586,25 @@ class VisualizationRenderer {
 
         const useColorBlindSafe = this.isColorBlindMode();
 
+        // Get data source info
+        let dataSourceNote = '';
+        if (this.app.dataSource === 'real') {
+            const yearRange = this.app.realDataYearRange;
+            const yearText = yearRange ? `${yearRange.min}-${yearRange.max}` : 'Historical';
+            dataSourceNote = `
+                <p style="font-size: 10px; margin-top: 8px; font-style: italic; color: #666;">
+                    Data: IBTrACS (${yearText})<br>
+                    Source: BoM & International Agencies
+                </p>
+            `;
+        } else {
+            dataSourceNote = `
+                <p style="font-size: 10px; margin-top: 8px; font-style: italic; color: #666;">
+                    Data: d4PDF Climate Models
+                </p>
+            `;
+        }
+
         legend.innerHTML = `
             <h4>Intensity Categories</h4>
             <div class="legend-item">
@@ -611,6 +631,7 @@ class VisualizationRenderer {
                 <span class="legend-color" style="background: ${TCConfigUtils.getCategoryColor(5, useColorBlindSafe)};" aria-hidden="true"></span>
                 <span>Category 5</span>
             </div>
+            ${dataSourceNote}
         `;
     }
     
