@@ -32,7 +32,10 @@ class TCVisualization {
         
         this.showHeatmap = false;
         this.heatmapRequestId = 0;
-        
+
+        // Colorblind mode
+        this.colorBlindMode = this.loadColorBlindMode();
+
         this.mapManager = new MapManager(this);
         this.dataManager = new DataManager(this);
         this.visualizationRenderer = new VisualizationRenderer(this);
@@ -42,6 +45,24 @@ class TCVisualization {
         this.tutorialManager = new TutorialManager(this);
 
         this.init();
+    }
+
+    loadColorBlindMode() {
+        try {
+            const saved = localStorage.getItem('tcColorBlindMode');
+            return saved === 'true';
+        } catch (error) {
+            console.warn('Failed to load colorblind mode from localStorage:', error);
+            return false;
+        }
+    }
+
+    saveColorBlindMode(enabled) {
+        try {
+            localStorage.setItem('tcColorBlindMode', enabled.toString());
+        } catch (error) {
+            console.warn('Failed to save colorblind mode to localStorage:', error);
+        }
     }
     
     async init() {
@@ -53,6 +74,13 @@ class TCVisualization {
             this.uiController.initializeEventListeners();
             this.uiController.updateEnsembleSelector();
             this.uiController.updateYearSlider();
+
+            // Initialize colorblind mode checkbox
+            const colorblindCheckbox = document.getElementById('colorblind-mode');
+            if (colorblindCheckbox) {
+                colorblindCheckbox.checked = this.colorBlindMode;
+            }
+
             await this.dataManager.loadData();
             this.visualizationRenderer.createComparisonPanel();
 
@@ -191,11 +219,38 @@ class TCVisualization {
     async changeSST(newSST) {
         if (this.comparisonMode) return;
         if (this.currentSSTModel === newSST) return;
-        
+
         this.currentSSTModel = newSST;
         await this.dataManager.loadData();
     }
-    
+
+    async toggleColorBlindMode(enabled) {
+        this.colorBlindMode = enabled;
+        this.saveColorBlindMode(enabled);
+
+        // Update comparison colors
+        this.visualizationRenderer.updateComparisonColors();
+
+        // Update the legend
+        if (this.comparisonMode) {
+            this.visualizationRenderer.updateComparisonLegend(
+                this.comparisonScenarioA,
+                this.comparisonScenarioB
+            );
+        } else {
+            this.visualizationRenderer.updateStandardLegend();
+        }
+
+        // Refresh the visualization to apply new colors
+        await this.updateVisualization();
+
+        // Show notification
+        const message = enabled ?
+            'Colorblind mode enabled - using accessible color palette' :
+            'Colorblind mode disabled - using standard color palette';
+        this.utils.showNotification(message, 'success');
+    }
+
     async toggleVisualizationMode(mode, enabled) {
         if (this.comparisonMode && mode === 'heatmap') {
             this.utils.showNotification('Heatmap mode not available in comparison mode', 'info');

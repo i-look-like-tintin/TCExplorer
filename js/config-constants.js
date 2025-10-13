@@ -21,12 +21,33 @@ const TCConfig = {
         defaultZoom: 4,
         minZoom: 3,
         maxZoom: 10,
+        defaultBaseLayer: 'street',
         tileLayer: {
             url: 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
             attribution: 'TC Explorer created by Team 7 Sharks',
             options: {
                 noWrap: false,
                 maxZoom: 18
+            }
+        },
+        tileLayers: {
+            street: {
+                name: 'Street Map',
+                url: 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
+                attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> | TC Explorer by Team 7 Sharks',
+                options: {
+                    noWrap: false,
+                    maxZoom: 19
+                }
+            },
+            satellite: {
+                name: 'Satellite',
+                url: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
+                attribution: '&copy; <a href="https://www.esri.com/">Esri</a> | TC Explorer by Team 7 Sharks',
+                options: {
+                    noWrap: false,
+                    maxZoom: 19
+                }
             }
         },
         australiaBounds: {
@@ -133,6 +154,7 @@ const TCConfig = {
             minWind: 0,
             maxWind: 62,
             color: '#999999',
+            colorBlindSafe: '#7f7f7f',
             description: 'Below tropical cyclone intensity'
         },
         1: {
@@ -140,6 +162,7 @@ const TCConfig = {
             minWind: 63,
             maxWind: 88,
             color: '#1f78b4',
+            colorBlindSafe: '#0072B2',
             description: 'Typical house roofing damage'
         },
         2: {
@@ -147,6 +170,7 @@ const TCConfig = {
             minWind: 89,
             maxWind: 117,
             color: '#33a02c',
+            colorBlindSafe: '#56B4E9',
             description: 'Minor structural damage'
         },
         3: {
@@ -154,6 +178,7 @@ const TCConfig = {
             minWind: 118,
             maxWind: 159,
             color: '#ff7f00',
+            colorBlindSafe: '#E69F00',
             description: 'Some structural damage'
         },
         4: {
@@ -161,6 +186,7 @@ const TCConfig = {
             minWind: 160,
             maxWind: 199,
             color: '#e31a1c',
+            colorBlindSafe: '#D55E00',
             description: 'Significant structural damage'
         },
         5: {
@@ -168,8 +194,41 @@ const TCConfig = {
             minWind: 200,
             maxWind: 999,
             color: '#6a3d9a',
+            colorBlindSafe: '#CC79A7',
             description: 'Extremely dangerous, widespread destruction'
         }
+    },
+
+    comparisonColors: {
+        standard: {
+            A: {
+                track: '#3498db',
+                genesis: '#2980b9',
+                name: 'Scenario A'
+            },
+            B: {
+                track: '#e74c3c',
+                genesis: '#c0392b',
+                name: 'Scenario B'
+            }
+        },
+        colorBlindSafe: {
+            A: {
+                track: '#0072B2',
+                genesis: '#005A8C',
+                name: 'Scenario A'
+            },
+            B: {
+                track: '#E69F00',
+                genesis: '#CC8800',
+                name: 'Scenario B'
+            }
+        }
+    },
+
+    genesisColors: {
+        standard: '#e74c3c',
+        colorBlindSafe: '#E69F00'
     },
     
     heatmap: {
@@ -179,17 +238,33 @@ const TCConfig = {
                 'rgba(255, 255, 255, 0)',
                 'rgba(254, 254, 217, 0.7)',
                 'rgba(254, 248, 195, 0.75)',
-                'rgba(254, 235, 162, 0.8)', 
+                'rgba(254, 235, 162, 0.8)',
                 'rgba(254, 217, 118, 0.85)',
-                'rgba(254, 196, 79, 0.85)', 
-                'rgba(254, 173, 67, 0.9)', 
+                'rgba(254, 196, 79, 0.85)',
+                'rgba(254, 173, 67, 0.9)',
                 'rgba(252, 141, 60, 0.9)',
-                'rgba(248, 105, 51, 0.9)', 
+                'rgba(248, 105, 51, 0.9)',
                 'rgba(238, 75, 43, 0.95)',
-                'rgba(220, 50, 32, 0.95)', 
+                'rgba(220, 50, 32, 0.95)',
                 'rgba(187, 21, 26, 0.95)',
-                'rgba(145, 0, 13, 1)',  
+                'rgba(145, 0, 13, 1)',
                 'rgba(103, 0, 13, 1)'
+            ],
+            colorsColorBlindSafe: [
+                'rgba(255, 255, 255, 0)',
+                'rgba(237, 248, 251, 0.7)',
+                'rgba(204, 236, 245, 0.75)',
+                'rgba(153, 216, 238, 0.8)',
+                'rgba(102, 194, 230, 0.85)',
+                'rgba(65, 174, 218, 0.85)',
+                'rgba(33, 144, 204, 0.9)',
+                'rgba(8, 104, 172, 0.9)',
+                'rgba(8, 81, 156, 0.9)',
+                'rgba(240, 228, 66, 0.95)',
+                'rgba(230, 180, 40, 0.95)',
+                'rgba(230, 159, 0, 0.95)',
+                'rgba(213, 94, 0, 1)',
+                'rgba(158, 1, 66, 1)'
             ],
             gridResolution: 2
         },
@@ -201,11 +276,23 @@ const TCConfig = {
                 'rgba(255, 255, 178, 0.7)',
                 'rgba(255, 237, 160, 0.75)',
                 'rgba(255, 200, 100, 0.8)',
-                'rgba(255, 150, 50, 0.85)',  
-                'rgba(255, 100, 0, 0.9)',  
-                'rgba(255, 50, 0, 0.95)', 
+                'rgba(255, 150, 50, 0.85)',
+                'rgba(255, 100, 0, 0.9)',
+                'rgba(255, 50, 0, 0.95)',
                 'rgba(200, 0, 0, 0.95)',
                 'rgba(139, 0, 0, 1)'
+            ],
+            colorsColorBlindSafe: [
+                'rgba(255, 255, 255, 0)',
+                'rgba(237, 248, 251, 0.6)',
+                'rgba(204, 236, 245, 0.7)',
+                'rgba(153, 216, 238, 0.75)',
+                'rgba(102, 194, 230, 0.8)',
+                'rgba(33, 144, 204, 0.85)',
+                'rgba(8, 104, 172, 0.9)',
+                'rgba(240, 228, 66, 0.95)',
+                'rgba(230, 159, 0, 0.95)',
+                'rgba(213, 94, 0, 1)'
             ]
         }
     },
@@ -360,9 +447,22 @@ const TCConfigUtils = {
         return configs[deviceType] || configs.desktop;
     },
     
-    getCategoryColor(category) {
+    getCategoryColor(category, useColorBlindSafe = false) {
         const cat = this.getIntensityCategory(category);
-        return cat ? cat.color : '#999999';
+        if (!cat) return useColorBlindSafe ? '#7f7f7f' : '#999999';
+        return useColorBlindSafe ? cat.colorBlindSafe : cat.color;
+    },
+
+    getComparisonColors(useColorBlindSafe = false) {
+        return useColorBlindSafe ?
+            TCConfig.comparisonColors.colorBlindSafe :
+            TCConfig.comparisonColors.standard;
+    },
+
+    getGenesisColor(useColorBlindSafe = false) {
+        return useColorBlindSafe ?
+            TCConfig.genesisColors.colorBlindSafe :
+            TCConfig.genesisColors.standard;
     },
     
     getHeatmapColor(value, type = 'density') {

@@ -121,6 +121,10 @@ class UIController {
         document.getElementById('show-pre-cat1').addEventListener('change', async (e) => {
             await this.app.updateVisualization();
         });
+
+        document.getElementById('colorblind-mode').addEventListener('change', async (e) => {
+            await this.app.toggleColorBlindMode(e.target.checked);
+        });
     }
     
     setupYearRangeControls() {

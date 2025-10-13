@@ -14,6 +14,29 @@ class MapManager {
         };
         this.previousZoom = null;
         this.previousCenter = null;
+
+        // Base layer management
+        this.baseLayers = {};
+        this.currentBaseLayerType = this.loadMapViewMode();
+        this.mapToggleControl = null;
+    }
+
+    loadMapViewMode() {
+        try {
+            const saved = localStorage.getItem('tcMapViewMode');
+            return saved === 'satellite' ? 'satellite' : 'street';
+        } catch (error) {
+            console.warn('Failed to load map view mode from localStorage:', error);
+            return 'street';
+        }
+    }
+
+    saveMapViewMode(viewMode) {
+        try {
+            localStorage.setItem('tcMapViewMode', viewMode);
+        } catch (error) {
+            console.warn('Failed to save map view mode to localStorage:', error);
+        }
     }
     
     async initializeMap() {
@@ -29,21 +52,33 @@ class MapManager {
                 // Force redraw on iOS
                 renderer: L.canvas({ padding: 0.5 })
             }).setView([-25.2744, 133.7751], 4);
-            
-            // Add base tile layer
-            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-                attribution: 'TC Explorer created by Team 7 Sharks',
-                noWrap: false
-            }).addTo(this.map);
-            
+
+            // Create both base tile layers
+            const tileConfig = TCConfig.map.tileLayers;
+            this.baseLayers.street = L.tileLayer(tileConfig.street.url, {
+                attribution: tileConfig.street.attribution,
+                ...tileConfig.street.options
+            });
+
+            this.baseLayers.satellite = L.tileLayer(tileConfig.satellite.url, {
+                attribution: tileConfig.satellite.attribution,
+                ...tileConfig.satellite.options
+            });
+
+            // Add the initial base layer based on saved preference
+            this.baseLayers[this.currentBaseLayerType].addTo(this.map);
+
+            // Add map toggle control
+            this.createMapToggleControl();
+
             // Add default layers
             this.layers.tracks.addTo(this.map);
             this.layers.genesis.addTo(this.map);
             this.layers.intensity.addTo(this.map);
-            
+
             // Load regional boundaries for geographic context
             await this.addAustraliaBoundaries();
-            
+
             // Set up map event handlers
             this.setupMapEvents();
 
@@ -107,13 +142,84 @@ class MapManager {
         });
     }
     
+    createMapToggleControl() {
+        const MapToggle = L.Control.extend({
+            options: {
+                position: 'topleft'
+            },
+
+            onAdd: (map) => {
+                const container = L.DomUtil.create('div', 'map-toggle-control leaflet-bar leaflet-control');
+
+                const button = L.DomUtil.create('button', 'map-toggle-button', container);
+                button.type = 'button';
+                button.setAttribute('aria-label', 'Toggle map view');
+
+                // Set initial button content
+                this.updateMapToggleButton(button);
+
+                // Prevent map interactions when clicking the button
+                L.DomEvent.disableClickPropagation(button);
+                L.DomEvent.on(button, 'click', (e) => {
+                    L.DomEvent.stopPropagation(e);
+                    this.switchBaseLayer();
+                });
+
+                return container;
+            }
+        });
+
+        this.mapToggleControl = new MapToggle();
+        this.mapToggleControl.addTo(this.map);
+    }
+
+    updateMapToggleButton(button) {
+        if (!button) {
+            // Find the button if not provided
+            button = document.querySelector('.map-toggle-button');
+        }
+
+        if (button) {
+            if (this.currentBaseLayerType === 'satellite') {
+                button.innerHTML = '🗺️ Map';
+                button.title = 'Switch to street map view';
+            } else {
+                button.innerHTML = '🛰️ Satellite';
+                button.title = 'Switch to satellite view';
+            }
+        }
+    }
+
+    switchBaseLayer() {
+        // Remove current base layer
+        this.map.removeLayer(this.baseLayers[this.currentBaseLayerType]);
+
+        // Switch to the other layer
+        this.currentBaseLayerType = this.currentBaseLayerType === 'street' ? 'satellite' : 'street';
+
+        // Add new base layer
+        this.baseLayers[this.currentBaseLayerType].addTo(this.map);
+
+        // Update button appearance
+        this.updateMapToggleButton();
+
+        // Save preference
+        this.saveMapViewMode(this.currentBaseLayerType);
+
+        // Show notification
+        const viewName = this.currentBaseLayerType === 'satellite' ? 'Satellite' : 'Street Map';
+        if (this.app && this.app.utils) {
+            this.app.utils.showNotification(`Switched to ${viewName} view`, 'success');
+        }
+    }
+
     async addAustraliaBoundaries() {
         try {
             const response = await fetch('https://raw.githubusercontent.com/nvkelso/natural-earth-vector/master/geojson/ne_50m_admin_0_countries.geojson');
             const data = await response.json();
-            
+
             const australia = data.features.find(f => f.properties.NAME === 'Australia');
-            
+
             if (australia) {
                 L.geoJSON(australia, {
                     style: {
@@ -124,7 +230,7 @@ class MapManager {
                         interactive: false
                     }
                 }).addTo(this.map);
-                
+
             } else {
                 throw new Error('Australia not found in dataset');
             }
@@ -132,7 +238,7 @@ class MapManager {
             console.error('Failed to load Australia boundaries:', error);
         }
     }
-    
+
     getLayer(layerName) {
         return this.layers[layerName];
     }

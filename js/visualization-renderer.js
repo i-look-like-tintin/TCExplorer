@@ -3,18 +3,16 @@ class VisualizationRenderer {
         this.app = app;
         this.heatmapConfig = null;
         this.gridResolution = 2;
-        this.comparisonColors = {
-            A: { 
-                track: '#3498db', 
-                genesis: '#2980b9',
-                name: 'Scenario A'
-            },
-            B: { 
-                track: '#e74c3c', 
-                genesis: '#c0392b',
-                name: 'Scenario B'
-            }
-        };
+        this.updateComparisonColors();
+    }
+
+    updateComparisonColors() {
+        const useColorBlindSafe = this.isColorBlindMode();
+        this.comparisonColors = TCConfigUtils.getComparisonColors(useColorBlindSafe);
+    }
+
+    isColorBlindMode() {
+        return this.app && this.app.colorBlindMode === true;
     }
     
     clearAllLayers() {
@@ -190,18 +188,20 @@ class VisualizationRenderer {
 
     drawGenesisPoint(cyclone) {
         if (!cyclone.track || cyclone.track.length === 0) return;
-        
+
         const genesis = cyclone.track[0];
+        const genesisColor = TCConfigUtils.getGenesisColor(this.isColorBlindMode());
+
         const marker = L.circleMarker([genesis.lat, genesis.lon], {
             radius: 6,
-            fillColor: '#e74c3c',
+            fillColor: genesisColor,
             color: 'white',
             weight: 2,
             fillOpacity: 0.8
         });
-        
+
         marker.bindPopup(`<strong>${cyclone.name}</strong><br>Genesis: ${genesis.date}<br>Year: ${cyclone.year}`);
-        
+
         this.app.mapManager.addToLayer('genesis', marker);
     }
 
@@ -253,7 +253,8 @@ class VisualizationRenderer {
         const legend = document.getElementById('legend');
         const scenarioAName = this.getScenarioDisplayName(scenarioA);
         const scenarioBName = this.getScenarioDisplayName(scenarioB);
-        
+        const useColorBlindSafe = this.isColorBlindMode();
+
         legend.innerHTML = `
             <h4>Scenario Comparison</h4>
             <div class="legend-item" style="margin-bottom: 0.8rem;">
@@ -264,35 +265,35 @@ class VisualizationRenderer {
                 <span class="legend-color" style="background: ${this.comparisonColors.B.track}; border: 1px solid #fff;"></span>
                 <span><strong>${scenarioBName}</strong></span>
             </div>
-            
+
             <div style="margin-top: 1rem; padding-top: 0.5rem; border-top: 1px solid #ddd;">
                 <h4>Intensity Categories</h4>
                 <div class="legend-item">
-                    <span class="legend-color" style="background: #636668ff;"></span>
+                    <span class="legend-color" style="background: ${TCConfigUtils.getCategoryColor(0, useColorBlindSafe)};"></span>
                     <span>Below Category 1</span>
                 </div>
                 <div class="legend-item">
-                    <span class="legend-color" style="background: #1f78b4;"></span>
+                    <span class="legend-color" style="background: ${TCConfigUtils.getCategoryColor(1, useColorBlindSafe)};"></span>
                     <span>Category 1</span>
                 </div>
                 <div class="legend-item">
-                    <span class="legend-color" style="background: #33a02c;"></span>
+                    <span class="legend-color" style="background: ${TCConfigUtils.getCategoryColor(2, useColorBlindSafe)};"></span>
                     <span>Category 2</span>
                 </div>
                 <div class="legend-item">
-                    <span class="legend-color" style="background: #ff7f00;"></span>
+                    <span class="legend-color" style="background: ${TCConfigUtils.getCategoryColor(3, useColorBlindSafe)};"></span>
                     <span>Category 3</span>
                 </div>
                 <div class="legend-item">
-                    <span class="legend-color" style="background: #e31a1c;"></span>
+                    <span class="legend-color" style="background: ${TCConfigUtils.getCategoryColor(4, useColorBlindSafe)};"></span>
                     <span>Category 4</span>
                 </div>
                 <div class="legend-item">
-                    <span class="legend-color" style="background: #6a3d9a;"></span>
+                    <span class="legend-color" style="background: ${TCConfigUtils.getCategoryColor(5, useColorBlindSafe)};"></span>
                     <span>Category 5</span>
                 </div>
             </div>
-            
+
             <p style="font-size: 11px; margin-top: 10px; color: #666; font-style: italic;">
                 ${this.getShowIntensityNotice()}
             </p>
@@ -494,34 +495,18 @@ class VisualizationRenderer {
     }
     
     getTrackColor(category) {
-        const colors = {
-            0: '#999999', 
-            1: '#1f78b4',
-            2: '#33a02c',
-            3: '#ff7f00',
-            4: '#e31a1c',
-            5: '#6a3d9a'
-        };
-        return colors[category] || '#666666';
+        return TCConfigUtils.getCategoryColor(category, this.isColorBlindMode());
     }
-    
+
     getIntensityColor(category) {
         return this.getTrackColor(category);
     }
     
     getHeatmapColors() {
-        return [
-            'rgba(255, 255, 255, 0)',     
-            'rgba(255, 255, 220, 0.6)',   
-            'rgba(255, 255, 178, 0.7)',   
-            'rgba(255, 237, 160, 0.75)',  
-            'rgba(255, 200, 100, 0.8)',   
-            'rgba(255, 150, 50, 0.85)',   
-            'rgba(255, 100, 0, 0.9)',     
-            'rgba(255, 50, 0, 0.95)',     
-            'rgba(200, 0, 0, 0.95)',      
-            'rgba(139, 0, 0, 1)'          
-        ];
+        const config = TCConfig.heatmap.precomputed;
+        return this.isColorBlindMode() ?
+            config.colorsColorBlindSafe :
+            config.colors;
     }
     
     getColorForCount(count, levels, colors) {
@@ -592,6 +577,41 @@ class VisualizationRenderer {
     clearHeatmapLegends() {
         const heatmapLegend = document.getElementById('heatmap-legend');
         if (heatmapLegend) heatmapLegend.style.display = 'none';
+    }
+
+    updateStandardLegend() {
+        const legend = document.getElementById('legend');
+        if (!legend) return;
+
+        const useColorBlindSafe = this.isColorBlindMode();
+
+        legend.innerHTML = `
+            <h4>Intensity Categories</h4>
+            <div class="legend-item">
+                <span class="legend-color" style="background: ${TCConfigUtils.getCategoryColor(0, useColorBlindSafe)};"></span>
+                <span>Below Category 1</span>
+            </div>
+            <div class="legend-item">
+                <span class="legend-color" style="background: ${TCConfigUtils.getCategoryColor(1, useColorBlindSafe)};" aria-hidden="true"></span>
+                <span>Category 1</span>
+            </div>
+            <div class="legend-item">
+                <span class="legend-color" style="background: ${TCConfigUtils.getCategoryColor(2, useColorBlindSafe)};" aria-hidden="true"></span>
+                <span>Category 2</span>
+            </div>
+            <div class="legend-item">
+                <span class="legend-color" style="background: ${TCConfigUtils.getCategoryColor(3, useColorBlindSafe)};" aria-hidden="true"></span>
+                <span>Category 3</span>
+            </div>
+            <div class="legend-item">
+                <span class="legend-color" style="background: ${TCConfigUtils.getCategoryColor(4, useColorBlindSafe)};" aria-hidden="true"></span>
+                <span>Category 4</span>
+            </div>
+            <div class="legend-item">
+                <span class="legend-color" style="background: ${TCConfigUtils.getCategoryColor(5, useColorBlindSafe)};" aria-hidden="true"></span>
+                <span>Category 5</span>
+            </div>
+        `;
     }
     
     createComparisonPanel() {

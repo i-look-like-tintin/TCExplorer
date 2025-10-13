@@ -8,7 +8,7 @@ class TutorialManager {
         this.spotlight = null;
 
         // Tutorial version for updates
-        this.tutorialVersion = '1.0';
+        this.tutorialVersion = '1.1';
 
         this.initializeTutorialData();
     }
@@ -53,6 +53,24 @@ class TutorialManager {
                 position: 'left',
                 showSkip: true,
                 preventBackdropClose: true
+            },
+            {
+                id: 'map-toggle',
+                title: 'Switch Map Views',
+                content: `Click this button to switch between street map and satellite imagery!
+
+<ul>
+<li><strong>Street Map:</strong> Standard map view with roads and labels</li>
+<li><strong>Satellite:</strong> High-resolution satellite imagery view</li>
+</ul>
+
+<p>Your preference will be saved for future visits.</p>
+
+<em>Try clicking the button to switch between views!</em>`,
+                highlight: '.map-toggle-control',
+                position: 'dynamic',
+                showSkip: true,
+                allowInteraction: true
             },
             {
                 id: 'scenarios',
@@ -104,7 +122,7 @@ class TutorialManager {
 
 <em>Try dragging the year sliders to change the time range!</em>`,
                 highlight: '#single-mode-controls .year-range-container',
-                position: 'above',
+                position: 'dynamic',
                 showSkip: true,
                 allowInteraction: true
             },
@@ -130,13 +148,34 @@ class TutorialManager {
                 allowInteraction: true
             },
             {
+                id: 'colorblind-mode',
+                title: 'Accessibility: Colorblind Mode',
+                content: `Enable colorblind-friendly colors for better accessibility!
+
+<strong>What changes:</strong>
+<ul>
+<li><strong>Storm Tracks:</strong> Uses scientifically-validated color palette</li>
+<li><strong>Comparison Mode:</strong> Blue vs Orange (instead of Blue vs Red)</li>
+<li><strong>Heatmaps:</strong> Blue-Purple-Yellow gradient</li>
+<li><strong>Legend:</strong> Updates to show accessible colors</li>
+</ul>
+
+<p><strong>Scroll down</strong> in Display Options to find the "Colorblind Mode" checkbox!</p>
+
+<em>Try toggling it to see the difference!</em>`,
+                highlight: '.toggle-options',
+                position: 'dynamic',
+                showSkip: true,
+                allowInteraction: true
+            },
+            {
                 id: 'export-data',
                 title: 'Export Your Data',
                 content: `Download the currently displayed data as a CSV file for further analysis in spreadsheets or other tools.
 
 The export includes all visible cyclone tracks with their details like intensity, location, and timing.`,
                 highlight: '#export-data',
-                position: 'above',
+                position: 'dynamic',
                 showSkip: true,
                 preventBackdropClose: true
             },
@@ -194,6 +233,23 @@ Large rotating storms (also called hurricanes or typhoons) that form over warm o
                 fabAccessible: false
             },
             {
+                id: 'map-toggle-mobile',
+                title: 'Switch Map Views',
+                content: `Tap the button at the top-left of the map to switch between:
+
+<ul>
+<li><strong>Street Map:</strong> Shows roads and labels</li>
+<li><strong>Satellite:</strong> Real satellite imagery</li>
+</ul>
+
+<p>Your preference is saved automatically!</p>`,
+                highlight: '.map-toggle-control',
+                position: 'center',
+                showSkip: true,
+                allowInteraction: true,
+                fabAccessible: false
+            },
+            {
                 id: 'menu-button',
                 title: 'Access Controls',
                 content: `Tap this blue menu button (☰) to access all controls and settings.
@@ -233,6 +289,30 @@ On mobile, we keep the map clear by hiding controls in this menu.
 </ul>
 
 <p><em>Try changing scenarios or adjusting the year range!</em></p>`,
+                highlight: '#mobile-controls-wrapper',
+                position: 'center',
+                requiresMenuOpen: true,
+                showSkip: true,
+                allowInteraction: true,
+                fabAccessible: true,
+                preventBackdropClose: true,
+                makeChildrenInteractive: true
+            },
+            {
+                id: 'colorblind-mobile',
+                title: 'Colorblind Accessibility',
+                content: `In the Display Options (scroll down), you'll find "Colorblind Mode"!
+
+<strong>Enables:</strong>
+<ul>
+<li>Colorblind-safe color palettes</li>
+<li>Blue vs Orange for comparisons</li>
+<li>Accessible heatmap colors</li>
+</ul>
+
+<p>Perfect for users with color vision deficiencies!</p>
+
+<em>Scroll down in the menu to find it!</em>`,
                 highlight: '#mobile-controls-wrapper',
                 position: 'center',
                 requiresMenuOpen: true,
@@ -567,6 +647,79 @@ On mobile, we keep the map clear by hiding controls in this menu.
         }
     }
 
+    calculateOptimalPosition(element, tooltip) {
+        if (!element) return null;
+
+        const elementRect = element.getBoundingClientRect();
+        const tooltipRect = tooltip.getBoundingClientRect();
+        const viewportWidth = window.innerWidth;
+        const viewportHeight = window.innerHeight;
+        const offset = 20; // Space between element and tooltip
+
+        // Calculate available space in each direction
+        const spaces = {
+            top: elementRect.top,
+            bottom: viewportHeight - elementRect.bottom,
+            left: elementRect.left,
+            right: viewportWidth - elementRect.right
+        };
+
+        // Determine best position (most available space)
+        let bestPosition = 'center';
+        let maxSpace = 0;
+
+        // Check vertical positions
+        if (spaces.bottom > tooltipRect.height + offset && spaces.bottom > maxSpace) {
+            bestPosition = 'below';
+            maxSpace = spaces.bottom;
+        }
+        if (spaces.top > tooltipRect.height + offset && spaces.top > maxSpace) {
+            bestPosition = 'above';
+            maxSpace = spaces.top;
+        }
+
+        // Check horizontal positions
+        if (spaces.right > tooltipRect.width + offset && spaces.right > maxSpace) {
+            bestPosition = 'right';
+            maxSpace = spaces.right;
+        }
+        if (spaces.left > tooltipRect.width + offset && spaces.left > maxSpace) {
+            bestPosition = 'left';
+            maxSpace = spaces.left;
+        }
+
+        // Calculate actual position coordinates
+        let top, left;
+
+        switch (bestPosition) {
+            case 'above':
+                top = elementRect.top - tooltipRect.height - offset;
+                left = elementRect.left + (elementRect.width / 2) - (tooltipRect.width / 2);
+                break;
+            case 'below':
+                top = elementRect.bottom + offset;
+                left = elementRect.left + (elementRect.width / 2) - (tooltipRect.width / 2);
+                break;
+            case 'left':
+                top = elementRect.top + (elementRect.height / 2) - (tooltipRect.height / 2);
+                left = elementRect.left - tooltipRect.width - offset;
+                break;
+            case 'right':
+                top = elementRect.top + (elementRect.height / 2) - (tooltipRect.height / 2);
+                left = elementRect.right + offset;
+                break;
+            default: // center
+                top = (viewportHeight / 2) - (tooltipRect.height / 2);
+                left = (viewportWidth / 2) - (tooltipRect.width / 2);
+        }
+
+        // Ensure tooltip stays within viewport boundaries
+        top = Math.max(10, Math.min(top, viewportHeight - tooltipRect.height - 10));
+        left = Math.max(10, Math.min(left, viewportWidth - tooltipRect.width - 10));
+
+        return { top, left, position: bestPosition };
+    }
+
     positionTooltip(step) {
         const tooltip = this.overlay.querySelector('.tutorial-tooltip');
         const isMobile = this.app.deviceManager && this.app.deviceManager.isMobile();
@@ -585,10 +738,37 @@ On mobile, we keep the map clear by hiding controls in this menu.
                 // If only FAB access needed, use intermediate size
                 tooltip.classList.add('fab-accessible');
             }
+
+            // Scroll highlighted element into view on mobile
+            if (step.highlight) {
+                const element = document.querySelector(step.highlight);
+                if (element) {
+                    setTimeout(() => {
+                        element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    }, 100);
+                }
+            }
         } else {
-            // Desktop: Position based on step configuration
+            // Desktop: Use dynamic positioning if specified, otherwise use fixed position
+            if (step.position === 'dynamic' && step.highlight) {
+                const element = document.querySelector(step.highlight);
+                if (element && this.isElementVisible(element)) {
+                    const position = this.calculateOptimalPosition(element, tooltip);
+                    if (position) {
+                        tooltip.classList.add('positioned');
+                        tooltip.style.top = position.top + 'px';
+                        tooltip.style.left = position.left + 'px';
+                        tooltip.style.transform = 'none';
+                        tooltip.setAttribute('data-position', position.position);
+                        return;
+                    }
+                }
+            }
+
+            // Fallback to fixed positions
             switch (step.position) {
                 case 'center':
+                case 'dynamic': // Fallback for dynamic if element not found
                     tooltip.classList.add('center');
                     break;
                 case 'left':
