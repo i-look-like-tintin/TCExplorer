@@ -1,8 +1,13 @@
 # Cache files - these are generated automatically and should not be committed
-php/cache/
+php/cache/*
 cache/
 
-# IBTrACS data files - too large for GitHub, will be downloaded automatically
+# Except for compressed IBTrACS data which we want to commit
+!php/cache/ibtracs/
+php/cache/ibtracs/*
+!php/cache/ibtracs/*.csv.gz
+
+# IBTrACS CSV files - too large for GitHub (will be auto-decompressed)
 *.csv
 
 # Node modules (if any)
