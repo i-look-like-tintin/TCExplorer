@@ -1,10 +1,10 @@
 const TCConfig = {
     app: {
         name: 'Tropical Cyclone Track Visualization',
-        version: '1.0.5',
+        version: '1.2.0',
         description: 'd4PDF Climate Model Projections for Australia',
         author: 'Team 7 Sharks',
-        buildDate: '2025-10-08'
+        buildDate: '2025-10-13'
     },
     
     api: {
