@@ -872,6 +872,57 @@ body.controls-collapsed .desktop-toggle-button .toggle-icon {
     flex-shrink: 0;
 }
 
+/* Map Toggle Control */
+.map-toggle-control {
+    background: rgba(255, 255, 255, 0.95);
+    border-radius: 4px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+}
+
+.map-toggle-button {
+    background: white;
+    border: none;
+    padding: 8px 12px;
+    font-size: 0.9rem;
+    font-weight: 500;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    color: #2c3e50;
+    border-radius: 4px;
+    transition: all 0.2s ease;
+    min-width: 110px;
+    justify-content: center;
+}
+
+.map-toggle-button:hover {
+    background: #f8f9fa;
+    transform: translateY(-1px);
+    box-shadow: 0 2px 4px rgba(0,0,0,0.15);
+}
+
+.map-toggle-button:active {
+    transform: translateY(0);
+}
+
+/* Mobile responsive styling */
+@media (max-width: 768px) {
+    .map-toggle-button {
+        font-size: 0.75rem;
+        padding: 6px 10px;
+        min-width: 90px;
+    }
+}
+
+@media (max-width: 480px) {
+    .map-toggle-button {
+        font-size: 0.7rem;
+        padding: 5px 8px;
+        min-width: 80px;
+    }
+}
+
 #info-panel {
     position: absolute;
     top: 20px;
@@ -1067,6 +1118,8 @@ body.controls-collapsed .desktop-toggle-button .toggle-icon {
     z-index: 10002;
     max-width: 400px;
     min-width: 300px;
+    max-height: calc(100vh - 40px);
+    overflow-y: auto;
     animation: tutorialSlideIn 0.3s ease-out;
     pointer-events: auto;
 }
@@ -1111,6 +1164,48 @@ body.controls-collapsed .desktop-toggle-button .toggle-icon {
     top: 20px;
     left: 50%;
     transform: translateX(-50%);
+}
+
+/* Dynamic positioning with arrows */
+.tutorial-tooltip.positioned {
+    position: fixed;
+}
+
+/* Arrow indicators for dynamically positioned tooltips */
+.tutorial-tooltip.positioned::before {
+    content: '';
+    position: absolute;
+    width: 0;
+    height: 0;
+    border: 10px solid transparent;
+}
+
+.tutorial-tooltip.positioned[data-position="above"]::before {
+    bottom: -20px;
+    left: 50%;
+    transform: translateX(-50%);
+    border-top-color: white;
+}
+
+.tutorial-tooltip.positioned[data-position="below"]::before {
+    top: -20px;
+    left: 50%;
+    transform: translateX(-50%);
+    border-bottom-color: white;
+}
+
+.tutorial-tooltip.positioned[data-position="left"]::before {
+    right: -20px;
+    top: 50%;
+    transform: translateY(-50%);
+    border-left-color: white;
+}
+
+.tutorial-tooltip.positioned[data-position="right"]::before {
+    left: -20px;
+    top: 50%;
+    transform: translateY(-50%);
+    border-right-color: white;
 }
 
 /* Mobile bottom sheet style */
@@ -1370,10 +1465,13 @@ body.tutorial-active {
 
     .tutorial-tooltip.mobile-bottom-sheet {
         max-height: 85vh;
+        overflow-y: auto;
     }
 
     .tutorial-content {
         padding: 1rem;
+        max-height: 50vh;
+        overflow-y: auto;
     }
 
     .tutorial-title {
@@ -1392,10 +1490,76 @@ body.tutorial-active {
     .tutorial-next {
         padding: 0.5rem 1rem;
         font-size: 0.8rem;
+        min-width: 80px;
     }
 
     .tutorial-progress {
         padding: 0.8rem;
+    }
+}
+
+/* Extra small mobile devices */
+@media (max-width: 375px) {
+    .tutorial-tooltip.mobile-bottom-sheet {
+        max-height: 80vh;
+    }
+
+    .tutorial-content {
+        padding: 0.8rem;
+        max-height: 45vh;
+    }
+
+    .tutorial-title {
+        font-size: 1rem;
+        margin-bottom: 0.8rem;
+    }
+
+    .tutorial-text {
+        font-size: 0.8rem;
+        line-height: 1.5;
+    }
+
+    .tutorial-text ul {
+        margin: 0.5rem 0;
+        padding-left: 1rem;
+    }
+
+    .tutorial-text li {
+        margin-bottom: 0.3rem;
+    }
+
+    .tutorial-navigation {
+        padding: 0.6rem 0.8rem;
+    }
+
+    .tutorial-prev,
+    .tutorial-next {
+        padding: 0.4rem 0.8rem;
+        font-size: 0.75rem;
+        min-width: 70px;
+    }
+
+    .tutorial-progress {
+        padding: 0.6rem;
+        gap: 0.4rem;
+    }
+
+    .progress-dot {
+        width: 6px;
+        height: 6px;
+    }
+
+    .tutorial-header {
+        padding: 0.6rem 0.8rem;
+    }
+
+    .tutorial-step-info {
+        font-size: 0.7rem;
+    }
+
+    .tutorial-skip {
+        padding: 0.3rem 0.6rem;
+        font-size: 0.7rem;
     }
 }
 
