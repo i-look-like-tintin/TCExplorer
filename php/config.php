@@ -11,6 +11,16 @@ define('LOG_PATH', __DIR__ . '/logs/');
 
 define('DP4DF_BASE_URL', 'https://climate.mri-jma.go.jp/pub/d4pdf/tropical_cyclone_tracks/');
 
+// IBTrACS (International Best Track Archive for Climate Stewardship) Configuration
+define('IBTRACS_BASE_URL', 'https://www.ncei.noaa.gov/data/international-best-track-archive-for-climate-stewardship-ibtracs/v04r01/access/csv/');
+define('IBTRACS_FILES', [
+    'all' => 'ibtracs.ALL.list.v04r01.csv',
+    'sp' => 'ibtracs.SP.list.v04r01.csv',  // South Pacific
+    'si' => 'ibtracs.SI.list.v04r01.csv'   // South Indian
+]);
+define('IBTRACS_CACHE_EXPIRY', 604800); // 7 days in seconds
+define('IBTRACS_DOWNLOAD_TIMEOUT', 60);  // 60 seconds
+
 define('DP4DF_FILE_PATTERNS', [
     'current' => [
         'prefix' => 'xytrackk319b_HPB_m',

@@ -2,6 +2,7 @@
 
 require_once 'config.php';
 require_once 'Dp4dfParser.php';
+require_once 'IBTraCSParser.php';
 
 $origin = $_SERVER['HTTP_ORIGIN'] ?? '*';
 if (in_array($origin, ALLOWED_ORIGINS)) {
@@ -29,15 +30,21 @@ class CycloneDataAPI {
     public function handleRequest() {
         $action = $_GET['action'] ?? '';
         $scenario = $_GET['scenario'] ?? 'current';
-        
-        if (!in_array($scenario, $this->scenarios)) {
-            $this->sendError('Invalid scenario');
-            return;
+
+        // Scenario validation not required for real historical data
+        if ($action !== 'getRealHistoricalData' && $action !== 'test') {
+            if (!in_array($scenario, $this->scenarios)) {
+                $this->sendError('Invalid scenario');
+                return;
+            }
         }
-        
+
         switch ($action) {
             case 'getCycloneData':
                 $this->getCycloneData($scenario);
+                break;
+            case 'getRealHistoricalData':
+                $this->getRealHistoricalData();
                 break;
             case 'getScenarioMetadata':
                 $this->getScenarioMetadata($scenario);
@@ -142,7 +149,83 @@ class CycloneDataAPI {
         
         $this->sendError('Failed to load cyclone data from d4PDF server and no sample data available');
     }
-    
+
+    private function getRealHistoricalData() {
+        $debug = isset($_GET['debug']) && $_GET['debug'] === 'true';
+        $basin = $_GET['basin'] ?? 'all';
+        $region = $_GET['region'] ?? 'australian';
+
+        try {
+            // Increase memory limit for global region to handle large dataset
+            if ($region === 'global') {
+                ini_set('memory_limit', '1G');
+                if ($debug) {
+                    error_log("API: Increased memory limit to 1G for global region");
+                }
+            }
+
+            if ($debug) {
+                error_log("API: Fetching real historical data from IBTrACS (basin: $basin, region: $region)");
+            }
+
+            $parser = new IBTraCSParser(CACHE_PATH);
+            $cyclones = $parser->getCycloneData($basin, $region);
+
+            if ($cyclones === null) {
+                $error = $parser->getLastError();
+                throw new Exception($error ?? 'Failed to fetch IBTrACS data');
+            }
+
+            if ($debug) {
+                error_log("API: Successfully got " . count($cyclones) . " real historical cyclones for region: $region");
+            }
+
+            // Calculate year range
+            $years = array_column($cyclones, 'year');
+            $minYear = !empty($years) ? min($years) : null;
+            $maxYear = !empty($years) ? max($years) : null;
+
+            // Region descriptions for metadata
+            $regionDescriptions = [
+                'australian' => 'Australian Region (105°E-160°E, 45°S-5°S)',
+                'global' => 'Global (All Regions)',
+                'north_atlantic' => 'North Atlantic (100°W-0°E, 0°N-60°N)',
+                'western_pacific' => 'Western Pacific (100°E-180°E, 0°N-60°N)',
+                'eastern_pacific' => 'Eastern Pacific (180°W-75°W, 0°N-60°N)',
+                'north_indian' => 'North Indian (30°E-100°E, 0°N-40°N)',
+                'south_indian' => 'South Indian (20°E-115°E, 40°S-0°)',
+                'south_pacific' => 'South Pacific (135°E-120°W, 40°S-0°)'
+            ];
+
+            $metadata = [
+                'description' => 'Real Historical Cyclone Observations',
+                'period' => ($minYear && $maxYear) ? "$minYear-$maxYear" : 'Unknown',
+                'min_year' => $minYear,
+                'max_year' => $maxYear,
+                'source' => 'IBTrACS v04r01 (includes BoM data)',
+                'source_agency' => 'NOAA National Centers for Environmental Information',
+                'data_url' => 'https://www.ncei.noaa.gov/products/international-best-track-archive',
+                'basin' => $basin,
+                'region_id' => $region,
+                'region' => $regionDescriptions[$region] ?? 'Unknown Region'
+            ];
+
+            $data = [
+                'scenario' => 'real-historical',
+                'metadata' => $metadata,
+                'data_source' => 'ibtracs',
+                'total_cyclones' => count($cyclones),
+                'cyclones' => $cyclones
+            ];
+
+            $this->sendSuccess($data);
+
+        } catch (Exception $e) {
+            error_log("API Error (getRealHistoricalData): " . $e->getMessage());
+            $this->sendError('Failed to load real historical data: ' . $e->getMessage());
+        }
+    }
+
     private function filterToAustralianRegion($cyclones) {
         $filtered = [];
         
