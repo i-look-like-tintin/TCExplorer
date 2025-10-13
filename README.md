@@ -1,5 +1,5 @@
 # TC Explorer - Tropical Cyclone Visualization Tool
-**Version 1.0.5**
+**Version 1.1.0**
 
 *Developed by Team Sharks: May, Markey, Scott, Jackson, and Wheeler*
 
@@ -21,7 +21,7 @@ TC Explorer is an interactive web application for visualizing and analyzing trop
 3. Start Apache from the XAMPP control panel
 4. Navigate to `http://localhost/TCExplorer/` in your web browser
 
-**Note:** This application has been tested on Linux, Windows, and macOS platforms.
+**Note:** This application has been tested on Linux, Windows, macOS platforms, iOS and Android.
 
 ## Key Features
 
@@ -86,10 +86,10 @@ For technical documentation and development information, please refer to:
 
 ## Version History
 
-**v1.0.0a** - Alpha-testing of Production Release
-- Collapsible desktop interface
-- Enhanced mobile responsiveness
-- Production-ready codebase
+**v1.1.0**
+- Add Satellite viewing mode
+- Add colourblind support
+- Refine tutorial
 
 **Previous Versions**
 - v0.10.0 Added experimental heatmap view, which utilises pre-processed cell data to draw the heatmap. This was created from Client's IPYNB code modified to pre-process data, and then uploaded into application through density_data/
@@ -102,7 +102,8 @@ See known issues with this experimental implementation.
 - v0.15.0 Added collapsible control panel to desktop mode as well. This allows app to facilitate lower resolution displays much more effectively.
 - v0.15.5 Mobile version of site updated for functionality. Now functions horizontally and vertically, with a hamburger options menu allowing elements to be disabled for visibility and functions to be selected. Additional testing required to ensure full functionality.
 - v0.16.0 Added individual year sliders and visibility toggles to scenario comparison. Investigating a potential issue with mobile display (full header showing in horizontal view).
-- v0.17.0 Add full user tutorial for both desktop and mobile. Tutorial is configured to launch automatically for first-time users, and also be toggleable with a header option. 
+- v0.17.0 Add full user tutorial for both desktop and mobile. Tutorial is configured to launch automatically for first-time users, and also be toggleable with a header option.
+- v1.0.0a Alpha-testing of Production Release, Collapsible desktop interface, Enhanced mobile responsiveness, Production-ready codebase
 
 ## About Team Sharks
 
@@ -110,7 +111,7 @@ This application was developed by Team Sharks, comprising May, Markey, Scott, Ja
 
 ---
 
-*TC Explorer v0.15.0 - Ready for deployment and educational use*
+*TC Explorer v1.1.0 - Ready for deployment and educational use*
 
 
 
