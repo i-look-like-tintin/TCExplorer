@@ -3,8 +3,9 @@ cache/
 php/cache/dp4df/
 
 # IBTrACS data files - CSV files are too large for GitHub, will be downloaded automatically
-# But we keep the parsed JSON files for faster Azure deployment
+# But we keep both CSV and parsed JSON files for Azure direct deployment (no GitHub size limit)
 *.csv
+!php/cache/ibtracs/*.csv
 !php/cache/ibtracs/*.json
 
 # Node modules (if any)
