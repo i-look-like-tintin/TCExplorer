@@ -1,0 +1,33 @@
+# Cache files - these are generated automatically and should not be committed
+php/cache/
+cache/
+
+# IBTrACS data files - too large for GitHub, will be downloaded automatically
+*.csv
+
+# Node modules (if any)
+node_modules/
+
+# IDE and editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS files
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Claude Code directory
+.claude/
+
+# Log files
+*.log
+error_log
+
+# Temporary files
+*.tmp
+*.temp
+.cache/
