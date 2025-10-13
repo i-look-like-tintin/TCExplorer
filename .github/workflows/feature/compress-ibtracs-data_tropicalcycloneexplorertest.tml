@@ -1,12 +1,12 @@
 # Docs for the Azure Web Apps Deploy action: https://github.com/Azure/webapps-deploy
 # More GitHub Actions for Azure: https://github.com/Azure/actions
 
-name: Build and deploy PHP app to Azure Web App - TropicalCycloneExplorer
+name: Build and deploy PHP app to Azure Web App - TCExplorerTest
 
 on:
   push:
     branches:
-      - main
+      - feature/compress-ibtracs-data
   workflow_dispatch:
 
 jobs:
@@ -56,15 +56,15 @@ jobs:
       - name: Login to Azure
         uses: azure/login@v2
         with:
-          client-id: ${{ secrets.AZUREAPPSERVICE_CLIENTID_78CE0814E62B44569AD16F4F89E35581 }}
-          tenant-id: ${{ secrets.AZUREAPPSERVICE_TENANTID_FE0C219E76F84603BE426006CCAE6F09 }}
-          subscription-id: ${{ secrets.AZUREAPPSERVICE_SUBSCRIPTIONID_672B273F9E3241159814C8D2E3DAFB0A }}
+          client-id: ${{ secrets.AZUREAPPSERVICE_CLIENTID_903A03B022B84652A5E31DBF785EC7B1 }}
+          tenant-id: ${{ secrets.AZUREAPPSERVICE_TENANTID_993DFB9FA62C4B839388605B012F7E43 }}
+          subscription-id: ${{ secrets.AZUREAPPSERVICE_SUBSCRIPTIONID_B4A985E5FBB8439A903B0F5FB5920F42 }}
 
       - name: 'Deploy to Azure Web App'
         uses: azure/webapps-deploy@v3
         id: deploy-to-webapp
         with:
-          app-name: 'TropicalCycloneExplorer'
+          app-name: 'TCExplorerTest'
           slot-name: 'Production'
           package: .
           
