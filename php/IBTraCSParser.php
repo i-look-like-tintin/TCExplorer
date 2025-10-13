@@ -151,33 +151,6 @@ class IBTraCSParser {
      */
     private function getCachedOrDownloadCSV($basin) {
         $cacheFile = $this->cacheDir . "ibtracs_{$basin}.csv";
-        $compressedFile = $cacheFile . '.gz';
-
-        // Check if we need to decompress the .gz file
-        if (!file_exists($cacheFile) && file_exists($compressedFile)) {
-            error_log("IBTrACS: Decompressing {$compressedFile}...");
-
-            // Decompress the file
-            $gzHandle = @gzopen($compressedFile, 'rb');
-            $outHandle = @fopen($cacheFile, 'wb');
-
-            if ($gzHandle && $outHandle) {
-                while (!gzeof($gzHandle)) {
-                    fwrite($outHandle, gzread($gzHandle, 4096));
-                }
-                gzclose($gzHandle);
-                fclose($outHandle);
-
-                // Set the same modification time as the compressed file
-                touch($cacheFile, filemtime($compressedFile));
-
-                error_log("IBTrACS: Successfully decompressed to {$cacheFile}");
-            } else {
-                if ($gzHandle) gzclose($gzHandle);
-                if ($outHandle) fclose($outHandle);
-                error_log("IBTrACS: Failed to decompress {$compressedFile}");
-            }
-        }
 
         // Check if cache exists and is not expired
         if (file_exists($cacheFile)) {
