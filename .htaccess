@@ -1,0 +1,55 @@
+# Azure Linux App Service - Apache configuration
+
+# Enable rewrite engine
+RewriteEngine On
+
+# Allow access to PHP files
+<FilesMatch "\.php$">
+    SetHandler application/x-httpd-php
+</FilesMatch>
+
+# CORS Headers
+Header set Access-Control-Allow-Origin "*"
+Header set Access-Control-Allow-Methods "GET, POST, OPTIONS"
+Header set Access-Control-Allow-Headers "Content-Type, Accept"
+
+# Increase PHP limits
+php_value memory_limit 1024M
+php_value max_execution_time 300
+php_value upload_max_filesize 100M
+php_value post_max_size 100M
+
+# Enable error display for debugging (disable in production)
+php_flag display_errors Off
+php_flag log_errors On
+
+# Cache control for static files
+<FilesMatch "\.(js|css|png|jpg|jpeg|gif|ico|svg|woff|woff2|ttf|eot)$">
+    Header set Cache-Control "max-age=604800, public"
+</FilesMatch>
+
+# JSON files
+<FilesMatch "\.json$">
+    Header set Content-Type "application/json"
+    Header set Cache-Control "max-age=3600, public"
+</FilesMatch>
+
+# CSV files
+<FilesMatch "\.csv$">
+    Header set Content-Type "text/csv"
+</FilesMatch>
+
+# Prevent access to sensitive files
+<FilesMatch "(^\.git|^\.env|composer\.json|composer\.lock|\.log)">
+    Require all denied
+</FilesMatch>
+
+# Allow .well-known for SSL certificates
+<IfModule mod_rewrite.c>
+    RewriteRule ^\.well-known/ - [L]
+</IfModule>
+
+# Compression
+<IfModule mod_deflate.c>
+    AddOutputFilterByType DEFLATE text/html text/plain text/xml text/css text/javascript application/javascript application/json
+</IfModule>
