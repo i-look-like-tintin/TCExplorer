@@ -82,6 +82,9 @@ class IBTraCSParser {
         ]
     ];
 
+    // Flag to disable downloads (useful for production/Azure where pre-parsed cache exists)
+    private $disableDownloads = false;
+
     public function __construct($cacheDir = null) {
         // If a cache directory is provided, append 'ibtracs/' subdirectory
         if ($cacheDir !== null) {
@@ -96,6 +99,13 @@ class IBTraCSParser {
         if (!is_dir($this->cacheDir)) {
             @mkdir($this->cacheDir, 0777, true);
             @chmod($this->cacheDir, 0777); // Ensure write permissions
+        }
+
+        // Check if we're on Azure or if downloads should be disabled
+        // Azure sets WEBSITE_INSTANCE_ID environment variable
+        if (getenv('WEBSITE_INSTANCE_ID') !== false || getenv('DISABLE_IBTRACS_DOWNLOADS') === 'true') {
+            $this->disableDownloads = true;
+            error_log("IBTrACS: Downloads disabled (production mode) - using pre-cached data only");
         }
     }
 
@@ -121,6 +131,13 @@ class IBTraCSParser {
             if ($parsedCache !== null) {
                 error_log("IBTrACS: Using cached parsed data for region: $region");
                 return $parsedCache;
+            }
+
+            // If downloads are disabled (Azure/production), return error
+            if ($this->disableDownloads) {
+                $this->lastError = "Region data not available. Pre-cached regions: Australian, North Atlantic, North Indian, South Indian";
+                error_log("IBTrACS: Region $region not available in pre-cached data (downloads disabled)");
+                return [];  // Return empty array instead of null to avoid errors
             }
 
             // Get cached or download CSV data
@@ -250,9 +267,9 @@ class IBTraCSParser {
             return null;
         }
 
-        // Check if cache is expired
+        // Check if cache is expired (but NEVER expire if downloads are disabled)
         $cacheAge = time() - filemtime($cacheFile);
-        if ($cacheAge >= $this->cacheExpiry) {
+        if (!$this->disableDownloads && $cacheAge >= $this->cacheExpiry) {
             error_log("IBTrACS: Parsed cache expired (age: " . round($cacheAge / 3600, 1) . " hours)");
             return null;
         }
