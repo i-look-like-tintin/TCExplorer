@@ -1,9 +1,5 @@
 class TCVisualization {
     constructor() {
-        // Data source - always default to 'simulated' on page load
-        this.dataSource = 'simulated';
-        this.currentRegion = this.loadRegion();  // Region selector for real data
-
         this.currentScenario = 'current';
         this.currentEnsemble = 1;
         this.currentSSTModel = 'CC';
@@ -15,12 +11,6 @@ class TCVisualization {
             'nat': { min: 1951, max: 2010 },
             '2k': { min: 2031, max: 2090 },
             '4k': { min: 2051, max: 2110 }
-        };
-
-        // Real data has its own year range (approximately 1842 to present)
-        this.realDataYearRange = {
-            min: 1842,
-            max: new Date().getFullYear()
         };
         
         // Comparison mode properties
@@ -74,120 +64,11 @@ class TCVisualization {
             console.warn('Failed to save colorblind mode to localStorage:', error);
         }
     }
-
-    loadDataSource() {
-        try {
-            const saved = localStorage.getItem('tcDataSource');
-            return (saved === 'real') ? 'real' : 'simulated';
-        } catch (error) {
-            console.warn('Failed to load data source from localStorage:', error);
-            return 'simulated';
-        }
-    }
-
-    saveDataSource(source) {
-        try {
-            localStorage.setItem('tcDataSource', source);
-        } catch (error) {
-            console.warn('Failed to save data source to localStorage:', error);
-        }
-    }
-
-    loadRegion() {
-        try {
-            const saved = localStorage.getItem('tcRegion');
-            return saved || 'australian';
-        } catch (error) {
-            console.warn('Failed to load region from localStorage:', error);
-            return 'australian';
-        }
-    }
-
-    saveRegion(region) {
-        try {
-            localStorage.setItem('tcRegion', region);
-        } catch (error) {
-            console.warn('Failed to save region to localStorage:', error);
-        }
-    }
-
-    async changeDataSource(newSource) {
-        if (this.dataSource === newSource) return;
-
-        const previousSource = this.dataSource;
-        this.dataSource = newSource;
-        this.saveDataSource(newSource);
-
-        // Clear cached data when switching sources
-        this.cycloneData = {};
-        this.selectedCyclone = null;
-
-        // Update UI based on data source
-        if (newSource === 'real') {
-            // Disable features not available for real data
-            this.comparisonMode = false;
-            this.uiController.updateDataSourceUI(newSource);
-
-            // Update year range to real data range
-            this.yearRange = null; // Will use full real data range
-
-            // Show info message
-            this.utils.showNotification(
-                'Switched to Real Historical Data. Some features disabled (scenarios, ensembles, comparisons).',
-                'info'
-            );
-        } else {
-            // Re-enable simulated data features
-            this.uiController.updateDataSourceUI(newSource);
-            this.yearRange = null;
-
-            this.utils.showNotification(
-                'Switched to Simulated Climate Model Data. All features enabled.',
-                'success'
-            );
-        }
-
-        // Load new data
-        await this.dataManager.loadData();
-    }
-
-    async changeRegion(newRegion) {
-        // Region changes only apply to real data mode
-        if (this.dataSource !== 'real') return;
-        if (this.currentRegion === newRegion) return;
-
-        this.currentRegion = newRegion;
-        this.saveRegion(newRegion);
-
-        // Clear cached data for the old region
-        this.cycloneData = {};
-        this.selectedCyclone = null;
-        this.yearRange = null;
-
-        // Get region config for map view
-        const regionConfig = TCConfigUtils.getRegion(newRegion);
-        if (regionConfig && regionConfig.defaultCenter && regionConfig.defaultZoom) {
-            this.mapManager.map.setView(regionConfig.defaultCenter, regionConfig.defaultZoom);
-        }
-
-        // Load new data for the selected region
-        await this.dataManager.loadData();
-
-        // Show notification
-        const regionName = regionConfig ? regionConfig.name : newRegion;
-        this.utils.showNotification(
-            `Switched to ${regionName}. Loading cyclone data...`,
-            'info'
-        );
-    }
-
+    
     async init() {
         try {
             // Apply iOS fixes before map initialization
             this.applyIOSGlobalFixes();
-
-            // Reset display options to defaults on every page load
-            this.resetDisplayOptionsToDefaults();
 
             await this.mapManager.initializeMap();
             this.uiController.initializeEventListeners();
@@ -208,27 +89,6 @@ class TCVisualization {
         } catch (error) {
             console.error('Failed to initialize application:', error);
             this.utils.showNotification('Failed to initialize application', 'error');
-        }
-    }
-
-    resetDisplayOptionsToDefaults() {
-        // Reset display checkboxes to defaults (tracks and genesis only)
-        const showTracksCheckbox = document.getElementById('show-tracks');
-        const showGenesisCheckbox = document.getElementById('show-genesis');
-        const showHeatmapCheckbox = document.getElementById('show-heatmap');
-        const showIntensityCheckbox = document.getElementById('show-intensity');
-        const showPreCat1Checkbox = document.getElementById('show-pre-cat1');
-
-        if (showTracksCheckbox) showTracksCheckbox.checked = true;
-        if (showGenesisCheckbox) showGenesisCheckbox.checked = true;
-        if (showHeatmapCheckbox) showHeatmapCheckbox.checked = false;
-        if (showIntensityCheckbox) showIntensityCheckbox.checked = false;
-        if (showPreCat1Checkbox) showPreCat1Checkbox.checked = false;
-
-        // Reset data source selector to simulated
-        const dataSourceSelect = document.getElementById('data-source-select');
-        if (dataSourceSelect) {
-            dataSourceSelect.value = 'simulated';
         }
     }
 
@@ -567,7 +427,6 @@ class TCVisualization {
     
     getState() {
         return {
-            dataSource: this.dataSource,
             scenario: this.currentScenario,
             ensemble: this.currentEnsemble,
             sstModel: this.currentSSTModel,

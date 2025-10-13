@@ -120,43 +120,39 @@ class TCUtils {
             this.showNotification('No data to export', 'error');
             return;
         }
-
+        
         let cyclones = data.cyclones;
-
+        
         if (yearRange) {
-            cyclones = cyclones.filter(c =>
+            cyclones = cyclones.filter(c => 
                 c.year >= yearRange.min && c.year <= yearRange.max
             );
         }
-
+        
         let csv = 'ID,Name,Year,Genesis Month,Max Category,Max Wind (km/h),Min Pressure (hPa),Duration (days),Genesis Lat,Genesis Lon,Landfall\n';
-
+        
         cyclones.forEach(cyclone => {
             csv += `${cyclone.id},${cyclone.name},${cyclone.year},${cyclone.genesis_month || 'N/A'},${cyclone.maxCategory},${cyclone.maxWind},${cyclone.minPressure},${cyclone.duration_days || cyclone.duration},${cyclone.genesis_lat},${cyclone.genesis_lon},${cyclone.landfall ? 'Yes' : 'No'}\n`;
         });
-
+        
         const blob = new Blob([csv], { type: 'text/csv' });
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.href = url;
-
-        // Handle filename for real vs simulated data
-        let filename = `cyclone_data_${scenario}`;
-        if (scenario !== 'real-historical') {
-            filename += `_ensemble${ensemble}`;
-            if (scenario === '2k' || scenario === '4k') {
-                filename += `_${sstModel}`;
-            }
+        
+        let filename = `cyclone_data_${scenario}_ensemble${ensemble}`;
+        if (scenario === '2k' || scenario === '4k') {
+            filename += `_${sstModel}`;
         }
         if (yearRange) {
             filename += `_${yearRange.min}-${yearRange.max}`;
         }
         filename += `_${this.formatDate(new Date())}.csv`;
-
+        
         a.download = filename;
         a.click();
         URL.revokeObjectURL(url);
-
+        
         this.showNotification(`Exported ${cyclones.length} cyclones to CSV`, 'success');
     }
     
@@ -165,9 +161,9 @@ class TCUtils {
             this.showNotification('No track data to export', 'error');
             return;
         }
-
+        
         let csv = 'Cyclone_ID,Name,Year,Track_Point,Date,Latitude,Longitude,Category,Wind_Speed_kmh,Pressure_hPa\n';
-
+        
         cyclones.forEach(cyclone => {
             if (cyclone.track && cyclone.track.length > 0) {
                 cyclone.track.forEach((point, index) => {
@@ -175,26 +171,22 @@ class TCUtils {
                 });
             }
         });
-
+        
         const blob = new Blob([csv], { type: 'text/csv' });
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.href = url;
-
-        // Handle filename for real vs simulated data
-        let filename = `cyclone_tracks_${scenario}`;
-        if (scenario !== 'real-historical') {
-            filename += `_ensemble${ensemble}`;
-            if (scenario === '2k' || scenario === '4k') {
-                filename += `_${sstModel}`;
-            }
+        
+        let filename = `cyclone_tracks_${scenario}_ensemble${ensemble}`;
+        if (scenario === '2k' || scenario === '4k') {
+            filename += `_${sstModel}`;
         }
         filename += `_${this.formatDate(new Date())}.csv`;
-
+        
         a.download = filename;
         a.click();
         URL.revokeObjectURL(url);
-
+        
         const totalPoints = cyclones.reduce((sum, c) => sum + (c.track ? c.track.length : 0), 0);
         this.showNotification(`Exported ${totalPoints} track points from ${cyclones.length} cyclones`, 'success');
     }
@@ -204,34 +196,23 @@ class TCUtils {
             this.showNotification('No data to export', 'error');
             return;
         }
-
-        // Build metadata based on data source
-        const metadata = {
-            scenario: scenario,
-            exportDate: new Date().toISOString(),
-            cycloneCount: cyclones.length
-        };
-
-        if (scenario === 'real-historical') {
-            metadata.dataSource = 'IBTrACS v04r01';
-            metadata.description = 'Real historical cyclone observations';
-            metadata.region = 'Australian Region';
-        } else {
-            metadata.ensemble = ensemble;
-            metadata.sstModel = sstModel;
-            metadata.dataSource = 'd4PDF Climate Models';
-        }
-
+        
         const geojson = {
             type: "FeatureCollection",
-            metadata: metadata,
+            metadata: {
+                scenario: scenario,
+                ensemble: ensemble,
+                sstModel: sstModel,
+                exportDate: new Date().toISOString(),
+                cycloneCount: cyclones.length
+            },
             features: []
         };
-
+        
         cyclones.forEach(cyclone => {
             if (cyclone.track && cyclone.track.length > 0) {
                 const coordinates = cyclone.track.map(point => [point.lon, point.lat]);
-
+                
                 const feature = {
                     type: "Feature",
                     geometry: {
@@ -251,30 +232,26 @@ class TCUtils {
                         genesisLon: cyclone.genesis_lon
                     }
                 };
-
+                
                 geojson.features.push(feature);
             }
         });
-
+        
         const blob = new Blob([JSON.stringify(geojson, null, 2)], { type: 'application/json' });
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.href = url;
-
-        // Handle filename for real vs simulated data
-        let filename = `cyclone_tracks_${scenario}`;
-        if (scenario !== 'real-historical') {
-            filename += `_ensemble${ensemble}`;
-            if (scenario === '2k' || scenario === '4k') {
-                filename += `_${sstModel}`;
-            }
+        
+        let filename = `cyclone_tracks_${scenario}_ensemble${ensemble}`;
+        if (scenario === '2k' || scenario === '4k') {
+            filename += `_${sstModel}`;
         }
         filename += `_${this.formatDate(new Date())}.geojson`;
-
+        
         a.download = filename;
         a.click();
         URL.revokeObjectURL(url);
-
+        
         this.showNotification(`Exported ${cyclones.length} cyclones to GeoJSON`, 'success');
     }
     
@@ -386,8 +363,7 @@ class TCUtils {
             'current': 'Historical',
             'nat': 'Natural',
             '2k': '2K_Warming',
-            '4k': '4K_Warming',
-            'real-historical': 'Real_Historical_IBTrACS'
+            '4k': '4K_Warming'
         };
         return names[scenario] || scenario;
     }

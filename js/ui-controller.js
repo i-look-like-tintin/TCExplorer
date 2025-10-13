@@ -5,8 +5,6 @@ class UIController {
     }
     
     initializeEventListeners() {
-        this.setupDataSourceSelector();
-        this.setupRegionSelector();
         this.setupScenarioDropdown();
         this.setupEnsembleControls();
         this.setupVisualizationToggles();
@@ -19,112 +17,8 @@ class UIController {
 
         // Update dynamic version information
         this.updateFooterVersion();
-
-        // Initialize data source UI based on current selection
-        this.updateDataSourceUI(this.app.dataSource);
     }
-
-    setupDataSourceSelector() {
-        const dataSourceSelect = document.getElementById('data-source-select');
-        if (dataSourceSelect) {
-            // Set initial value
-            dataSourceSelect.value = this.app.dataSource;
-
-            // Add change event listener
-            dataSourceSelect.addEventListener('change', async (e) => {
-                await this.app.changeDataSource(e.target.value);
-            });
-        }
-    }
-
-    setupRegionSelector() {
-        const regionSelect = document.getElementById('region-select');
-        if (regionSelect) {
-            // Set initial value
-            regionSelect.value = this.app.currentRegion;
-
-            // Add change event listener
-            regionSelect.addEventListener('change', async (e) => {
-                await this.app.changeRegion(e.target.value);
-            });
-        }
-    }
-
-    updateDataSourceUI(dataSource) {
-        // Get data source configuration
-        const dataSourceConfig = TCConfigUtils.getDataSource(dataSource);
-        if (!dataSourceConfig) return;
-
-        // Get control elements
-        const scenarioGroup = document.getElementById('scenario-select')?.closest('.control-group');
-        const ensembleGroup = document.getElementById('ensemble-select')?.closest('.control-group');
-        const sstSelector = document.getElementById('sst-selector');
-        const comparisonToggle = document.getElementById('comparison-mode');
-        const dataSourceInfo = document.getElementById('data-source-info');
-        const regionSelectorGroup = document.getElementById('region-selector-group');
-
-        if (dataSource === 'real') {
-            // Hide/disable controls not compatible with real data
-            if (scenarioGroup) scenarioGroup.style.display = 'none';
-            if (ensembleGroup) ensembleGroup.style.display = 'none';
-            if (sstSelector) sstSelector.style.display = 'none';
-            if (comparisonToggle) {
-                comparisonToggle.disabled = true;
-                comparisonToggle.checked = false;
-            }
-
-            // Show region selector for real data
-            if (regionSelectorGroup) regionSelectorGroup.style.display = 'flex';
-
-            // Update year slider bounds for real data
-            const yearRange = this.app.realDataYearRange || dataSourceConfig.yearRange;
-            if (yearRange) {
-                const yearMinSlider = document.getElementById('year-slider-min');
-                const yearMaxSlider = document.getElementById('year-slider-max');
-
-                if (yearMinSlider && yearMaxSlider) {
-                    yearMinSlider.min = yearRange.min;
-                    yearMinSlider.max = yearRange.max;
-                    yearMinSlider.value = yearRange.min;
-
-                    yearMaxSlider.min = yearRange.min;
-                    yearMaxSlider.max = yearRange.max;
-                    yearMaxSlider.value = yearRange.max;
-
-                    this.updateSliderRange();
-                    this.updateYearDisplay();
-                }
-            }
-
-            // Show info message
-            if (dataSourceInfo) {
-                dataSourceInfo.textContent = `Real historical data: ${dataSourceConfig.source}`;
-                dataSourceInfo.style.display = 'block';
-            }
-        } else {
-            // Show/enable all controls for simulated data
-            if (scenarioGroup) scenarioGroup.style.display = 'flex';
-            if (ensembleGroup) ensembleGroup.style.display = 'flex';
-            if (comparisonToggle) {
-                comparisonToggle.disabled = false;
-            }
-
-            // Hide region selector for simulated data
-            if (regionSelectorGroup) regionSelectorGroup.style.display = 'none';
-
-            // Restore year slider bounds based on current scenario
-            this.updateYearSlider();
-
-            // Hide info message
-            if (dataSourceInfo) {
-                dataSourceInfo.style.display = 'none';
-            }
-
-            // Update SST selector visibility based on current scenario
-            this.updateEnsembleSelector();
-        }
-    }
-
+    
     setupComparisonControls() {
         document.getElementById('comparison-mode').addEventListener('change', async (e) => {
             await this.app.toggleComparisonMode(e.target.checked);
@@ -254,28 +148,22 @@ class UIController {
         const yearMinSlider = document.getElementById('year-slider-min');
         const yearMaxSlider = document.getElementById('year-slider-max');
         const yearDisplay = document.getElementById('year-display');
-
+        
         if (yearMinSlider.disabled) return;
-
+        
         let min = parseInt(yearMinSlider.value);
         let max = parseInt(yearMaxSlider.value);
-
+        
         if (this.app.comparisonMode) {
             const boundsA = this.app.scenarioYearRanges[this.app.comparisonScenarioA];
             const boundsB = this.app.scenarioYearRanges[this.app.comparisonScenarioB];
-
+            
             const minYear = Math.min(boundsA.min, boundsB.min);
             const maxYear = Math.max(boundsA.max, boundsB.max);
-
+            
             min = Math.max(minYear, Math.min(maxYear, min));
             max = Math.max(minYear, Math.min(maxYear, max));
-        } else if (this.app.dataSource === 'real') {
-            // Use real data year range for real historical data
-            const bounds = this.app.realDataYearRange;
-            min = Math.max(bounds.min, Math.min(bounds.max, min));
-            max = Math.max(bounds.min, Math.min(bounds.max, max));
         } else {
-            // Use scenario year ranges for simulated data
             const bounds = this.app.scenarioYearRanges[this.app.currentScenario];
             min = Math.max(bounds.min, Math.min(bounds.max, min));
             max = Math.max(bounds.min, Math.min(bounds.max, max));
@@ -602,19 +490,19 @@ class UIController {
         const yearMinSlider = document.getElementById('year-slider-min');
         const yearMaxSlider = document.getElementById('year-slider-max');
         const yearDisplay = document.getElementById('year-display');
-
+        
         if (this.app.showHeatmap) {
             yearDisplay.textContent = 'All Years (Severity Mode)';
         } else {
             const min = parseInt(yearMinSlider.value);
             const max = parseInt(yearMaxSlider.value);
-
+            
             if (this.app.comparisonMode) {
                 const boundsA = this.app.scenarioYearRanges[this.app.comparisonScenarioA];
                 const boundsB = this.app.scenarioYearRanges[this.app.comparisonScenarioB];
                 const minYear = Math.min(boundsA.min, boundsB.min);
                 const maxYear = Math.max(boundsA.max, boundsB.max);
-
+                
                 if (min === minYear && max === maxYear) {
                     yearDisplay.textContent = `${minYear} - ${maxYear} (Both scenarios)`;
                 } else if (min === max) {
@@ -622,21 +510,9 @@ class UIController {
                 } else {
                     yearDisplay.textContent = `${min} - ${max}`;
                 }
-            } else if (this.app.dataSource === 'real') {
-                // Use real data year range for display
-                const bounds = this.app.realDataYearRange;
-
-                if (min === bounds.min && max === bounds.max) {
-                    yearDisplay.textContent = `${bounds.min} - ${bounds.max}`;
-                } else if (min === max) {
-                    yearDisplay.textContent = `Year: ${min}`;
-                } else {
-                    yearDisplay.textContent = `${min} - ${max}`;
-                }
             } else {
-                // Use scenario year ranges for simulated data
                 const bounds = this.app.scenarioYearRanges[this.app.currentScenario];
-
+                
                 if (min === bounds.min && max === bounds.max) {
                     yearDisplay.textContent = `${bounds.min} - ${bounds.max}`;
                 } else if (min === max) {
@@ -696,36 +572,23 @@ class UIController {
     showCycloneInfo(cyclone) {
         const infoPanel = document.getElementById('info-panel');
         const details = document.getElementById('cyclone-details');
-
+        
         if (!infoPanel || !details) return;
-
-        // Get genesis coordinates - fallback to first track point if not available
-        let genesisLat = cyclone.genesis_lat;
-        let genesisLon = cyclone.genesis_lon;
-
-        if ((genesisLat === undefined || genesisLon === undefined) && cyclone.track && cyclone.track.length > 0) {
-            genesisLat = cyclone.track[0].lat;
-            genesisLon = cyclone.track[0].lon;
-        }
-
-        const genesisText = (genesisLat !== undefined && genesisLon !== undefined)
-            ? `${genesisLat.toFixed(2)}°, ${genesisLon.toFixed(2)}°`
-            : 'Unknown';
-
+        
         details.innerHTML = `
             <p><strong>ID:</strong> ${cyclone.id}</p>
             <p><strong>Name:</strong> ${cyclone.name}</p>
             <p><strong>Year:</strong> ${cyclone.year}</p>
             <p><strong>Max Category:</strong> ${cyclone.maxCategory}</p>
             <p><strong>Max Wind Speed:</strong> ${cyclone.maxWind} km/h</p>
-            <p><strong>Min Pressure:</strong> ${cyclone.minPressure || 'N/A'} hPa</p>
+            <p><strong>Min Pressure:</strong> ${cyclone.minPressure} hPa</p>
             <p><strong>Duration:</strong> ${cyclone.duration_days || cyclone.duration} days</p>
-            <p><strong>Genesis:</strong> ${genesisText}</p>
+            <p><strong>Genesis:</strong> ${cyclone.genesis_lat.toFixed(2)}°, ${cyclone.genesis_lon.toFixed(2)}°</p>
             <p><strong>Landfall:</strong> ${cyclone.landfall ? 'Yes' : 'No'}</p>
         `;
-
+        
         infoPanel.classList.remove('hidden');
-
+        
         setTimeout(() => {
             infoPanel.classList.add('hidden');
         }, 10000);

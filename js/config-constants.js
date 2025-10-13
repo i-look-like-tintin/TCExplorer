@@ -1,10 +1,10 @@
 const TCConfig = {
     app: {
         name: 'Tropical Cyclone Track Visualization',
-        version: '2.0.0',
+        version: '1.0.5',
         description: 'd4PDF Climate Model Projections for Australia',
         author: 'Team 7 Sharks',
-        buildDate: '2025-10-13'
+        buildDate: '2025-10-08'
     },
     
     api: {
@@ -57,144 +57,7 @@ const TCConfig = {
             west: 105
         }
     },
-
-    regions: {
-        australian: {
-            id: 'australian',
-            name: 'Australian Region',
-            description: 'Australian Region (105°E-160°E, 45°S-5°S)',
-            bounds: {
-                north: -5,
-                south: -45,
-                east: 160,
-                west: 105
-            },
-            defaultCenter: [-25, 132.5],
-            defaultZoom: 4
-        },
-        // global: {
-        //     id: 'global',
-        //     name: 'Global (All Regions)',
-        //     description: 'All cyclone basins worldwide - NOT AVAILABLE (file size > 100MB)',
-        //     bounds: {
-        //         north: 90,
-        //         south: -90,
-        //         east: 180,
-        //         west: -180
-        //     },
-        //     defaultCenter: [0, 0],
-        //     defaultZoom: 2
-        // },
-        north_atlantic: {
-            id: 'north_atlantic',
-            name: 'North Atlantic',
-            description: 'North Atlantic Basin (100°W-0°E, 0°N-60°N)',
-            bounds: {
-                north: 60,
-                south: 0,
-                east: 0,
-                west: -100
-            },
-            defaultCenter: [25, -50],
-            defaultZoom: 3
-        },
-        western_pacific: {
-            id: 'western_pacific',
-            name: 'Western Pacific',
-            description: 'Western Pacific Basin (100°E-180°E, 0°N-60°N)',
-            bounds: {
-                north: 60,
-                south: 0,
-                east: 180,
-                west: 100
-            },
-            defaultCenter: [20, 140],
-            defaultZoom: 3
-        },
-        eastern_pacific: {
-            id: 'eastern_pacific',
-            name: 'Eastern Pacific',
-            description: 'Eastern Pacific Basin (180°W-75°W, 0°N-60°N)',
-            bounds: {
-                north: 60,
-                south: 0,
-                east: -75,
-                west: -180
-            },
-            defaultCenter: [15, -125],
-            defaultZoom: 3
-        },
-        north_indian: {
-            id: 'north_indian',
-            name: 'North Indian',
-            description: 'North Indian Ocean Basin (30°E-100°E, 0°N-40°N)',
-            bounds: {
-                north: 40,
-                south: 0,
-                east: 100,
-                west: 30
-            },
-            defaultCenter: [15, 65],
-            defaultZoom: 3
-        },
-        south_indian: {
-            id: 'south_indian',
-            name: 'South Indian',
-            description: 'South Indian Ocean Basin (20°E-115°E, 40°S-0°)',
-            bounds: {
-                north: 0,
-                south: -40,
-                east: 115,
-                west: 20
-            },
-            defaultCenter: [-20, 67.5],
-            defaultZoom: 3
-        },
-        south_pacific: {
-            id: 'south_pacific',
-            name: 'South Pacific',
-            description: 'South Pacific Basin (135°E-120°W, 40°S-0°)',
-            bounds: {
-                north: 0,
-                south: -40,
-                east: -120,
-                west: 135
-            },
-            defaultCenter: [-20, 172.5],
-            defaultZoom: 3
-        }
-    },
-
-    dataSources: {
-        simulated: {
-            id: 'simulated',
-            name: 'Simulated (d4PDF Climate Models)',
-            description: 'Climate model projections from d4PDF dataset',
-            shortName: 'Simulated',
-            features: {
-                scenarios: true,
-                ensembles: true,
-                sstModels: true,
-                comparison: true
-            }
-        },
-        real: {
-            id: 'real',
-            name: 'Real Historical (BoM/IBTrACS)',
-            description: 'Observed tropical cyclone tracks from Bureau of Meteorology and International Best Track Archive',
-            shortName: 'Real Historical',
-            yearRange: { min: 1842, max: new Date().getFullYear() },
-            features: {
-                scenarios: false,
-                ensembles: false,
-                sstModels: false,
-                comparison: false  // Can compare real vs real, but not real vs simulated
-            },
-            source: 'IBTrACS v04r01 (includes BoM data)',
-            sourceUrl: 'https://www.ncei.noaa.gov/products/international-best-track-archive'
-        }
-    },
-
+    
     scenarios: {
         current: {
             id: 'current',
@@ -205,8 +68,7 @@ const TCConfig = {
             warming: '0K',
             model: 'd4PDF HPB',
             color: '#2c3e50',
-            requiresSST: false,
-            dataSource: 'simulated'
+            requiresSST: false
         },
         nat: {
             id: 'nat',
@@ -217,8 +79,7 @@ const TCConfig = {
             warming: 'Natural Only',
             model: 'd4PDF HPB NAT',
             color: '#27ae60',
-            requiresSST: false,
-            dataSource: 'simulated'
+            requiresSST: false
         },
         '2k': {
             id: '2k',
@@ -231,8 +92,7 @@ const TCConfig = {
             model: 'd4PDF HFB_2K',
             color: '#e67e22',
             requiresSST: true,
-            sstModels: ['CC', 'GF', 'HA', 'MI', 'MP', 'MR'],
-            dataSource: 'simulated'
+            sstModels: ['CC', 'GF', 'HA', 'MI', 'MP', 'MR']
         },
         '4k': {
             id: '4k',
@@ -245,8 +105,7 @@ const TCConfig = {
             model: 'd4PDF HFB_4K',
             color: '#c0392b',
             requiresSST: true,
-            sstModels: ['CC', 'GF', 'HA', 'MI', 'MP', 'MR'],
-            dataSource: 'simulated'
+            sstModels: ['CC', 'GF', 'HA', 'MI', 'MP', 'MR']
         }
     },
     
@@ -550,34 +409,20 @@ const TCConfig = {
 };
 
 const TCConfigUtils = {
-    getDataSource(dataSourceId) {
-        return TCConfig.dataSources[dataSourceId] || null;
-    },
-
     getScenario(scenarioId) {
         return TCConfig.scenarios[scenarioId] || null;
     },
-
-    getRegion(regionId) {
-        return TCConfig.regions[regionId] || null;
-    },
-
+    
     getSST(sstId) {
         return TCConfig.sstModels[sstId] || null;
     },
-
+    
     getIntensityCategory(category) {
         return TCConfig.intensityCategories[category] || TCConfig.intensityCategories[0];
     },
-
+    
     isFeatureEnabled(featureName) {
         return TCConfig.features[featureName] === true;
-    },
-
-    isDataSourceFeatureEnabled(dataSourceId, featureName) {
-        const dataSource = this.getDataSource(dataSourceId);
-        if (!dataSource || !dataSource.features) return false;
-        return dataSource.features[featureName] === true;
     },
     
     getDeviceConfig(deviceType) {

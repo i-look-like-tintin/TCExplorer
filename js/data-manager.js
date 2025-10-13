@@ -5,25 +5,13 @@ class DataManager {
         this.loadingQueue = new Set();
         this.comparisonDataA = null;
         this.comparisonDataB = null;
-
-        // Initialize IndexedDB cache manager
-        this.cacheManager = new CacheManager();
-        this.cacheManager.init().catch(error => {
-            console.warn('Failed to initialize IndexedDB cache:', error);
-        });
     }
     
     getCacheKey(scenario = null, ensemble = null, sstModel = null) {
-        // Special handling for real historical data - include region in cache key
-        if (this.app.dataSource === 'real') {
-            const region = this.app.currentRegion || 'australian';
-            return `real-historical-${region}`;
-        }
-
         const s = scenario || this.app.currentScenario;
         const e = ensemble || this.app.currentEnsemble;
         const sst = sstModel || this.app.currentSSTModel;
-
+        
         if (s === 'current' || s === 'nat') {
             return `${s}_${e}`;
         } else {
@@ -102,23 +90,17 @@ class DataManager {
         if (this.app.comparisonMode) {
             return;
         }
-
-        // Check if using real data source
-        if (this.app.dataSource === 'real') {
-            return await this.loadRealHistoricalData(forceRefresh);
-        }
-
+        
         const cacheKey = this.getCacheKey();
-
+        
         if (this.loadingQueue.has(cacheKey)) {
             return;
         }
-
+        
         try {
             this.app.showLoading(true);
             this.updateDataStatus('Loading data...');
-
-            // Check in-memory cache first
+            
             if (!forceRefresh && this.app.cycloneData[cacheKey]) {
                 const cachedData = this.app.cycloneData[cacheKey];
                 this.updateSourceFileDisplay(cachedData);
@@ -126,42 +108,15 @@ class DataManager {
                 await this.app.updateVisualization();
                 return;
             }
-
-            // Check IndexedDB cache
-            if (!forceRefresh) {
-                try {
-                    const indexedDBData = await this.cacheManager.get(cacheKey);
-                    if (indexedDBData) {
-                        console.log('Using IndexedDB cached data for', cacheKey);
-                        this.app.cycloneData[cacheKey] = indexedDBData;
-                        this.updateSourceFileDisplay(indexedDBData);
-                        await this.app.updateVisualization();
-                        this.showDataInfo(indexedDBData);
-                        return;
-                    }
-                } catch (error) {
-                    console.warn('Failed to load from IndexedDB cache:', error);
-                    // Continue to fetch from server
-                }
-            }
-
+            
             this.loadingQueue.add(cacheKey);
-
+            
             const params = this.buildAPIParams();
             const response = await fetch(`php/api.php?${params}`);
             const data = await response.json();
-
+            
             if (data.success) {
                 this.app.cycloneData[cacheKey] = data.data;
-
-                // Save to IndexedDB cache
-                try {
-                    await this.cacheManager.set(cacheKey, data.data);
-                    console.log('Saved data to IndexedDB cache:', cacheKey);
-                } catch (error) {
-                    console.warn('Failed to save to IndexedDB cache:', error);
-                }
-
                 this.updateSourceFileDisplay(data.data);
                 await this.app.updateVisualization();
                 this.showDataInfo(data.data);
@@ -170,123 +125,11 @@ class DataManager {
                 this.updateDataStatus('Failed to load data', 'error');
                 throw new Error(data.error || 'Unknown API error');
             }
-
+            
         } catch (error) {
             console.error('Error loading data:', error);
             this.updateDataStatus('Error loading data', 'error');
             this.app.utils.showNotification('Failed to load cyclone data. Please try again.', 'error');
-        } finally {
-            this.loadingQueue.delete(cacheKey);
-            this.app.showLoading(false);
-        }
-    }
-
-    async loadRealHistoricalData(forceRefresh = false) {
-        const cacheKey = this.getCacheKey();  // Use dynamic cache key with region
-
-        if (this.loadingQueue.has(cacheKey)) {
-            return;
-        }
-
-        try {
-            this.app.showLoading(true, 'Loading real historical cyclone data from IBTrACS...');
-            this.updateDataStatus('Loading real historical data...');
-
-            // Check in-memory cache first
-            if (!forceRefresh && this.app.cycloneData[cacheKey]) {
-                const cachedData = this.app.cycloneData[cacheKey];
-                this.updateSourceFileDisplay(cachedData);
-                this.showDataInfo(cachedData);
-                await this.app.updateVisualization();
-                return;
-            }
-
-            // Check IndexedDB cache
-            if (!forceRefresh) {
-                try {
-                    const indexedDBData = await this.cacheManager.get(cacheKey);
-                    if (indexedDBData) {
-                        console.log('Using IndexedDB cached data for', cacheKey);
-                        this.app.cycloneData[cacheKey] = indexedDBData;
-
-                        // Update year range based on cached data
-                        if (indexedDBData.metadata && indexedDBData.metadata.min_year && indexedDBData.metadata.max_year) {
-                            this.app.realDataYearRange = {
-                                min: indexedDBData.metadata.min_year,
-                                max: indexedDBData.metadata.max_year
-                            };
-                        }
-
-                        this.updateSourceFileDisplay(indexedDBData);
-                        await this.app.updateVisualization();
-                        this.showDataInfo(indexedDBData);
-
-                        this.app.utils.showNotification(
-                            `Loaded ${indexedDBData.total_cyclones} real historical cyclones from cache (${indexedDBData.metadata.period})`,
-                            'success'
-                        );
-                        return;
-                    }
-                } catch (error) {
-                    console.warn('Failed to load from IndexedDB cache:', error);
-                    // Continue to fetch from server
-                }
-            }
-
-            this.loadingQueue.add(cacheKey);
-
-            const region = this.app.currentRegion || 'australian';
-
-            const params = new URLSearchParams({
-                action: 'getRealHistoricalData',
-                basin: 'all',  // Global basin - includes all worldwide cyclone data
-                region: region,  // Selected geographical region
-                debug: 'true'
-            });
-
-            const response = await fetch(`php/api.php?${params}`);
-            const data = await response.json();
-
-            if (data.success) {
-                this.app.cycloneData[cacheKey] = data.data;
-
-                // Save to IndexedDB cache
-                try {
-                    await this.cacheManager.set(cacheKey, data.data);
-                    console.log('Saved data to IndexedDB cache:', cacheKey);
-                } catch (error) {
-                    console.warn('Failed to save to IndexedDB cache:', error);
-                }
-
-                // Update year range based on actual data
-                if (data.data.metadata && data.data.metadata.min_year && data.data.metadata.max_year) {
-                    this.app.realDataYearRange = {
-                        min: data.data.metadata.min_year,
-                        max: data.data.metadata.max_year
-                    };
-                }
-
-                this.updateSourceFileDisplay(data.data);
-                await this.app.updateVisualization();
-                this.showDataInfo(data.data);
-
-                this.app.utils.showNotification(
-                    `Loaded ${data.data.total_cyclones} real historical cyclones (${data.data.metadata.period})`,
-                    'success'
-                );
-            } else {
-                console.error('Failed to load real data:', data.error);
-                this.updateDataStatus('Failed to load real data', 'error');
-                throw new Error(data.error || 'Unknown API error');
-            }
-
-        } catch (error) {
-            console.error('Error loading real historical data:', error);
-            this.updateDataStatus('Error loading real data', 'error');
-            this.app.utils.showNotification(
-                'Failed to load real historical data. This may take a moment on first load as data is downloaded.',
-                'error'
-            );
         } finally {
             this.loadingQueue.delete(cacheKey);
             this.app.showLoading(false);
