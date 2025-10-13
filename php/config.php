@@ -1,13 +1,23 @@
 <?php
 
-define('DB_HOST', 'localhost');
-define('DB_NAME', 'cyclone_viz');
-define('DB_USER', 'root');
-define('DB_PASS', '');
+// Database configuration (not currently used, but kept for future features)
+define('DB_HOST', getenv('DB_HOST') ?: 'localhost');
+define('DB_NAME', getenv('DB_NAME') ?: 'cyclone_viz');
+define('DB_USER', getenv('DB_USER') ?: 'root');
+define('DB_PASS', getenv('DB_PASS') ?: '');
 
-define('DATA_PATH', __DIR__ . '/data/');
-define('CACHE_PATH', __DIR__ . '/cache/');
-define('LOG_PATH', __DIR__ . '/logs/');
+// Path configuration - Azure compatible
+// Azure App Service uses D:\home\site\wwwroot as the root directory
+$isAzure = getenv('WEBSITE_SITE_NAME') !== false;
+if ($isAzure) {
+    define('DATA_PATH', __DIR__ . '/data/');
+    define('CACHE_PATH', 'D:/home/data/cache/');
+    define('LOG_PATH', 'D:/home/LogFiles/application/');
+} else {
+    define('DATA_PATH', __DIR__ . '/data/');
+    define('CACHE_PATH', __DIR__ . '/cache/');
+    define('LOG_PATH', __DIR__ . '/logs/');
+}
 
 define('DP4DF_BASE_URL', 'https://climate.mri-jma.go.jp/pub/d4pdf/tropical_cyclone_tracks/');
 
@@ -103,11 +113,20 @@ define('LOG_LEVEL', 'INFO');
 define('LOG_FILE_PREFIX', 'cyclone_viz_');
 define('LOG_ROTATION_DAYS', 7);
 
-define('ALLOWED_ORIGINS', [
+// Allowed CORS origins - Azure compatible
+$allowedOrigins = [
     'http://localhost',
     'https://www.unsw.edu.au',
     'https://ssci.unsw.edu.au'
-]);
+];
+
+// Automatically add Azure Web App URL if running on Azure
+if ($isAzure && getenv('WEBSITE_SITE_NAME')) {
+    $azureSiteName = getenv('WEBSITE_SITE_NAME');
+    $allowedOrigins[] = "https://{$azureSiteName}.azurewebsites.net";
+}
+
+define('ALLOWED_ORIGINS', $allowedOrigins);
 
 define('FEATURES', [
     'ensemble_selection' => false,

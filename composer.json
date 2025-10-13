@@ -1,0 +1,28 @@
+{
+  "name": "team-sharks/tc-explorer",
+  "description": "Interactive visualization of tropical cyclone tracks using d4PDF climate model projections and IBTrACS historical data",
+  "version": "2.0.0",
+  "type": "project",
+  "license": "GPL-3.0",
+  "authors": [
+    {
+      "name": "Team Sharks",
+      "email": "noreply@example.com"
+    }
+  ],
+  "require": {
+    "php": ">=7.4"
+  },
+  "config": {
+    "platform": {
+      "php": "8.0"
+    }
+  },
+  "scripts": {
+    "post-install-cmd": [
+      "@php -r \"if (!file_exists('php/cache')) mkdir('php/cache', 0755, true);\"",
+      "@php -r \"if (!file_exists('php/logs')) mkdir('php/logs', 0755, true);\"",
+      "@php -r \"if (!file_exists('php/data')) mkdir('php/data', 0755, true);\""
+    ]
+  }
+}

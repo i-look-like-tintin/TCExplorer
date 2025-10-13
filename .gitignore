@@ -1,9 +1,11 @@
 # Cache files - these are generated automatically and should not be committed
-php/cache/
 cache/
+php/cache/dp4df/
 
-# IBTrACS data files - too large for GitHub, will be downloaded automatically
+# IBTrACS data files - CSV files are too large for GitHub, will be downloaded automatically
+# But we keep the parsed JSON files for faster Azure deployment
 *.csv
+!php/cache/ibtracs/*.json
 
 # Node modules (if any)
 node_modules/
@@ -31,3 +33,15 @@ error_log
 *.tmp
 *.temp
 .cache/
+
+# Azure-specific files
+*.azurewebsites.net
+config.local.php
+php/config.local.php
+
+# Composer vendor directory (if dependencies are added later)
+vendor/
+composer.lock
+
+# Azure deployment artifacts
+.deployment.bak
