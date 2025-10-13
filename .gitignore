@@ -1,6 +1,11 @@
 # Cache files - these are generated automatically and should not be committed
-php/cache/
+php/cache/ibtracs/*.csv
+php/cache/ibtracs/*.tmp
+php/logs/
 cache/
+
+# EXCEPT: Include pre-parsed JSON files (they're small enough and save Azure from downloading/parsing)
+!php/cache/ibtracs/parsed_*.json
 
 # IBTrACS data files - too large for GitHub, will be downloaded automatically
 *.csv
