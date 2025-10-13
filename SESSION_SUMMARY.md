@@ -437,5 +437,4 @@ For questions or issues:
 **Session completed successfully!**
 
 *Developed by Team Sharks: May, Markey, Scott, Jackson, and Wheeler*
-*Deployment assistance provided by Claude Code*
 *Date: October 14, 2025*
