@@ -135,7 +135,7 @@ class IBTraCSParser {
 
             // If downloads are disabled (Azure/production), return error
             if ($this->disableDownloads) {
-                $this->lastError = "Region data not available. Pre-cached regions: Australian, North Atlantic, North Indian, South Indian";
+                $this->lastError = "Region data not available. Available regions: Australian, North Atlantic, Western Pacific, Eastern Pacific, North Indian, South Indian, South Pacific";
                 error_log("IBTrACS: Region $region not available in pre-cached data (downloads disabled)");
                 return [];  // Return empty array instead of null to avoid errors
             }

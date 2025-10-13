@@ -52,7 +52,6 @@
                 <label for="region-select">Region:</label>
                 <select id="region-select" class="scenario-select" aria-describedby="region-desc">
                     <option value="australian">Australian Region</option>
-                    <option value="global">Global (All Regions)</option>
                     <option value="north_atlantic">North Atlantic</option>
                     <option value="western_pacific">Western Pacific</option>
                     <option value="eastern_pacific">Eastern Pacific</option>
@@ -61,7 +60,7 @@
                     <option value="south_pacific">South Pacific</option>
                 </select>
                 <div id="region-desc" class="sr-only">Select the geographical region for cyclone data</div>
-                <div id="region-info" class="info-text" style="display: none;" aria-live="polite"></div>
+                <div id="region-info" class="info-text" style="display: none;" aria-live="polite">Note: Global view not available due to file size constraints. Please select a specific region.</div>
             </div>
 
             <!-- Comparison Mode Toggle -->
@@ -415,7 +414,7 @@
                     <h3>🔬 Data Sources</h3>
                     <ul>
                         <li><strong>d4PDF Climate Model:</strong> Database for Policy Decision Making for Future Climate Change - Simulated climate projections for historical and future warming scenarios</li>
-                        <li><strong>IBTrACS (International Best Track Archive for Climate Stewardship):</strong> NOAA's comprehensive global historical cyclone database (1842-present) with 8 regional filters including Australian, Global, North Atlantic, Western Pacific, Eastern Pacific, North Indian, South Indian, and South Pacific regions</li>
+                        <li><strong>IBTrACS (International Best Track Archive for Climate Stewardship):</strong> NOAA's comprehensive historical cyclone database (1842-present) with 7 regional filters: Australian, North Atlantic, Western Pacific, Eastern Pacific, North Indian, South Indian, and South Pacific. Global view not available in production due to file size constraints.</li>
                     </ul>
                 </div>
 

@@ -72,19 +72,19 @@ const TCConfig = {
             defaultCenter: [-25, 132.5],
             defaultZoom: 4
         },
-        global: {
-            id: 'global',
-            name: 'Global (All Regions)',
-            description: 'All cyclone basins worldwide',
-            bounds: {
-                north: 90,
-                south: -90,
-                east: 180,
-                west: -180
-            },
-            defaultCenter: [0, 0],
-            defaultZoom: 2
-        },
+        // global: {
+        //     id: 'global',
+        //     name: 'Global (All Regions)',
+        //     description: 'All cyclone basins worldwide - NOT AVAILABLE (file size > 100MB)',
+        //     bounds: {
+        //         north: 90,
+        //         south: -90,
+        //         east: 180,
+        //         west: -180
+        //     },
+        //     defaultCenter: [0, 0],
+        //     defaultZoom: 2
+        // },
         north_atlantic: {
             id: 'north_atlantic',
             name: 'North Atlantic',
