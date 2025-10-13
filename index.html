@@ -36,37 +36,10 @@
         </header>
         
         <div id="control-panel">
-            <!-- Data Source Selector -->
-            <div class="control-group data-source-group">
-                <label for="data-source-select">Data Source:</label>
-                <select id="data-source-select" class="scenario-select data-source-select" aria-describedby="data-source-desc">
-                    <option value="simulated">Simulated (d4PDF Climate Models)</option>
-                    <option value="real">Real Historical (BoM/IBTrACS)</option>
-                </select>
-                <div id="data-source-desc" class="sr-only">Choose between simulated climate model data or real historical observations</div>
-                <div id="data-source-info" class="info-text" style="display: none;" aria-live="polite"></div>
-            </div>
-
-            <!-- Region Selector (for Real Data) -->
-            <div class="control-group region-selector-group" id="region-selector-group" style="display: none;">
-                <label for="region-select">Region:</label>
-                <select id="region-select" class="scenario-select" aria-describedby="region-desc">
-                    <option value="australian">Australian Region</option>
-                    <option value="north_atlantic">North Atlantic</option>
-                    <option value="western_pacific">Western Pacific</option>
-                    <option value="eastern_pacific">Eastern Pacific</option>
-                    <option value="north_indian">North Indian</option>
-                    <option value="south_indian">South Indian</option>
-                    <option value="south_pacific">South Pacific</option>
-                </select>
-                <div id="region-desc" class="sr-only">Select the geographical region for cyclone data</div>
-                <div id="region-info" class="info-text" style="display: none;" aria-live="polite">Note: Global view not available due to file size constraints. Please select a specific region.</div>
-            </div>
-
             <!-- Comparison Mode Toggle -->
             <div class="control-group comparison-toggle-group">
                 <label class="checkbox-label comparison-toggle">
-                    <input type="checkbox" id="comparison-mode" aria-describedby="comparison-desc">
+                    <input type="checkbox" id="comparison-mode" aria-describedby="comparison-desc"> 
                     <span class="comparison-toggle-text">Compare Scenarios</span>
                 </label>
                 <div id="comparison-desc" class="sr-only">Enable to compare two different climate scenarios side by side</div>
@@ -355,21 +328,7 @@
     
     <div id="loading-overlay" role="status" aria-live="polite">
         <div class="loader" aria-hidden="true"></div>
-        <p id="loading-message">Loading cyclone data...</p>
-        <div id="loading-progress" class="loading-progress" style="display: none;">
-            <div class="progress-step" id="progress-step-1">
-                <span class="progress-icon">⏳</span>
-                <span class="progress-text">Checking cache...</span>
-            </div>
-            <div class="progress-step" id="progress-step-2">
-                <span class="progress-icon">⏳</span>
-                <span class="progress-text">Downloading data...</span>
-            </div>
-            <div class="progress-step" id="progress-step-3">
-                <span class="progress-icon">⏳</span>
-                <span class="progress-text">Processing cyclones...</span>
-            </div>
-        </div>
+        <p>Loading cyclone data...</p>
     </div>
     
     <div id="notification-container" aria-live="assertive" aria-atomic="true"></div>
@@ -411,17 +370,17 @@
                 </div>
 
                 <div class="about-section">
-                    <h3>🔬 Data Sources</h3>
+                    <h3>🔬 Data Source</h3>
                     <ul>
-                        <li><strong>d4PDF Climate Model:</strong> Database for Policy Decision Making for Future Climate Change - Simulated climate projections for historical and future warming scenarios</li>
-                        <li><strong>IBTrACS (International Best Track Archive for Climate Stewardship):</strong> NOAA's comprehensive historical cyclone database (1842-present) with 7 regional filters: Australian, North Atlantic, Western Pacific, Eastern Pacific, North Indian, South Indian, and South Pacific. Global view not available in production due to file size constraints.</li>
+                        <li><strong>d4PDF Climate Model:</strong> Database for Policy Decision Making for Future Climate Change</li>
+
                     </ul>
                 </div>
 
                 <div class="about-section">
                     <h3>ℹ️ Version Information</h3>
-                    <p><strong>Version:</strong> 2.0.0<br>
-                    <strong>Release Date:</strong> 2025<br>
+                    <p><strong>Version:</strong> 0.15.0<br>
+                    <strong>Release Date:</strong> 2024<br>
                     <strong>License:</strong> GNU General Public License-3.0</p>
                 </div>
             </div>
@@ -441,7 +400,6 @@
     
     <script src="./js/config-constants.js"></script>
     <script src="./js/utils.js"></script>
-    <script src="./js/cache-manager.js"></script>
     <script src="./js/map-manager.js"></script>
     <script src="./js/data-manager.js"></script>
     <script src="./js/visualization-renderer.js"></script>
@@ -502,11 +460,11 @@
     <footer id="team-footer" class="team-footer">
         <div class="footer-content">
             <p>
-                <strong id="app-version">TC Explorer v2.0.0</strong> |
+                <strong id="app-version">TC Explorer v1.0.0a</strong> |
                 Developed by <strong>Team Sharks</strong>: May, Markey, Scott, Jackson, and Wheeler
             </p>
             <p>
-                <small>Interactive visualization of tropical cyclone tracks using d4PDF climate model projections and historic IBTrACS data</small>
+                <small>Interactive visualization of tropical cyclone tracks using d4PDF climate model projections</small>
             </p>
             <button id="about-btn" class="about-btn" aria-label="About this application">About</button>
         </div>

@@ -1,5 +1,5 @@
 # TC Explorer - Tropical Cyclone Visualization Tool
-**Version 2.0.0**
+**Version 1.0.5**
 
 *Developed by Team Sharks: May, Markey, Scott, Jackson, and Wheeler*
 
@@ -21,7 +21,7 @@ TC Explorer is an interactive web application for visualizing and analyzing trop
 3. Start Apache from the XAMPP control panel
 4. Navigate to `http://localhost/TCExplorer/` in your web browser
 
-**Note:** This application has been tested on Linux, Windows, macOS platforms, iOS and Android.
+**Note:** This application has been tested on Linux, Windows, and macOS platforms.
 
 ## Key Features
 
@@ -50,25 +50,12 @@ TC Explorer is an interactive web application for visualizing and analyzing trop
 
 ## Data Sources
 
-The application provides access to both simulated climate model data and real historical observations:
-
-### Simulated Data (d4PDF Climate Models)
 The application utilizes tropical cyclone data from the d4PDF (database for Policy Decision making for Future climate change) project, providing comprehensive climate model outputs for:
 
 - **Historical Climate** (1951-2011): Current climate conditions
 - **Natural Climate** (1951-2010): Climate conditions without anthropogenic warming
 - **2K Warming Scenario** (2031-2090): Climate projections with 2°C global warming
 - **4K Warming Scenario** (2051-2110): Climate projections with 4°C global warming
-
-### Real Historical Data (IBTrACS)
-The application integrates real historical cyclone data from IBTrACS (International Best Track Archive for Climate Stewardship), NOAA's comprehensive global database:
-
-- **Coverage Period**: 1842 to present
-- **Global Dataset**: 13,519+ historical tropical cyclones worldwide
-- **8 Regional Filters**: Australian Region, Global (All Regions), North Atlantic, Western Pacific, Eastern Pacific, North Indian, South Indian, and South Pacific
-- **Data Source**: IBTrACS v04r01, which includes Bureau of Meteorology (BoM) data for the Australian region
-- **Performance**: Multi-level caching system (IndexedDB + server-side parsed JSON cache) for fast data loading
-- **Source**: [NOAA IBTrACS](https://www.ncei.noaa.gov/products/international-best-track-archive)
 
 ## Usage Guidelines
 
@@ -99,23 +86,10 @@ For technical documentation and development information, please refer to:
 
 ## Version History
 
-**v2.0.0**
-- Major feature release: Real historical cyclone data integration
-- Added IBTrACS (International Best Track Archive for Climate Stewardship) dataset support
-- 8 global regional filters: Australian, Global, North Atlantic, Western Pacific, Eastern Pacific, North Indian, South Indian, South Pacific
-- Historical cyclone data from 1842 to present (13,519+ global storms)
-- Multi-level caching system: IndexedDB client-side cache + server-side parsed JSON cache
-- Significant performance improvements: Load times reduced from 10-15s to <1s for cached regions
-- Data source selector allowing users to switch between simulated (d4PDF) and real historical data
-- Memory-efficient CSV parsing with region-specific filtering
-- Cache expiration set to 7 days for both client and server caches
-- Loading progress indicators for better user experience
-- Default options reset on page reload for consistency
-
-**v1.1.0**
-- Add Satellite viewing mode
-- Add colourblind support
-- Refine tutorial
+**v1.0.0a** - Alpha-testing of Production Release
+- Collapsible desktop interface
+- Enhanced mobile responsiveness
+- Production-ready codebase
 
 **Previous Versions**
 - v0.10.0 Added experimental heatmap view, which utilises pre-processed cell data to draw the heatmap. This was created from Client's IPYNB code modified to pre-process data, and then uploaded into application through density_data/
@@ -128,8 +102,7 @@ See known issues with this experimental implementation.
 - v0.15.0 Added collapsible control panel to desktop mode as well. This allows app to facilitate lower resolution displays much more effectively.
 - v0.15.5 Mobile version of site updated for functionality. Now functions horizontally and vertically, with a hamburger options menu allowing elements to be disabled for visibility and functions to be selected. Additional testing required to ensure full functionality.
 - v0.16.0 Added individual year sliders and visibility toggles to scenario comparison. Investigating a potential issue with mobile display (full header showing in horizontal view).
-- v0.17.0 Add full user tutorial for both desktop and mobile. Tutorial is configured to launch automatically for first-time users, and also be toggleable with a header option.
-- v1.0.0a Alpha-testing of Production Release, Collapsible desktop interface, Enhanced mobile responsiveness, Production-ready codebase
+- v0.17.0 Add full user tutorial for both desktop and mobile. Tutorial is configured to launch automatically for first-time users, and also be toggleable with a header option. 
 
 ## About Team Sharks
 
@@ -137,7 +110,7 @@ This application was developed by Team Sharks, comprising May, Markey, Scott, Ja
 
 ---
 
-*TC Explorer v2.0.0 - Ready for deployment and educational use*
+*TC Explorer v0.15.0 - Ready for deployment and educational use*
 
 
 
@@ -205,4 +178,3 @@ This application was developed by Team Sharks, comprising May, Markey, Scott, Ja
                                 #####
                                   #####
                                     ###
-
