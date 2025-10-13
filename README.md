@@ -1,5 +1,5 @@
 # TC Explorer - Tropical Cyclone Visualization Tool
-**Version 1.0.5**
+**Version 1.2.0**
 
 *Developed by Team Sharks: May, Markey, Scott, Jackson, and Wheeler*
 
@@ -86,6 +86,13 @@ For technical documentation and development information, please refer to:
 
 ## Version History
 
+**v1.2.0**
+- Colourblind support added
+- Satellite view added
+- Refined tutorial
+- (also un~~fucked~~ my attempt at database integration. she aint ready yet)
+
+
 **v1.0.0a** - Alpha-testing of Production Release
 - Collapsible desktop interface
 - Enhanced mobile responsiveness
@@ -110,7 +117,7 @@ This application was developed by Team Sharks, comprising May, Markey, Scott, Ja
 
 ---
 
-*TC Explorer v0.15.0 - Ready for deployment and educational use*
+*TC Explorer v1.2.0 - Ready for deployment and educational use*
 
 
 
