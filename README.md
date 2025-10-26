@@ -1,4 +1,4 @@
-# TC Explorer - Tropical Cyclone Visualization Tool
+# TC Explorer - Tropical Cyclone Visualisation Tool
 **Version 1.2.0**
 
 *Developed by Team Sharks: May, Markey, Scott, Jackson, and Wheeler*
@@ -27,11 +27,11 @@ TC Explorer is an interactive web application for visualizing and analyzing trop
 
 ## Key Features
 
-### Data Visualization
-- **Cyclone Tracks**: Interactive visualization of tropical cyclone paths across the Australian region
+### Data Visualisation
+- **Cyclone Tracks**: Interactive visualisation of tropical cyclone paths across the Australian region
 - **Genesis Locations**: Display cyclone formation points (≥Category 1 strength)
 - **Intensity Mapping**: Color-coded tracks showing cyclone intensity categories
-- **Heatmap Analysis**: Density visualization showing cyclone frequency patterns
+- **Heatmap Analysis**: Density visualisation showing cyclone frequency patterns
 
 ### Scenario Analysis
 - **Multiple Climate Scenarios**: Current, Natural (NAT), 2K warming, and 4K warming scenarios
@@ -41,7 +41,7 @@ TC Explorer is an interactive web application for visualizing and analyzing trop
 
 ### Interactive Controls
 - **Year Range Filtering**: Flexible time period selection
-- **Real-time Updates**: Dynamic visualization updates based on control settings
+- **Real-time Updates**: Dynamic visualisation updates based on control settings
 - **Export Functionality**: Data export capabilities for further analysis
 - **Mobile Support**: Responsive design for tablet and mobile devices
 
@@ -65,7 +65,7 @@ The application utilizes tropical cyclone data from the d4PDF (database for Poli
 1. Launch the application and complete the interactive tutorial for an overview of features
 2. Select your desired climate scenario and ensemble member
 3. Adjust year ranges to focus on specific time periods
-4. Toggle visualization options to explore different aspects of the data
+4. Toggle visualisation options to explore different aspects of the data
 
 ### Best Practices
 - Use comparison mode to analyze differences between climate scenarios
