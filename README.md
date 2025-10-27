@@ -1,5 +1,5 @@
 # TC Explorer - Tropical Cyclone Visualisation Tool
-**Version 2.0.0**
+**Version 2.1.0**
 
 *Developed by Team Sharks: May, Markey, Scott, Jackson, and Wheeler*
 
@@ -88,6 +88,9 @@ For technical documentation and development information, please refer to:
 
 ## Version History
 
+**v2.1.0**
+- Optimised IBTrACS data loading, by compressing and extracting between back and front end. This reduces load times by ~15-30seconds.
+
 **v2.0.0**
 - Finalised files for streamlined GitHub-Azure deployment. 
 
@@ -122,7 +125,7 @@ This application was developed by Team Sharks, comprising May, Markey, Scott, Ja
 
 ---
 
-*TC Explorer v2.0.0 - Ready for deployment and educational use*
+*TC Explorer v2.1.0 - Ready for deployment and educational use*
 
 
 
