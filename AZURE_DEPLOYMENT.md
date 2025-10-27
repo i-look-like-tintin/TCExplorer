@@ -108,15 +108,5 @@ Azure Web App Creation Steps (Azure Portal)
   - Check that app can reach www.ncei.noaa.gov
 
   ---
-  Comparison Points
-
-  This GitHub deployment test will show whether:
-
-  1. .user.ini works from GitHub deployment (vs local git push)
-  2. Apache configuration (.htaccess) applies correctly
-  3. Startup script creates cache directories
-  4. App can download large files from NOAA
-  5. PHP has enough memory/timeout to parse 314MB CSV
-  6. Cache persistence works across restarts
-
-  If all works, you can deploy all future updates via GitHub rather than local git push
+Most likely failure point is the setting of PHP environment variables. If this fails automatically, and it almost certainly will, the most reliable indicator is visiting https://tcexplorergh.azurewebsites.net/php/debug.php and seeing default values, or by attempting to load IBTrACS data and getting a JSON Parse error. Do not fret, this is manageable. SSH into the server, and verify that .user.ini does not exist in home/site/ or in home/site/wwwroot/
+It probably will not. In that event, create it in home/site/ and copy the values reported in the equally-named github file. Recommend copying this created file into wwwroot for good measure. Once done, restart the server, and ya should be good to start loading the csv and then parsing it down into regional json files. This process takes a while, and I didn't bother to automate it, so watch some YouTube or smth. 
