@@ -44,6 +44,7 @@ Azure Web App Creation Steps (Azure Portal)
   | Name                           | Value |
   |--------------------------------|-------|
   | SCM_DO_BUILD_DURING_DEPLOYMENT | false |
+  | PHP_INI_SCAN_DIR               | /usr/local/etc/php/conf.d:/home/site/ini |
   | ENABLE_ORYX_BUILD              | false |
 
     - Click "Save" at the top
