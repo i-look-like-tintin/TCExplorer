@@ -1,5 +1,5 @@
-# TC Explorer - Tropical Cyclone Visualization Tool
-**Version 2.0.0**
+# TC Explorer - Tropical Cyclone Visualisation Tool
+**Version 2.1.0**
 
 *Developed by Team Sharks: May, Markey, Scott, Jackson, and Wheeler*
 
@@ -8,6 +8,8 @@
 TC Explorer is an interactive web application for visualizing and analyzing tropical cyclone data across different climate scenarios. The application provides comprehensive tools for researchers to explore cyclone tracks, genesis locations, intensity patterns, and scenario comparisons.
 
 **Live Application:** https://tropicalcycloneexplorer.azurewebsites.net/
+
+**Testing Branch:** https://tcexplorertest.azurewebsites.net
 
 ## Installation & Setup
 
@@ -21,15 +23,15 @@ TC Explorer is an interactive web application for visualizing and analyzing trop
 3. Start Apache from the XAMPP control panel
 4. Navigate to `http://localhost/TCExplorer/` in your web browser
 
-**Note:** This application has been tested on Linux, Windows, macOS platforms, iOS and Android.
+**Note:** This application has been tested on Linux, Windows, and macOS platforms.
 
 ## Key Features
 
-### Data Visualization
-- **Cyclone Tracks**: Interactive visualization of tropical cyclone paths across the Australian region
+### Data Visualisation
+- **Cyclone Tracks**: Interactive visualisation of tropical cyclone paths across the Australian region
 - **Genesis Locations**: Display cyclone formation points (≥Category 1 strength)
 - **Intensity Mapping**: Color-coded tracks showing cyclone intensity categories
-- **Heatmap Analysis**: Density visualization showing cyclone frequency patterns
+- **Heatmap Analysis**: Density visualisation showing cyclone frequency patterns
 
 ### Scenario Analysis
 - **Multiple Climate Scenarios**: Current, Natural (NAT), 2K warming, and 4K warming scenarios
@@ -39,7 +41,7 @@ TC Explorer is an interactive web application for visualizing and analyzing trop
 
 ### Interactive Controls
 - **Year Range Filtering**: Flexible time period selection
-- **Real-time Updates**: Dynamic visualization updates based on control settings
+- **Real-time Updates**: Dynamic visualisation updates based on control settings
 - **Export Functionality**: Data export capabilities for further analysis
 - **Mobile Support**: Responsive design for tablet and mobile devices
 
@@ -50,9 +52,6 @@ TC Explorer is an interactive web application for visualizing and analyzing trop
 
 ## Data Sources
 
-The application provides access to both simulated climate model data and real historical observations:
-
-### Simulated Data (d4PDF Climate Models)
 The application utilizes tropical cyclone data from the d4PDF (database for Policy Decision making for Future climate change) project, providing comprehensive climate model outputs for:
 
 - **Historical Climate** (1951-2011): Current climate conditions
@@ -60,23 +59,13 @@ The application utilizes tropical cyclone data from the d4PDF (database for Poli
 - **2K Warming Scenario** (2031-2090): Climate projections with 2°C global warming
 - **4K Warming Scenario** (2051-2110): Climate projections with 4°C global warming
 
-### Real Historical Data (IBTrACS)
-The application integrates real historical cyclone data from IBTrACS (International Best Track Archive for Climate Stewardship), NOAA's comprehensive global database:
-
-- **Coverage Period**: 1842 to present
-- **Global Dataset**: 13,519+ historical tropical cyclones worldwide
-- **8 Regional Filters**: Australian Region, Global (All Regions), North Atlantic, Western Pacific, Eastern Pacific, North Indian, South Indian, and South Pacific
-- **Data Source**: IBTrACS v04r01, which includes Bureau of Meteorology (BoM) data for the Australian region
-- **Performance**: Multi-level caching system (IndexedDB + server-side parsed JSON cache) for fast data loading
-- **Source**: [NOAA IBTrACS](https://www.ncei.noaa.gov/products/international-best-track-archive)
-
 ## Usage Guidelines
 
 ### Getting Started
 1. Launch the application and complete the interactive tutorial for an overview of features
 2. Select your desired climate scenario and ensemble member
 3. Adjust year ranges to focus on specific time periods
-4. Toggle visualization options to explore different aspects of the data
+4. Toggle visualisation options to explore different aspects of the data
 
 ### Best Practices
 - Use comparison mode to analyze differences between climate scenarios
@@ -99,23 +88,20 @@ For technical documentation and development information, please refer to:
 
 ## Version History
 
-**v2.0.0**
-- Major feature release: Real historical cyclone data integration
-- Added IBTrACS (International Best Track Archive for Climate Stewardship) dataset support
-- 8 global regional filters: Australian, Global, North Atlantic, Western Pacific, Eastern Pacific, North Indian, South Indian, South Pacific
-- Historical cyclone data from 1842 to present (13,519+ global storms)
-- Multi-level caching system: IndexedDB client-side cache + server-side parsed JSON cache
-- Significant performance improvements: Load times reduced from 10-15s to <1s for cached regions
-- Data source selector allowing users to switch between simulated (d4PDF) and real historical data
-- Memory-efficient CSV parsing with region-specific filtering
-- Cache expiration set to 7 days for both client and server caches
-- Loading progress indicators for better user experience
-- Default options reset on page reload for consistency
+**v2.1.0**
+- Finalised files for streamlined GitHub-Azure deployment. 
 
-**v1.1.0**
-- Add Satellite viewing mode
-- Add colourblind support
-- Refine tutorial
+**v1.2.0**
+- Colourblind support added
+- Satellite view added
+- Refined tutorial
+- (also un~~fucked~~ my attempt at database integration. she aint ready yet)
+
+
+**v1.0.0a** - Alpha-testing of Production Release
+- Collapsible desktop interface
+- Enhanced mobile responsiveness
+- Production-ready codebase
 
 **Previous Versions**
 - v0.10.0 Added experimental heatmap view, which utilises pre-processed cell data to draw the heatmap. This was created from Client's IPYNB code modified to pre-process data, and then uploaded into application through density_data/
@@ -128,8 +114,7 @@ See known issues with this experimental implementation.
 - v0.15.0 Added collapsible control panel to desktop mode as well. This allows app to facilitate lower resolution displays much more effectively.
 - v0.15.5 Mobile version of site updated for functionality. Now functions horizontally and vertically, with a hamburger options menu allowing elements to be disabled for visibility and functions to be selected. Additional testing required to ensure full functionality.
 - v0.16.0 Added individual year sliders and visibility toggles to scenario comparison. Investigating a potential issue with mobile display (full header showing in horizontal view).
-- v0.17.0 Add full user tutorial for both desktop and mobile. Tutorial is configured to launch automatically for first-time users, and also be toggleable with a header option.
-- v1.0.0a Alpha-testing of Production Release, Collapsible desktop interface, Enhanced mobile responsiveness, Production-ready codebase
+- v0.17.0 Add full user tutorial for both desktop and mobile. Tutorial is configured to launch automatically for first-time users, and also be toggleable with a header option. 
 
 ## About Team Sharks
 
@@ -137,7 +122,7 @@ This application was developed by Team Sharks, comprising May, Markey, Scott, Ja
 
 ---
 
-*TC Explorer v2.0.0 - Ready for deployment and educational use*
+*TC Explorer v2.1.0 - Ready for deployment and educational use*
 
 
 
@@ -205,4 +190,3 @@ This application was developed by Team Sharks, comprising May, Markey, Scott, Ja
                                 #####
                                   #####
                                     ###
-
