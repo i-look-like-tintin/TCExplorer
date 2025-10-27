@@ -1,5 +1,5 @@
 # TC Explorer - Tropical Cyclone Visualisation Tool
-**Version 2.1.0**
+**Version 2.0.0**
 
 *Developed by Team Sharks: May, Markey, Scott, Jackson, and Wheeler*
 
@@ -83,12 +83,12 @@ The application utilizes tropical cyclone data from the d4PDF (database for Poli
 ## Support & Documentation
 
 For technical documentation and development information, please refer to:
-- `USER_GUIDE.md` - Detailed user instructions
-- `TECHNICAL_DOCS.md` - Development and maintenance documentation
+- `AZURE_DEPLOYMENT.md`
+- Accompanying documentation files
 
 ## Version History
 
-**v2.1.0**
+**v2.0.0**
 - Finalised files for streamlined GitHub-Azure deployment. 
 
 **v1.2.0**
@@ -122,7 +122,7 @@ This application was developed by Team Sharks, comprising May, Markey, Scott, Ja
 
 ---
 
-*TC Explorer v2.1.0 - Ready for deployment and educational use*
+*TC Explorer v2.0.0 - Ready for deployment and educational use*
 
 
 
