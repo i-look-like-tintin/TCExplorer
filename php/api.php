@@ -1,5 +1,13 @@
 <?php
 
+// Enable gzip compression for JSON responses to speed up large data transfers
+// This reduces 72MB JSON responses to ~8-10MB (80-90% reduction)
+if (extension_loaded('zlib') &&
+    !ob_get_level() &&
+    strpos($_SERVER['HTTP_ACCEPT_ENCODING'] ?? '', 'gzip') !== false) {
+    ob_start('ob_gzhandler');
+}
+
 require_once 'config.php';
 require_once 'Dp4dfParser.php';
 require_once 'IBTraCSParser.php';
