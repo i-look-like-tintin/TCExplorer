@@ -22,6 +22,7 @@ TC Explorer is an interactive web application for visualizing and analyzing trop
 2. Copy the TCExplorer folder to the `htdocs` directory in your XAMPP installation
 3. Start Apache from the XAMPP control panel
 4. Navigate to `http://localhost/TCExplorer/` in your web browser
+5. If using the IBTrACS-devoid branch, no further action is required. If using main, configure PHP environment variables to expand memory limit to >1500MB and timeout to >= 300
 
 **Note:** This application has been tested on Linux, Windows, and macOS platforms.
 
