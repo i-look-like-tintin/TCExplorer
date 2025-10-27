@@ -9,7 +9,7 @@ TC Explorer is an interactive web application for visualizing and analyzing trop
 
 **Live Application:** https://tropicalcycloneexplorer.azurewebsites.net/
 
-**Testing Branch:** https://tcexplorertest.azurewebsites.net
+~~**Testing Branch:** https://tcexplorertest.azurewebsites.net~~ Test server has been removed.
 
 ## Installation & Setup
 
